@@ -1,0 +1,46 @@
+# Build output
+/_site/
+/.jekyll-cache/
+/.sass-cache/
+/build/
+/dist/
+/out/
+
+# Dependencies
+/node_modules/
+/.bundle/
+/vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+.cache/
+
+# Generated content
+*.pdf
+*.epub
+*.mobi
+*.azw3
+
+# Local development
+.local/
+
+.next/
+.turbo/
+.nextra/
+.pagefind/
+.nextra-cache/
+_pagefind/

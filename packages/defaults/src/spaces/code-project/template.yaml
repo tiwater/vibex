@@ -1,0 +1,24 @@
+id: code-project
+category: 开发
+name: 代码项目
+description: 软件开发和代码审查工作区
+icon: Code
+agents:
+  - code-reviewer
+quickMessages:
+  - 审查这个 GitHub 仓库的代码质量和潜在问题
+  - 帮我分析最新的 Pull Request 并提供改进建议
+  - 查找仓库中的安全漏洞和性能瓶颈
+  - 为这个项目创建详细的代码审查报告
+
+# Marketplace metadata
+tags:
+  - 编程
+  - 开发
+  - 代码审查
+author: Supen 团队
+featured: true
+downloads: 0
+rating: 0
+preview:
+  image: /templates/code-project.png

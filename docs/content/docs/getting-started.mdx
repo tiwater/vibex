@@ -1,0 +1,86 @@
+import { Callout } from "nextra/components";
+import { Link } from "nextra/components";
+
+# Getting Started with VibeX
+
+Welcome to VibeX! This guide will walk you through the basics of setting up your first multi-agent team.
+
+## Installation
+
+First, make sure you have Python 3.8+ installed. Then, you can install VibeX using pip:
+
+```bash
+pip install vibex
+```
+
+## Your First Agent Team
+
+Let's create a simple agent team with a writer and a reviewer.
+
+### 1. Configure Your Team
+
+Create a `team.yaml` file to define your agents:
+
+```yaml
+# team.yaml
+agents:
+  - name: writer
+    description: "A professional writer who creates high-quality content."
+    prompt_file: "writer.md"
+  - name: reviewer
+    description: "A meticulous reviewer who checks for clarity and accuracy."
+    prompt_file: "reviewer.md"
+```
+
+### 2. Create Agent Prompts
+
+Create the prompt files for your agents:
+
+```markdown
+# writer.md
+
+You are a professional writer. Your task is to create a well-structured and engaging article based on the user's request.
+```
+
+```markdown
+# reviewer.md
+
+You are a meticulous reviewer. Your task is to review the writer's work for clarity, accuracy, and overall quality. Provide feedback for improvement.
+```
+
+### 3. Run Your Team
+
+Now, you can use VibeX to run your agent team. Create a Python script:
+
+```python
+import asyncio
+from vibex import XAgent
+
+async def main():
+    # Start a new project
+    x = await XAgent.start(
+        goal="Write a short blog post about the benefits of remote work.",
+        config_path="team.yaml"
+    )
+
+    # Autonomously execute the project
+    while not x.is_complete():
+        response = await x.step()
+        print(response)
+
+    print("Project completed!")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+<Callout type="info">
+  When you run this script, VibeX will orchestrate the writer and reviewer
+  agents to collaboratively create and refine the blog post.
+</Callout>
+
+## What's Next?
+
+- **Explore the Core Concepts**: Learn about Agents, Tools, and the VibeX architecture in the [Design Principles](/docs/design/design-principles) section.
+- **Build Custom Tools**: Extend your agents' capabilities by creating your own [custom tools](/docs/reference/tools).
+- **Check out the Examples**: See more advanced use cases in the `examples` directory of the VibeX repository.

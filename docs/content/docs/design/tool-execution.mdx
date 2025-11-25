@@ -1,0 +1,135 @@
+# Tool Architecture & Execution
+
+## 1. Overview and Core Principles
+
+The tool architecture is a cornerstone of the VibeX framework, designed to safely provide agents with the capabilities they need to perform meaningful work. It directly supports the Vibe-X philosophy by enabling a secure, observable, and extensible system where a human expert can confidently delegate tasks to an AI partner.
+
+The core principles are:
+
+- **Security First**: Untrusted, LLM-generated code or commands must never execute directly on a host machine. All tool execution is centralized, validated, and sandboxed.
+- **Robust Self-Correction**: LLM-generated tool calls can be malformed. The system is designed to detect this, provide clear, corrective feedback to the agent's `Brain`, and enable the agent to fix its own mistakes.
+- **Extensible by Design**: The framework is built to be easily extended. Adding new tools is a simple, decorator-based process, and the architecture supports advanced integrations like the Model Context Protocol (MCP).
+
+## 2. Tool Definition and Registration
+
+A "tool" is a capability that an agent can call. This can be a Python function or a shell command.
+
+### 2.1. Tool Definition
+
+- **Python Functions**: Any Python function can be turned into a tool. The function must have type hints for all its arguments and a clear docstring. The docstring is critical as it is used in the prompt to tell the agent what the tool does.
+
+  ```python
+  def write_file(path: str, content: str) -> str:
+      """Writes content to a file at the specified path."""
+      # ... implementation ...
+      return f"File '{path}' written successfully."
+  ```
+
+- **Shell Commands**: Shell commands are defined with a name, description, and an argument schema. The agent's LLM will generate the command string based on the arguments.
+
+### 2.2. Tool Registration and Schema Generation
+
+Tools are made available to agents via a central `ToolRegistry`.
+
+- **Decorator-Based Registration**: The `@register_tool` decorator is the primary mechanism for adding a tool to the registry.
+
+  ```python
+  from vibex.tool import register_tool
+
+  @register_tool
+  def write_file(path: str, content: str) -> str:
+      # ...
+  ```
+
+- **Automatic Schema Generation**: When a function is decorated, the `ToolRegistry` automatically inspects its signature and docstring to create a JSON schema. This schema is what the LLM sees and uses to construct a valid tool call. For the `write_file` example, the generated schema would look like this:
+
+  ```json
+  {
+    "name": "write_file",
+    "description": "Writes content to a file at the specified path.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "required": ["path", "content"]
+    }
+  }
+  ```
+
+## 3. The Tool Call Lifecycle
+
+The following diagram and steps describe the end-to-end flow of a tool call, from the `XAgent`'s task assignment to the final result.
+
+```mermaid
+graph TD
+    XAgent -- "1. Assign Task" --> AgentBrain
+
+    subgraph "Agent"
+        AgentBrain["Brain (LLM)"]
+        AgentCore["Core Logic"]
+    end
+
+    subgraph "Framework"
+        ToolManager
+    end
+
+    subgraph "Execution Environment"
+        Tool["Tool (e.g., Python function)"]
+    end
+
+    AgentBrain -- "2. Generate Tool Call" --> AgentCore
+    AgentCore -- "3. Request Execution" --> ToolManager
+
+    alt 4a. Validation Fails
+        ToolManager -- "Validation Error" --> AgentCore
+        AgentCore -- "Error Context" --> AgentBrain
+        AgentBrain -- "Corrected Tool Call" --> AgentCore
+        AgentCore -- "Retry Request" --> ToolManager
+    end
+
+    ToolManager -- "4b. Validation Succeeds" --> Tool
+    Tool -- "5. Return Result" --> ToolManager
+    ToolManager -- "6. Return Structured Result" --> AgentCore
+    AgentCore -- "7. Report Task Completion" --> XAgent
+```
+
+**Step-by-Step Flow:**
+
+1.  **Task Assignment (`XAgent`)**: The process begins when the `XAgent`, following the project's plan, assigns a specific task to a specialist `Agent` (e.g., "Write 'hello world' to `hello.txt`").
+
+2.  **Tool Call Generation (`Agent`'s `Brain`)**: The `Agent`'s `Brain` (its integrated LLM) receives the instruction. It determines that the task can be accomplished with a tool and generates the corresponding structured tool call (e.g., `write_file(path='hello.txt', content='hello world')`).
+
+3.  **Execution Request (`Agent`'s Core Logic)**: The `Agent`'s core logic receives the generated tool call and passes it to the `ToolManager` for secure execution.
+
+4.  **Validation (`ToolManager`)**: The `ToolManager` validates the call against the tool's registered schema.
+
+    - **If Validation Fails**: The `ToolManager` returns a structured error to the `Agent`. The `Agent`'s `Brain` receives the error context and generates a corrected call. This self-correction loop is a key feature of the framework's robustness.
+    - **If Validation Succeeds**: The `ToolManager` proceeds to execution.
+
+5.  **Secure Execution (`ToolManager`)**: The `ToolManager` securely runs the tool. Python functions are called directly, while shell commands are executed inside a secure sandbox.
+
+6.  **Result Capturing**: The `ToolManager` captures the tool's output and packages it into a structured `ToolResult` object, which is returned to the `Agent`.
+
+7.  **Task Completion**: The `Agent` has now completed its assigned task. It reports the `ToolResult` back to the `XAgent`, which updates the project plan and proceeds to the next step in the workflow.
+
+## 4. Security Architecture: The Sandbox
+
+Executing arbitrary, LLM-generated shell commands is a major security risk. VibeX mitigates this by using a sandboxed execution environment with user-scoped isolation.
+
+**Project-Scoped Execution**: All tool executions are scoped to the project's workspace directory, preventing access to other projects' data. Tools can only read from and write to `.vibex/projects/{project_id}/` directories, ensuring complete data isolation.
+
+- **Technology**: The default implementation uses **Docker containers**. Each shell tool execution spins up a new, short-lived container.
+- **Isolation**:
+  - **Network**: Containers run with networking disabled by default (`--net=none`) to prevent exfiltration of data or attacks on the local network. Tools that explicitly need network access must be granted it.
+  - **Filesystem**: The container is only granted access to the current project's workspace directory (`/app/.vibex/projects/{project_id}`). It cannot read from or write to any other part of the host filesystem or other projects' workspaces.
+  - **Permissions**: The process inside the container runs as a non-root user to limit its privileges even within the sandbox.
+
+## 5. Extensibility
+
+The tool architecture is designed for extension. VibeX supports a rich ecosystem of built-in tools, custom user-defined tools, and integrations with emerging standards like MCP.
+
+- **Built-in Tools**: VibeX provides a core set of safe, pre-built tools for common tasks like file I/O, web search, and memory access, located in `src/vibex/builtin_tools/`.
+- **Custom Tools**: Users can easily define their own tools by decorating Python functions with `@register_tool`. As long as the file containing the tool is imported, it will be automatically discovered and made available to agents.
+- **MCP (Model Context Protocol) Integration**: VibeX is designed to be a first-class citizen in the growing ecosystem of standardized AI tools. The `ToolManager` can seamlessly integrate with external, MCP-compliant tool servers, allowing agents to access a vast library of third-party capabilities without requiring custom code.

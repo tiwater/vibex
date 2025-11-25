@@ -1,0 +1,105 @@
+
+> @vibex/data@0.1.0 build /Users/hugh/tc/vibex/packages/data
+> tsup src/index.ts --format cjs,esm --dts
+
+[34mCLI[39m Building entry: src/index.ts
+[34mCLI[39m Using tsconfig: tsconfig.json
+[34mCLI[39m tsup v8.5.1
+[34mCLI[39m Target: es2020
+[34mCJS[39m Build start
+[34mESM[39m Build start
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "../storage/space"[0m
+
+    src/manager.ts:17:50:
+[37m      17 │ import { SpaceStorage, SpaceStorageFactory } from [32m"../storage/space"[37m;
+         ╵                                                   [32m~~~~~~~~~~~~~~~~~~[0m
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "../storage/space"[0m
+
+    src/manager.ts:17:50:
+[37m      17 │ import { SpaceStorage, SpaceStorageFactory } from [32m"../storage/space"[37m;
+         ╵                                                   [32m~~~~~~~~~~~~~~~~~~[0m
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@/vibex/data/factory"[0m
+
+    src/manager.ts:83:45:
+[37m      83 │     const { getServerDataAdapter } = require([32m"@/vibex/data/factory"[37m);
+         ╵                                              [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@/vibex/data/factory" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle. You can also surround this
+  "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@/vibex/data/factory"[0m
+
+    src/manager.ts:83:45:
+[37m      83 │     const { getServerDataAdapter } = require([32m"@/vibex/data/factory"[37m);
+         ╵                                              [32m~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@/vibex/data/factory" as external to exclude it from the bundle, which will
+  remove this error and leave the unresolved path in the bundle. You can also surround this
+  "require" call with a try/catch block to handle this failure at run-time instead of bundle-time.
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@/lib/supabase/server"[0m
+
+    src/adapters/supabase-server.ts:75:53:
+[37m      75 │     const { createServiceRoleClient } = await import([32m"@/lib/supabase/server"[37m);
+         ╵                                                      [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@/lib/supabase/server" as external to exclude it from the bundle, which
+  will remove this error and leave the unresolved path in the bundle. You can also add ".catch()"
+  here to handle this failure at run-time instead of bundle-time.
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "@/lib/supabase/server"[0m
+
+    src/adapters/supabase-server.ts:75:53:
+[37m      75 │     const { createServiceRoleClient } = await import([32m"@/lib/supabase/server"[37m);
+         ╵                                                      [32m~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "@/lib/supabase/server" as external to exclude it from the bundle, which
+  will remove this error and leave the unresolved path in the bundle. You can also add ".catch()"
+  here to handle this failure at run-time instead of bundle-time.
+
+[31mESM[39m [31mBuild failed[39m
+[31mError: Build failed with 3 errors:
+src/adapters/supabase-server.ts:75:53: ERROR: Could not resolve "@/lib/supabase/server"
+src/manager.ts:17:50: ERROR: Could not resolve "../storage/space"
+src/manager.ts:83:45: ERROR: Could not resolve "@/vibex/data/factory"
+    at failureErrorWithLog (/Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:926:25
+    at runOnEndCallbacks (/Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:1307:45)
+    at buildResponseToResult (/Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/hugh/tc/vibex/node_modules/.pnpm/esbuild@0.27.0/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)[39m
+[31mCJS[39m [31mBuild failed[39m
+DTS Build start
+src/manager.ts(16,26): error TS6133: 'getServerDataAdapter' is declared but its value is never read.
+src/manager.ts(17,10): error TS6133: 'SpaceStorage' is declared but its value is never read.
+src/manager.ts(17,51): error TS2307: Cannot find module '../storage/space' or its corresponding type declarations.
+src/manager.ts(18,1): error TS6133: 'Space' is declared but its value is never read.
+src/manager.ts(18,28): error TS2307: Cannot find module '@vibex/core' or its corresponding type declarations.
+src/manager.ts(19,55): error TS2307: Cannot find module '../storage/space' or its corresponding type declarations.
+src/manager.ts(533,19): error TS2339: Property 'model' does not exist on type 'Partial<Task>'.
+src/manager.ts(534,18): error TS2339: Property 'mode' does not exist on type 'Partial<Task>'.
+src/manager.ts(535,27): error TS2339: Property 'systemMessage' does not exist on type 'Partial<Task>'.
+src/manager.ts(536,22): error TS2339: Property 'messages' does not exist on type 'Partial<Task>'.
+src/manager.ts(537,25): error TS2339: Property 'supervision' does not exist on type 'Partial<Task>'.
+src/manager.ts(539,21): error TS2339: Property 'context' does not exist on type 'Partial<Task>'.
+src/manager.ts(731,5): error TS6133: 'clientInstance' is declared but its value is never read.
+
+DTS Build error
+RollupError: [plugin dts] src/manager.ts: Failed to compile. Check the logs above.
+    at getRollupError (/Users/hugh/tc/vibex/node_modules/.pnpm/rollup@4.53.3/node_modules/rollup/dist/shared/parseAst.js:285:41)
+    at Object.error (/Users/hugh/tc/vibex/node_modules/.pnpm/rollup@4.53.3/node_modules/rollup/dist/shared/parseAst.js:281:42)
+    at Object.error (/Users/hugh/tc/vibex/node_modules/.pnpm/rollup@4.53.3/node_modules/rollup/dist/shared/rollup.js:913:32)
+    at Object.error (/Users/hugh/tc/vibex/node_modules/.pnpm/rollup@4.53.3/node_modules/rollup/dist/shared/rollup.js:22415:42)
+    at generateDtsFromTs (/Users/hugh/tc/vibex/node_modules/.pnpm/tsup@8.5.1_jiti@1.21.7_postcss@8.5.6_typescript@5.9.3_yaml@2.8.1/node_modules/tsup/dist/rollup.js:6429:22)
+    at /Users/hugh/tc/vibex/node_modules/.pnpm/tsup@8.5.1_jiti@1.21.7_postcss@8.5.6_typescript@5.9.3_yaml@2.8.1/node_modules/tsup/dist/rollup.js:6436:59
+    at _nullishCoalesce (/Users/hugh/tc/vibex/node_modules/.pnpm/tsup@8.5.1_jiti@1.21.7_postcss@8.5.6_typescript@5.9.3_yaml@2.8.1/node_modules/tsup/dist/rollup.js:1:472)
+    at Object.transform (/Users/hugh/tc/vibex/node_modules/.pnpm/tsup@8.5.1_jiti@1.21.7_postcss@8.5.6_typescript@5.9.3_yaml@2.8.1/node_modules/tsup/dist/rollup.js:6436:18)
+    at /Users/hugh/tc/vibex/node_modules/.pnpm/rollup@4.53.3/node_modules/rollup/dist/shared/rollup.js:3392:40
+[41m[30m ELIFECYCLE [39m[49m [31mCommand failed with exit code 1.[39m
