@@ -17,7 +17,7 @@
   "dependencies": {
     "@vibex/core": "workspace:*",
     "@vibex/data": "workspace:*",
-    "ai": "^3.0.0"
+    "ai": "^5.0.52"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
