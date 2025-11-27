@@ -18,7 +18,7 @@ export interface Agent {
     model: string;
     settings?: {
       temperature?: number;
-      maxTokens?: number;
+      maxOutputTokens?: number;
       topP?: number;
       frequencyPenalty?: number;
       presencePenalty?: number;

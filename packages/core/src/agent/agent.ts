@@ -66,7 +66,7 @@ export class Agent {
       this.provider = config.llm.provider;
       this.model = config.llm.model;
       this.temperature = config.llm.settings?.temperature;
-      this.maxTokens = config.llm.settings?.maxTokens;
+      this.maxOutputTokens = config.llm.settings?.maxOutputTokens;
       this.topP = config.llm.settings?.topP;
       this.frequencyPenalty = config.llm.settings?.frequencyPenalty;
       this.presencePenalty = config.llm.settings?.presencePenalty;
@@ -76,7 +76,7 @@ export class Agent {
       this.provider = config.provider!;
       this.model = config.model!;
       this.temperature = config.temperature;
-      this.maxTokens = config.maxTokens;
+      this.maxOutputTokens = config.maxOutputTokens;
       this.topP = config.topP;
       this.frequencyPenalty = config.frequencyPenalty;
       this.presencePenalty = config.presencePenalty;
@@ -356,7 +356,7 @@ export class Agent {
         model: this.config.llm?.model || this.config.model || "unknown",
         settings: {
           temperature: this.temperature,
-          maxTokens: this.maxTokens,
+          maxOutputTokens: this.maxOutputTokens,
           topP: this.topP,
           frequencyPenalty: this.frequencyPenalty,
           presencePenalty: this.presencePenalty,
@@ -444,7 +444,7 @@ export class Agent {
       toolChoice: "auto", // Explicitly set tool choice mode
       // stopWhen removed - stepCountIs not available in this AI SDK version
       temperature: this.temperature,
-      maxTokens: this.maxTokens,
+      maxOutputTokens: this.maxOutputTokens,
       topP: this.topP,
       frequencyPenalty: this.frequencyPenalty,
       presencePenalty: this.presencePenalty,
@@ -587,7 +587,7 @@ export class Agent {
       maxRetries: 3,
       ...aiSdkOptions,
       // Add model-specific options if they exist
-      ...(this.maxTokens && { maxSteps: 5 }), // generateText uses maxSteps not maxTokens
+      ...(this.maxOutputTokens && { maxSteps: 5 }), // generateText uses maxSteps not maxTokens
       ...(this.topP && { topP: this.topP }),
       ...(this.frequencyPenalty && { frequencyPenalty: this.frequencyPenalty }),
       ...(this.presencePenalty && { presencePenalty: this.presencePenalty }),

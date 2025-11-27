@@ -27,7 +27,7 @@ export interface StreamTextOptions {
 
   // Optional parameters
   temperature?: number;
-  maxTokens?: number;
+  maxOutputTokens?: number;
   topP?: number;
   frequencyPenalty?: number;
   presencePenalty?: number;

@@ -29,7 +29,7 @@ export * from "./workflow/types";
 export * from "./workflow/engine";
 
 // Knowledge subsystem
-export * from "./knowledge/knowledge";
+
 export * from "./knowledge/rag";
 export * from "./knowledge/rag-embeddings";
 export * from "./knowledge/rag-memory-store";

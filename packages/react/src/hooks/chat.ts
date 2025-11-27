@@ -1,5 +1,5 @@
-import { useChat } from 'ai/react';
-import type { UseChatOptions, UseChatHelpers } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
+import type { UseChatOptions, UseChatHelpers } from '@ai-sdk/react';
 import { useMemo } from 'react';
 
 export interface UseVibexChatOptions extends Omit<UseChatOptions, 'body'> {

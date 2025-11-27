@@ -13,7 +13,8 @@
 
 import type { DataAdapter } from "./adapter";
 import type { Space as DataSpace, Artifact, Task, Agent, Tool } from "./types";
-import { getDataAdapter } from "./factory";
+import type { KnowledgeAdapter, Dataset, KnowledgeDocument, DocumentChunk } from "./knowledge/adapter";
+import { getDataAdapter, getKnowledgeAdapter } from "./factory";
 import { SpaceStorageFactory } from "./storage/space";
 import type { SpaceStorage as SpaceStorageType } from "./storage/space";
 
@@ -45,15 +46,17 @@ export type SubscriptionCallback<T> = (data: T) => void;
  */
 export class VibexDataManager {
   private dataAdapter: DataAdapter;
+  private knowledgeAdapter: KnowledgeAdapter;
   private cache: Map<string, { data: any; timestamp: number }>;
   private subscriptions: Map<string, Set<SubscriptionCallback<any>>>;
   private cacheTTL: number = 5 * 60 * 1000; // 5 minutes default
 
-  constructor(dataAdapter?: DataAdapter) {
+  constructor(dataAdapter?: DataAdapter, knowledgeAdapter?: KnowledgeAdapter) {
     // If no adapter provided, try to get one from factory
     // Note: This will fail for database mode on client side, which is intended
     // as client side should use server actions, not VibexDataManager directly
     this.dataAdapter = dataAdapter || getDataAdapter();
+    this.knowledgeAdapter = knowledgeAdapter || getKnowledgeAdapter();
     this.cache = new Map();
     this.subscriptions = new Map();
   }
@@ -717,6 +720,77 @@ export class VibexDataManager {
   async deleteArtifactFile(spaceId: string, storageKey: string): Promise<void> {
     const storage = await this.getSpaceStorage(spaceId);
     await storage.delete(storageKey);
+  }
+  // ==================== Knowledge Operations ====================
+
+  /**
+   * Get all datasets
+   */
+  async getDatasets(): Promise<Dataset[]> {
+    return this.knowledgeAdapter.getDatasets();
+  }
+
+  /**
+   * Get a single dataset
+   */
+  async getDataset(id: string): Promise<Dataset | null> {
+    return this.knowledgeAdapter.getDataset(id);
+  }
+
+  /**
+   * Save a dataset
+   */
+  async saveDataset(dataset: Dataset): Promise<void> {
+    await this.knowledgeAdapter.saveDataset(dataset);
+  }
+
+  /**
+   * Delete a dataset
+   */
+  async deleteDataset(id: string): Promise<void> {
+    await this.knowledgeAdapter.deleteDataset(id);
+  }
+
+  /**
+   * Get documents for a dataset
+   */
+  async getDocuments(datasetId: string): Promise<KnowledgeDocument[]> {
+    return this.knowledgeAdapter.getDocuments(datasetId);
+  }
+
+  /**
+   * Add a document to a dataset
+   */
+  async addDocument(datasetId: string, document: KnowledgeDocument): Promise<void> {
+    await this.knowledgeAdapter.addDocument(datasetId, document);
+  }
+
+  /**
+   * Delete a document from a dataset
+   */
+  async deleteDocument(datasetId: string, documentId: string): Promise<void> {
+    await this.knowledgeAdapter.deleteDocument(datasetId, documentId);
+  }
+
+  /**
+   * Save vector chunks
+   */
+  async saveChunks(chunks: DocumentChunk[]): Promise<void> {
+    await this.knowledgeAdapter.saveChunks(chunks);
+  }
+
+  /**
+   * Search vector chunks
+   */
+  async searchChunks(vector: number[], k: number): Promise<DocumentChunk[]> {
+    return this.knowledgeAdapter.searchChunks(vector, k);
+  }
+
+  /**
+   * Delete vector chunks
+   */
+  async deleteChunks(ids: string[]): Promise<void> {
+    await this.knowledgeAdapter.deleteChunks(ids);
   }
 }
 

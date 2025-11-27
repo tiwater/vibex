@@ -15,7 +15,7 @@ import { Plan } from "../space/plan";
 import { Task, TaskStatus } from "../space/task";
 import { generateObject } from "ai";
 import type { StreamTextResult } from "ai";
-type StreamTextResultType = StreamTextResult<Record<string, unknown>>;
+type StreamTextResultType = StreamTextResult<Record<string, any>, any>;
 import { z } from "zod";
 import { WorkflowEngine } from "../workflow/engine";
 import { Workflow } from "../workflow/types";
@@ -244,7 +244,7 @@ Use "condition" for decision points.`,
     spaceId: string | undefined,
     metadata: Record<string, unknown>,
     restOptions: Record<string, unknown>
-  ): Promise<StreamTextResult> {
+  ): Promise<StreamTextResult<Record<string, any>, any>> {
     // Check if parallel execution is requested
     const parallelAgents = metadata.parallelAgents as string[] | undefined;
     if (parallelAgents && parallelAgents.length > 1) {
@@ -259,7 +259,7 @@ Use "condition" for decision points.`,
     }
 
     // Single agent execution (existing logic)
-    const targetAgent = metadata.requestedAgent;
+    const targetAgent = metadata.requestedAgent as string;
     if (!targetAgent) {
       throw new Error("Agent mode requires requestedAgent in metadata");
     }
@@ -372,7 +372,7 @@ Use "condition" for decision points.`,
         yield { type: 'finish' as const, finishReason: 'stop' as const };
       },
       text: aggregatedText,
-    } as StreamTextResultType;
+    } as any as StreamTextResultType;
   }
 
   /**

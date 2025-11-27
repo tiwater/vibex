@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { XAgent } from "./xagent";
-import { AgentConfig } from "../config";
+import { XAgent } from "../../src/orchestration/xagent";
+import { AgentConfig } from "../../src/config";
 
 // Mock dependencies
 vi.mock("ai", () => ({
@@ -8,6 +8,10 @@ vi.mock("ai", () => ({
   streamText: vi.fn(),
   generateObject: vi.fn().mockResolvedValue({ object: { tasks: [] } }),
   stepCountIs: vi.fn(),
+}));
+
+vi.mock("@vibex/tools", () => ({
+  buildToolMap: vi.fn().mockReturnValue(new Map()),
 }));
 
 vi.mock("@vibex/data", () => ({

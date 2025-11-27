@@ -37,12 +37,12 @@ export class BrowserAgent extends Agent {
       tool({
         description: "Navigate to a URL",
         parameters: z.object({ url: z.string().url() }),
-        execute: async ({ url }) => {
+        execute: (async ({ url }: { url: string }) => {
           await this.ensurePage();
           await this.page!.goto(url);
           return `Navigated to ${url}`;
-        },
-      })
+        }) as any,
+      } as any)
     );
 
     this.registerTool(
@@ -50,12 +50,12 @@ export class BrowserAgent extends Agent {
       tool({
         description: "Click an element specified by a selector",
         parameters: z.object({ selector: z.string() }),
-        execute: async ({ selector }) => {
+        execute: (async ({ selector }: { selector: string }) => {
           await this.ensurePage();
           await this.page!.click(selector);
           return `Clicked element: ${selector}`;
-        },
-      })
+        }) as any,
+      } as any)
     );
 
     this.registerTool(
@@ -63,12 +63,12 @@ export class BrowserAgent extends Agent {
       tool({
         description: "Type text into an element",
         parameters: z.object({ selector: z.string(), text: z.string() }),
-        execute: async ({ selector, text }) => {
+        execute: (async ({ selector, text }: { selector: string; text: string }) => {
           await this.ensurePage();
           await this.page!.fill(selector, text);
           return `Typed "${text}" into ${selector}`;
-        },
-      })
+        }) as any,
+      } as any)
     );
 
     this.registerTool(
@@ -76,15 +76,15 @@ export class BrowserAgent extends Agent {
       tool({
         description: "Take a screenshot of the current page",
         parameters: z.object({ fullPage: z.boolean().optional() }),
-        execute: async ({ fullPage }) => {
+        execute: (async ({ fullPage }: { fullPage?: boolean }) => {
           await this.ensurePage();
           const buffer = await this.page!.screenshot({ fullPage });
           return {
             type: "image",
             image: buffer.toString("base64"),
           };
-        },
-      })
+        }) as any,
+      } as any)
     );
 
     this.registerTool(
@@ -92,13 +92,13 @@ export class BrowserAgent extends Agent {
       tool({
         description: "Get the text content of the page",
         parameters: z.object({}),
-        execute: async () => {
+        execute: (async () => {
           await this.ensurePage();
           const content = await this.page!.content();
           // Basic cleanup could go here
           return content.slice(0, 10000) + "... (truncated)";
-        },
-      })
+        }) as any,
+      } as any)
     );
 
     this.registerTool(
@@ -106,12 +106,12 @@ export class BrowserAgent extends Agent {
       tool({
         description: "Evaluate JavaScript on the page",
         parameters: z.object({ script: z.string() }),
-        execute: async ({ script }) => {
+        execute: (async ({ script }: { script: string }) => {
           await this.ensurePage();
           const result = await this.page!.evaluate(script);
           return JSON.stringify(result);
-        },
-      })
+        }) as any,
+      } as any)
     );
   }
 

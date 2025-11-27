@@ -94,3 +94,15 @@ export function getServerDataAdapter(): DataAdapter {
   console.log("[VibexDataAdapter] Server: Using local mode (file-based)");
   return new LocalDataAdapter();
 }
+
+/**
+ * Get knowledge adapter
+ */
+import type { KnowledgeAdapter } from "./knowledge/adapter";
+import { LocalKnowledgeAdapter } from "./knowledge/local-adapter";
+
+export function getKnowledgeAdapter(): KnowledgeAdapter {
+  // For now, always return LocalKnowledgeAdapter
+  // In future, we can switch based on config/env
+  return new LocalKnowledgeAdapter();
+}

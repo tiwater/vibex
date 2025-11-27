@@ -20,9 +20,10 @@ export interface EmbeddingModel {
   embedQuery(text: string): Promise<number[]>;
 }
 
+import { getVibexDataManagerServer } from "@vibex/data";
+
 export class KnowledgeBase {
   constructor(
-    private store: VectorStore,
     private embeddings: EmbeddingModel
   ) {}
 
@@ -38,12 +39,14 @@ export class KnowledgeBase {
       embedding: vectors[i],
     }));
 
-    await this.store.addDocuments(docs);
+    const dataManager = getVibexDataManagerServer();
+    await dataManager.saveChunks(docs);
   }
 
   async query(text: string, k: number = 5): Promise<DocumentChunk[]> {
     const vector = await this.embeddings.embedQuery(text);
-    return this.store.similaritySearch(vector, k);
+    const dataManager = getVibexDataManagerServer();
+    return dataManager.searchChunks(vector, k);
   }
 
   private chunkText(text: string, size: number = 1000): string[] {

@@ -22,7 +22,7 @@ export interface ModelConfig {
   provider: 'openai' | 'anthropic' | 'deepseek' | 'local';
   model: string;
   temperature?: number;
-  maxTokens?: number;
+  maxOutputTokens?: number;
 }
 
 export interface StorageConfig {

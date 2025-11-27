@@ -15,6 +15,11 @@ export type { DataAdapter } from "./adapter";
 export { getDataAdapter, getServerDataAdapter } from "./factory";
 export * from "./types";
 
+// Knowledge
+export type { KnowledgeAdapter, Dataset, KnowledgeDocument, DocumentChunk } from "./knowledge/adapter";
+export { LocalKnowledgeAdapter } from "./knowledge/local-adapter";
+
+
 // Storage primitives
 export { BaseStorage } from "./storage/base";
 export type { StorageAdapter, ArtifactInfo } from "./storage/base";

@@ -9,19 +9,7 @@
 
 // LocalStorageAdapter is imported dynamically to avoid bundling Node.js fs module in client
 
-/**
- * Resolve logical root prefix for local storage (only used as fallback)
- * For cloud storage, this is not used - the adapter handles root prefix
- */
-function resolveVibexRoot(): string {
-  // Only used for local storage fallback
-  if (typeof window === "undefined") {
-    const path = require("path");
-    const os = require("os");
-    return process.env.VIBEX_STORAGE_PATH || path.join(os.homedir(), ".vibex");
-  }
-  return "";
-}
+
 
 export interface ArtifactInfo {
   id: string;

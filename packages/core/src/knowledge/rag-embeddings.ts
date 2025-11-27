@@ -1,9 +1,9 @@
 import { EmbeddingModel } from "./rag";
 import { embed, embedMany } from "ai";
-import type { LanguageModel } from "ai";
+
 
 export class AIEmbeddingModel implements EmbeddingModel {
-  constructor(private model: LanguageModel) {}
+  constructor(private model: any) {}
 
   async embedDocuments(texts: string[]): Promise<number[][]> {
     // Use embedMany for multiple texts
