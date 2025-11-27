@@ -44,7 +44,7 @@ export class Agent {
   public provider: string;
   public model: string;
   public temperature?: number;
-  public maxTokens?: number;
+  public maxOutputTokens?: number;
   public topP?: number;
   public frequencyPenalty?: number;
   public presencePenalty?: number;

@@ -12,8 +12,8 @@
 
 import { Plan } from "./plan";
 import { Task, TaskStatus } from "./task";
-import { XAgent } from "../orchestration/xagent";
-import { SpaceStorage, SpaceStorageFactory } from "@vibex/data";
+import { XAgent } from "../agent/xagent";
+import { getServerResourceAdapter } from "@vibex/data";
 import { SpaceConfig, AgentConfig } from "../config";
 import { Agent } from "../agent/agent";
 import { MessageQueue, ConversationHistory } from "./message";
@@ -22,7 +22,7 @@ import {
   AgentCollaborationManager,
   ParallelExecutionEngine,
   CollaborativePlanner,
-} from "../orchestration/collaboration";
+} from "../agent/collaboration";
 
 // Re-export for convenience
 export type { SpaceModel, SpaceState };
@@ -47,7 +47,6 @@ export class Space {
   public tasks: Map<string, SpaceTask>; // NEW: Multiple tasks
   public messageQueue: MessageQueue;
   public agents: Map<string, Agent>;
-  public storage: SpaceStorage;
   public goal: string;
   public name: string;
   public xAgent?: XAgent;
@@ -66,7 +65,6 @@ export class Space {
     history,
     messageQueue,
     agents,
-    storage,
     goal,
     name,
     xAgent,
@@ -77,7 +75,6 @@ export class Space {
     history: ConversationHistory;
     messageQueue: MessageQueue;
     agents: Map<string, Agent>;
-    storage: SpaceStorage;
     goal: string;
     name?: string;
     xAgent?: XAgent;
@@ -89,7 +86,6 @@ export class Space {
     this.tasks = new Map(); // NEW: Task storage
     this.messageQueue = messageQueue;
     this.agents = agents;
-    this.storage = storage;
     this.goal = goal;
     this.name = name || `Space ${spaceId}`;
     this.xAgent = xAgent;
@@ -173,7 +169,6 @@ export class Space {
     const context: Record<string, any> = {
       spaceId: this.spaceId,
       goal: this.goal,
-      storagePath: this.storage.getSpacePath(),
       agents: Array.from(this.agents.keys()),
       historyLength: this.history.messages.length,
       createdAt: this.createdAt.toISOString(),
@@ -278,33 +273,30 @@ export class Space {
   }
 
   async persistState(): Promise<void> {
-    // NOTE: In database mode, space data is persisted through the data adapter (spaces table)
-    // Storage is ONLY used for artifacts, not config files
-    // This legacy file-based persistence is disabled to avoid conflicts
-    // Space persistence is now handled by the API layer using SupabaseDatabaseAdapter
-    console.log("[Space] State persistence handled by database adapter");
+    const adapter = getServerResourceAdapter();
+    await adapter.saveSpace({
+      id: this.spaceId,
+      name: this.name,
+      goal: this.goal,
+      userId: this.userId,
+      // Map configuration as needed
+      createdAt: this.createdAt.toISOString(),
+      updatedAt: this.updatedAt.toISOString(),
+    } as any);
+    console.log("[Space] State persisted via ResourceAdapter");
   }
 
   async loadState(): Promise<boolean> {
     try {
-      // NOTE: In database mode, space data is loaded from the database, not storage
-      // This method is kept for backward compatibility but returns false
-      console.log("[Space] State loading handled by database adapter");
-      return false;
+      const adapter = getServerResourceAdapter();
+      const spaceData = await adapter.getSpace(this.spaceId);
 
-      // Legacy code disabled:
-      // const spaceData = await this.storage.readFile("space.json");
-      // if (spaceData) {
-      //   const data = JSON.parse(spaceData.toString("utf-8")) as SpaceModel;
-      //   this.createdAt = new Date(data.createdAt || this.createdAt.toISOString());
-      //   this.updatedAt = new Date(data.updatedAt || this.updatedAt.toISOString());
-      //   this.name = data.name || this.name;
-      //   if (data.plan) {
-      //     this.plan = Plan.fromJSON(data.plan);
-      //   }
-      //   // Load artifacts...
-      //   return true;
-      // }
+      if (spaceData) {
+        this.name = spaceData.name;
+        this.goal = spaceData.description || this.goal;
+        // Load other properties...
+        return true;
+      }
     } catch (error) {
       console.error("Failed to load space state:", error);
     }
@@ -377,9 +369,6 @@ export async function startSpace({
 
   console.log(`[Space] Creating space - agents will be loaded on demand`);
 
-  // Create storage
-  const storage = await SpaceStorageFactory.create(id);
-
   // Create agents map - empty initially, agents loaded on demand
   const agents = new Map<string, Agent>();
 
@@ -397,7 +386,6 @@ export async function startSpace({
     history,
     messageQueue,
     agents,
-    storage,
     goal,
     name: name || spaceConfig.name,
   });

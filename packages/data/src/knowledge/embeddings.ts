@@ -1,9 +1,8 @@
-import { EmbeddingModel } from "./rag";
-import { embed, embedMany } from "ai";
-
+import { EmbeddingModel } from "@vibex/core/dist/types/knowledge";
+import { embed, embedMany, LanguageModel } from "ai";
 
 export class AIEmbeddingModel implements EmbeddingModel {
-  constructor(private model: any) {}
+  constructor(private model: LanguageModel) {}
 
   async embedDocuments(texts: string[]): Promise<number[][]> {
     // Use embedMany for multiple texts

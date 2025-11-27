@@ -1,7 +1,7 @@
-import { Agent, AgentContext } from "./agent";
-import { AgentConfig } from "../config";
+import { Agent, AgentContext } from "@vibex/core";
+import { AgentConfig } from "@vibex/core/dist/config";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
-import { z } from 'zod/v3';
+import { z } from 'zod';
 import { tool } from "ai";
 
 export interface BrowserAgentConfig extends AgentConfig {
@@ -145,3 +145,4 @@ Always verify your actions by checking the page content or taking screenshots if
 `;
   }
 }
+

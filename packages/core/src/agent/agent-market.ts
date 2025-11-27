@@ -7,7 +7,14 @@
  */
 
 import { AgentConfig } from "../config";
-import { getServerResourceAdapter } from "@vibex/data";
+import { getServerResourceAdapter, BaseStorage } from "@vibex/data";
+
+// Helper to get storage
+async function getStorage(path: string) {
+  const { LocalStorageAdapter } = await import("@vibex/data");
+  const adapter = new LocalStorageAdapter();
+  return new BaseStorage(path, adapter);
+}
 
 /**
  * Agent template metadata - extends AgentConfig with market-specific fields
@@ -69,8 +76,7 @@ export class AgentMarket {
    */
   static async getCategories(): Promise<MarketCategory[]> {
     try {
-      const { Storage } = await import("../space/storage");
-      const defaultsStorage = await Storage.getDefaultsStorage();
+      const defaultsStorage = await getStorage("defaults");
       const defaultsData = await defaultsStorage.readYaml("categories.yaml");
 
       // Extract agent subcategories
@@ -114,9 +120,8 @@ export class AgentMarket {
       // Initialize market if needed
       await this.ensureMarketInitialized();
 
-      const { Storage } = await import("../space/storage");
-      const defaultsStorage = await Storage.getDefaultsStorage();
-      const rootStorage = await Storage.getRootStorage();
+      const defaultsStorage = await getStorage("defaults");
+      const rootStorage = await getStorage("");
 
       const templates: AgentTemplate[] = [];
 
@@ -184,8 +189,7 @@ export class AgentMarket {
    */
   private static async ensureMarketInitialized(): Promise<void> {
     try {
-      const { Storage } = await import("../space/storage");
-      const defaultsStorage = await Storage.getDefaultsStorage();
+      const defaultsStorage = await getStorage("defaults");
 
       // Check if agents directory exists
       const files = await defaultsStorage.list("agents").catch(() => []);
@@ -291,8 +295,7 @@ export class AgentMarket {
     try {
       await this.ensureMarketInitialized();
 
-      const { Storage } = await import("../space/storage");
-      const defaultsStorage = await Storage.getDefaultsStorage();
+      const defaultsStorage = await getStorage("defaults");
 
       const config = await defaultsStorage.readYaml(
         `agents/${templateId}.yaml`
@@ -377,9 +380,8 @@ export class AgentMarket {
    * This creates an instance from a template
    */
   static async saveAgentInstance(agentConfig: AgentConfig): Promise<void> {
-    const { Storage } = await import("../space/storage");
-    const rootStorage = await Storage.getRootStorage();
-    const configStorage = await Storage.getConfigStorage();
+    const rootStorage = await getStorage("");
+    const configStorage = await getStorage("config");
 
     // Ensure agents directory exists in root storage
     await rootStorage.mkdir("agents");

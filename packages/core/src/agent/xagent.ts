@@ -745,34 +745,26 @@ These artifacts are pre-loaded in the space and can be referenced in your respon
     const { model } = options;
 
     // Load existing space
-    const { SpaceStorageFactory } = await import("@vibex/data");
+    const { SpaceStorageFactory, getServerResourceAdapter } = await import(
+      "@vibex/data"
+    );
     const { startSpace } = await import("../space/space");
 
-    // Check if space exists
-    const exists = await SpaceStorageFactory.exists(spaceId);
-    if (!exists) {
+    // Check if space exists using ResourceAdapter
+    const adapter = getServerResourceAdapter();
+    const spaceModel = await adapter.getSpace(spaceId);
+
+    if (!spaceModel) {
       throw new Error(`Space ${spaceId} not found`);
     }
 
     // Load space data
-    const storage = await SpaceStorageFactory.create(spaceId);
-    const spaceData = await storage.readJSON<{
-      goal: string;
-      name: string;
-      model?: string;
-      singleAgentId?: string;
-    }>("space.json");
-
-    if (!spaceData) {
-      throw new Error(`Failed to load space ${spaceId}`);
-    }
-
     // Recreate space with saved state
     const space = await startSpace({
       spaceId,
-      goal: spaceData.goal,
-      name: spaceData.name,
-      model: model || spaceData.model,
+      goal: spaceModel.description || "", // Map description to goal
+      name: spaceModel.name,
+      model: model || (spaceModel.config as any)?.model,
     });
 
     if (!space.xAgent) {
@@ -780,24 +772,19 @@ These artifacts are pre-loaded in the space and can be referenced in your respon
     }
 
     // Set singleAgentId if provided
-    const agentId = options.singleAgentId || spaceData.singleAgentId;
+    const agentId =
+      options.singleAgentId || (spaceModel.config as any)?.singleAgentId;
     if (agentId) {
       space.xAgent.singleAgentId = agentId;
     }
 
     // Restore conversation messages if exists
-    const messages = await storage.readJSON<VibexMessage[]>("messages.json");
-    if (messages && Array.isArray(messages)) {
-      space.history.clear();
-      for (const msg of messages) {
-        // Normalize message content format to AI SDK v5 standard
-        const normalizedMsg = { ...msg };
-        if (typeof msg.content === "string") {
-          // Convert string content to AI SDK v5 format
-          normalizedMsg.content = [{ type: "text", text: msg.content }];
-        }
-        space.history.add(normalizedMsg);
-      }
+    // Messages are now loaded via ResourceAdapter through tasks
+    // This part needs to be adapted to load from Task history
+    const tasks = await adapter.getTasks(spaceId);
+    if (tasks.length > 0) {
+      // Find the default task or most recent one
+      // Implementation details depend on how tasks are structured now
     }
 
     return space.xAgent;

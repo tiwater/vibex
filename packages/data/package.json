@@ -14,6 +14,7 @@
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@vibex/core": "workspace:*",
+    "ai": "^5.0.102",
     "better-sqlite3": "^12.4.6",
     "nanoid": "^5.0.0",
     "yaml": "^2.8.1"
