@@ -177,6 +177,44 @@ export async function getTool(toolId: string): Promise<ToolType | null> {
   return await manager.getTool(toolId);
 }
 
+// ==================== Task Actions (Aliases for Conversation) ====================
+// Tasks are conversations in Vibex, these provide backward-compatible naming
+
+export interface TaskFilters {
+  spaceId?: string;
+  title?: string;
+  createdAfter?: Date;
+}
+
+export async function getTasks(
+  spaceId: string,
+  filters?: TaskFilters
+): Promise<ConversationType[]> {
+  return getConversations(spaceId, filters);
+}
+
+export async function getTask(taskId: string): Promise<ConversationType | null> {
+  return getConversation(taskId);
+}
+
+export async function createTask(
+  spaceId: string,
+  task: Partial<ConversationType>
+): Promise<ConversationType> {
+  return createConversation(spaceId, task);
+}
+
+export async function updateTask(
+  taskId: string,
+  updates: Partial<ConversationType>
+): Promise<ConversationType> {
+  return updateConversation(taskId, updates);
+}
+
+export async function deleteTask(taskId: string, spaceId: string): Promise<void> {
+  return deleteConversation(taskId, spaceId);
+}
+
 // ==================== Storage Actions ====================
 
 export async function getSpaceStorage(spaceId: string) {

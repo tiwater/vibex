@@ -812,14 +812,8 @@ These artifacts are pre-loaded in the space and can be referenced in your respon
       space.xAgent.singleAgentId = agentId;
     }
 
-    // Restore conversation messages if exists
-    // Messages are now loaded via ResourceAdapter through tasks
-    // This part needs to be adapted to load from Task history
-    const tasks = await adapter.getTasks(spaceId);
-    if (tasks.length > 0) {
-      // Find the default task or most recent one
-      // Implementation details depend on how tasks are structured now
-    }
+    // Note: Messages and tasks are now loaded through the plan via loadState()
+    // The plan contains tasks which have their own message history
 
     return space.xAgent;
   }

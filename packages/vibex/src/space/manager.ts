@@ -14,9 +14,9 @@ import type {
   ConversationType,
   AgentType,
   ToolType,
-  DatasetTypeType,
-  KnowledgeDocumentTypeType,
-  DocumentChunkTypeType,
+  DatasetType,
+  KnowledgeDocumentType,
+  DocumentChunkType,
 } from "@vibex/core";
 import { getResourceAdapter, getKnowledgeAdapter } from "./factory";
 import { BaseStorage } from "./storage";
@@ -30,14 +30,14 @@ export interface SpaceFilters {
 
 export interface ArtifactFilters {
   spaceId?: string;
-  taskId?: string;
+  conversationId?: string;
   category?: "input" | "intermediate" | "output";
   mimeType?: string;
 }
 
 export interface TaskFilters {
   spaceId: string;
-  status?: "active" | "completed" | "archived";
+  title?: string;
   createdAfter?: Date;
 }
 
@@ -284,8 +284,10 @@ export class SpaceManager {
     let artifacts = await this.resourceAdapter.getArtifacts(spaceId);
 
     if (filters) {
-      if (filters.taskId) {
-        artifacts = artifacts.filter((a) => a.taskId === filters.taskId);
+      if (filters.conversationId) {
+        artifacts = artifacts.filter(
+          (a) => a.conversationId === filters.conversationId
+        );
       }
       if (filters.category) {
         artifacts = artifacts.filter((a) => a.category === filters.category);
@@ -319,7 +321,7 @@ export class SpaceManager {
       id: artifact.id || `artifact-${Date.now()}`,
       spaceId,
       userId: artifact.userId,
-      taskId: artifact.taskId,
+      conversationId: artifact.conversationId,
       category: artifact.category || "intermediate",
       storageKey: artifact.storageKey || "",
       originalName: artifact.originalName || "untitled",
@@ -410,8 +412,11 @@ export class SpaceManager {
     let tasks = await this.resourceAdapter.getConversations(spaceId);
 
     if (filters) {
-      if (filters.status) {
-        tasks = tasks.filter((t) => t.status === filters.status);
+      if (filters.title) {
+        const lowerTitle = filters.title.toLowerCase();
+        tasks = tasks.filter((t) =>
+          t.title?.toLowerCase().includes(lowerTitle)
+        );
       }
       if (filters.createdAfter) {
         tasks = tasks.filter((t) => {
@@ -616,27 +621,30 @@ export class SpaceManager {
 
   // ==================== Knowledge Operations ====================
 
-  async getDatasetTypes(): Promise<DatasetType[]> {
-    return this.knowledgeAdapter.getDatasetTypes();
+  async getDatasets(): Promise<DatasetType[]> {
+    return this.knowledgeAdapter.getDatasets();
   }
 
-  async getDatasetType(id: string): Promise<DatasetType | null> {
-    return this.knowledgeAdapter.getDatasetType(id);
+  async getDataset(id: string): Promise<DatasetType | null> {
+    return this.knowledgeAdapter.getDataset(id);
   }
 
-  async saveDatasetType(dataset: DatasetType): Promise<void> {
-    await this.knowledgeAdapter.saveDatasetType(dataset);
+  async saveDataset(dataset: DatasetType): Promise<void> {
+    await this.knowledgeAdapter.saveDataset(dataset);
   }
 
-  async deleteDatasetType(id: string): Promise<void> {
-    await this.knowledgeAdapter.deleteDatasetType(id);
+  async deleteDataset(id: string): Promise<void> {
+    await this.knowledgeAdapter.deleteDataset(id);
   }
 
   async getDocuments(datasetId: string): Promise<KnowledgeDocumentType[]> {
     return this.knowledgeAdapter.getDocuments(datasetId);
   }
 
-  async addDocument(datasetId: string, document: KnowledgeDocumentType): Promise<void> {
+  async addDocument(
+    datasetId: string,
+    document: KnowledgeDocumentType
+  ): Promise<void> {
     await this.knowledgeAdapter.addDocument(datasetId, document);
   }
 
@@ -648,7 +656,10 @@ export class SpaceManager {
     await this.knowledgeAdapter.saveChunks(chunks);
   }
 
-  async searchChunks(vector: number[], k: number): Promise<DocumentChunkType[]> {
+  async searchChunks(
+    vector: number[],
+    k: number
+  ): Promise<DocumentChunkType[]> {
     return this.knowledgeAdapter.searchChunks(vector, k);
   }
 

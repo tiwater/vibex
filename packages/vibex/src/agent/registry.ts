@@ -10,6 +10,47 @@ import { AgentConfig } from "../config";
 import { getServerResourceAdapter } from "../space/factory";
 import { BaseStorage } from "../space/storage";
 
+// Type for defaults categories.yaml structure
+interface CategoriesConfig {
+  categories?: Array<{
+    id: string;
+    name?: string;
+    icon?: string;
+    subcategories?: Array<{
+      id: string;
+      name: string;
+      icon?: string;
+    }>;
+  }>;
+}
+
+// Type for agent config from YAML files (minimal interface for parsing)
+interface AgentYamlConfig {
+  id?: string;
+  name?: string;
+  description?: string;
+  llm?: Record<string, unknown>;
+  promptFile?: string;
+  systemPrompt?: string;
+  tools?: string[];
+  personality?: Record<string, unknown>;
+  examples?: unknown[];
+  category?: string;
+  tags?: string[];
+  author?: string;
+  version?: string;
+  icon?: string;
+  usageExamples?: string[];
+  requirements?: string[];
+  variables?: AgentTemplate["variables"];
+  downloads?: number;
+  rating?: number;
+  protected?: boolean;
+  isCustom?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Helper to get storage
 async function getStorage(path: string) {
   const { LocalStorageAdapter } = await import("@vibex/local");
@@ -78,15 +119,16 @@ export class AgentMarket {
   static async getCategories(): Promise<MarketCategory[]> {
     try {
       const defaultsStorage = await getStorage("defaults");
-      const defaultsData = await defaultsStorage.readYaml("categories.yaml");
+      const defaultsData =
+        await defaultsStorage.readYaml<CategoriesConfig>("categories.yaml");
 
       // Extract agent subcategories
       const agentsCategory = defaultsData?.categories?.find(
-        (c: any) => c.id === "agents"
+        (c) => c.id === "agents"
       );
 
       if (agentsCategory?.subcategories) {
-        return agentsCategory.subcategories.map((sub: any, index: number) => ({
+        return agentsCategory.subcategories.map((sub, index) => ({
           id: sub.id,
           name: sub.name,
           icon: sub.icon,
@@ -131,7 +173,9 @@ export class AgentMarket {
       for (const file of defaultFiles) {
         if (file.endsWith(".yaml") || file.endsWith(".yml")) {
           try {
-            const config = await defaultsStorage.readYaml(`agents/${file}`);
+            const config =
+              await defaultsStorage.readYaml<AgentYamlConfig>(`agents/${file}`);
+            if (!config) continue;
 
             // Load prompt file if specified
             if (config.promptFile) {
@@ -158,7 +202,10 @@ export class AgentMarket {
         for (const file of customFiles) {
           if (file.endsWith(".yaml") || file.endsWith(".yml")) {
             try {
-              const config = await rootStorage.readYaml(`agents/${file}`);
+              const config =
+                await rootStorage.readYaml<AgentYamlConfig>(`agents/${file}`);
+              if (!config) continue;
+
               // Ensure unique ID by prefixing with "custom-" if not already prefixed
               const uniqueId = config.id?.startsWith("custom-")
                 ? config.id
@@ -298,9 +345,13 @@ export class AgentMarket {
 
       const defaultsStorage = await getStorage("defaults");
 
-      const config = await defaultsStorage.readYaml(
+      const config = await defaultsStorage.readYaml<AgentYamlConfig>(
         `agents/${templateId}.yaml`
       );
+
+      if (!config) {
+        return null;
+      }
 
       // Load prompt file if specified
       if (config.promptFile) {

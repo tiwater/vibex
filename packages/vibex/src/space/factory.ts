@@ -49,8 +49,9 @@ export function getServerResourceAdapter(): ResourceAdapter {
   // Dynamic import to avoid bundling @vibex/local in client code
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { LocalResourceAdapter } = require("@vibex/local");
-  resourceAdapterInstance = new LocalResourceAdapter();
-  return resourceAdapterInstance;
+  const adapter = new LocalResourceAdapter();
+  resourceAdapterInstance = adapter;
+  return adapter;
 }
 
 /**
@@ -82,8 +83,9 @@ export function getStorageAdapter(): StorageAdapter {
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { LocalStorageAdapter } = require("@vibex/local");
-  storageAdapterInstance = new LocalStorageAdapter();
-  return storageAdapterInstance;
+  const adapter = new LocalStorageAdapter();
+  storageAdapterInstance = adapter;
+  return adapter;
 }
 
 /**
@@ -108,8 +110,9 @@ export function getKnowledgeAdapter(): KnowledgeAdapter {
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { LocalKnowledgeAdapter } = require("@vibex/local");
-  knowledgeAdapterInstance = new LocalKnowledgeAdapter();
-  return knowledgeAdapterInstance;
+  const adapter = new LocalKnowledgeAdapter();
+  knowledgeAdapterInstance = adapter;
+  return adapter;
 }
 
 /**
