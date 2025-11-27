@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Bot, User, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,20 @@ interface ChatMessageProps {
   message: Message;
 }
 
+// Helper to extract text content from React children
+function extractTextFromChildren(children: React.ReactNode): string {
+  if (typeof children === "string") return children;
+  if (typeof children === "number") return String(children);
+  if (Array.isArray(children)) return children.map(extractTextFromChildren).join("");
+  if (React.isValidElement(children) && children.props.children) {
+    return extractTextFromChildren(children.props.children);
+  }
+  return "";
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
+  const preRef = useRef<HTMLPreElement>(null);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -62,33 +74,39 @@ export function ChatMessage({ message }: ChatMessageProps) {
           <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
             <ReactMarkdown
               components={{
-                pre: ({ children }) => (
-                  <div className="relative my-2">
-                    <pre className="bg-slate-900 text-slate-100 p-3 rounded-lg text-xs overflow-x-auto">
-                      {children}
-                    </pre>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 h-6 w-6"
-                      onClick={() => {
-                        const code = (children as React.ReactElement)?.props?.children;
-                        if (typeof code === "string") handleCopy(code);
-                      }}
-                    >
-                      {copied ? (
-                        <Check className="w-3 h-3 shrink-0" />
-                      ) : (
-                        <Copy className="w-3 h-3 shrink-0" />
-                      )}
-                    </Button>
-                  </div>
-                ),
+                pre: ({ children }) => {
+                  const codeText = extractTextFromChildren(children);
+                  return (
+                    <div className="relative my-2">
+                      <pre
+                        ref={preRef}
+                        className="bg-slate-900 text-slate-100 p-3 rounded-lg text-xs overflow-x-auto"
+                      >
+                        {children}
+                      </pre>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => handleCopy(codeText)}
+                      >
+                        {copied ? (
+                          <Check className="w-3 h-3 shrink-0" />
+                        ) : (
+                          <Copy className="w-3 h-3 shrink-0" />
+                        )}
+                      </Button>
+                    </div>
+                  );
+                },
                 code: ({ className, children, ...props }) => {
                   const isInline = !className;
                   if (isInline) {
                     return (
-                      <code className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs" {...props}>
+                      <code
+                        className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs"
+                        {...props}
+                      >
                         {children}
                       </code>
                     );
