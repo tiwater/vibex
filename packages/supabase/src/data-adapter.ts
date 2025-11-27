@@ -1,19 +1,17 @@
-import type { ResourceAdapter } from "@vibex/data";
 import type {
-  Agent,
-  Tool,
-  Space,
-  Artifact,
-  Conversation,
-  Task,
-  ModelProvider,
-  Datasource,
-} from "@vibex/data";
+  ResourceAdapter,
+  AgentType,
+  ToolType,
+  SpaceType,
+  ArtifactType,
+  ConversationType,
+  ModelProviderType,
+  PlanType,
+} from "@vibex/core";
 import { createServiceRoleClient } from "./client";
 
 /**
- * SupabaseDatabaseAdapter - Direct Supabase/PostgreSQL database access
- * Mirrors the previous implementation from @vibex/data but lives in @vibex/supabase now.
+ * SupabaseResourceAdapter - Direct Supabase/PostgreSQL database access
  */
 export class SupabaseResourceAdapter implements ResourceAdapter {
   private supabase = createServiceRoleClient();
@@ -26,9 +24,14 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
 
     const result: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
-      const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+      const snakeKey = key.replace(
+        /[A-Z]/g,
+        (letter) => `_${letter.toLowerCase()}`
+      );
       result[snakeKey] =
-        typeof value === "object" && value !== null ? this.toSnakeCase(value) : value;
+        typeof value === "object" && value !== null
+          ? this.toSnakeCase(value)
+          : value;
     }
     return result;
   }
@@ -40,21 +43,25 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
 
     const result: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
-      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
+        letter.toUpperCase()
+      );
       result[camelKey] =
-        typeof value === "object" && value !== null ? this.toCamelCase(value) : value;
+        typeof value === "object" && value !== null
+          ? this.toCamelCase(value)
+          : value;
     }
     return result;
   }
 
   // Agents --------------------------------------------------------------
-  async getAgents(): Promise<Agent[]> {
+  async getAgents(): Promise<AgentType[]> {
     const { data, error } = await this.supabase.from("agents").select("*");
     if (error) throw new Error(`Failed to fetch agents: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getAgent(id: string): Promise<Agent | null> {
+  async getAgent(id: string): Promise<AgentType | null> {
     const { data, error } = await this.supabase
       .from("agents")
       .select("*")
@@ -67,7 +74,7 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     return this.toCamelCase(data);
   }
 
-  async saveAgent(agent: Agent): Promise<Agent> {
+  async saveAgent(agent: AgentType): Promise<AgentType> {
     const dbAgent = this.toSnakeCase({
       ...agent,
       updatedAt: new Date().toISOString(),
@@ -86,7 +93,7 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     if (error) throw new Error(`Failed to delete agent: ${error.message}`);
   }
 
-  async cloneAgent(id: string): Promise<Agent> {
+  async cloneAgent(id: string): Promise<AgentType> {
     const agent = await this.getAgent(id);
     if (!agent) throw new Error(`Agent ${id} not found`);
     const clone = { ...agent, id: `${id}-copy-${Date.now()}` };
@@ -94,13 +101,13 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
   }
 
   // Tools ---------------------------------------------------------------
-  async getTools(): Promise<Tool[]> {
+  async getTools(): Promise<ToolType[]> {
     const { data, error } = await this.supabase.from("tools").select("*");
     if (error) throw new Error(`Failed to fetch tools: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getTool(id: string): Promise<Tool | null> {
+  async getTool(id: string): Promise<ToolType | null> {
     const { data, error } = await this.supabase
       .from("tools")
       .select("*")
@@ -113,12 +120,16 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     return this.toCamelCase(data);
   }
 
-  async saveTool(tool: Tool): Promise<Tool> {
+  async saveTool(tool: ToolType): Promise<ToolType> {
     const dbTool = this.toSnakeCase({
       ...tool,
       updatedAt: new Date().toISOString(),
     });
-    const { data, error } = await this.supabase.from("tools").upsert(dbTool).select().single();
+    const { data, error } = await this.supabase
+      .from("tools")
+      .upsert(dbTool)
+      .select()
+      .single();
     if (error) throw new Error(`Failed to save tool: ${error.message}`);
     return this.toCamelCase(data);
   }
@@ -128,7 +139,7 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     if (error) throw new Error(`Failed to delete tool: ${error.message}`);
   }
 
-  async cloneTool(id: string): Promise<Tool> {
+  async cloneTool(id: string): Promise<ToolType> {
     const tool = await this.getTool(id);
     if (!tool) throw new Error(`Tool ${id} not found`);
     const clone = { ...tool, id: `${id}-copy-${Date.now()}` };
@@ -136,13 +147,13 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
   }
 
   // Spaces --------------------------------------------------------------
-  async getSpaces(): Promise<Space[]> {
+  async getSpaces(): Promise<SpaceType[]> {
     const { data, error } = await this.supabase.from("spaces").select("*");
     if (error) throw new Error(`Failed to fetch spaces: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getSpace(id: string): Promise<Space | null> {
+  async getSpace(id: string): Promise<SpaceType | null> {
     const { data, error } = await this.supabase
       .from("spaces")
       .select("*")
@@ -155,9 +166,10 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     return this.toCamelCase(data);
   }
 
-  async saveSpace(space: Space): Promise<Space> {
+  async saveSpace(space: SpaceType): Promise<SpaceType> {
     const dbSpace = this.toSnakeCase({
       ...space,
+      description: space.goal || space.description || null,
       updatedAt: new Date().toISOString(),
     });
     if (dbSpace.id === "") delete dbSpace.id;
@@ -175,8 +187,60 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     if (error) throw new Error(`Failed to delete space: ${error.message}`);
   }
 
+  // Plans ---------------------------------------------------------------
+  async getPlan(spaceId: string): Promise<PlanType | null> {
+    const { data, error } = await this.supabase
+      .from("space_plans")
+      .select("*")
+      .eq("space_id", spaceId)
+      .single();
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw new Error(`Failed to fetch plan: ${error.message}`);
+    }
+    const record = this.toCamelCase(data);
+    return {
+      spaceId: record.spaceId,
+      plan: record.plan,
+      status: record.status,
+      summary: record.summary,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    };
+  }
+
+  async savePlan(plan: PlanType): Promise<PlanType> {
+    const dbPlan = this.toSnakeCase({
+      ...plan,
+      updatedAt: new Date().toISOString(),
+    });
+    const { data, error } = await this.supabase
+      .from("space_plans")
+      .upsert(dbPlan)
+      .select()
+      .single();
+    if (error) throw new Error(`Failed to save plan: ${error.message}`);
+    const record = this.toCamelCase(data);
+    return {
+      spaceId: record.spaceId,
+      plan: record.plan,
+      status: record.status,
+      summary: record.summary,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    };
+  }
+
+  async deletePlan(spaceId: string): Promise<void> {
+    const { error } = await this.supabase
+      .from("space_plans")
+      .delete()
+      .eq("space_id", spaceId);
+    if (error) throw new Error(`Failed to delete plan: ${error.message}`);
+  }
+
   // Artifacts -----------------------------------------------------------
-  async getArtifacts(spaceId: string): Promise<Artifact[]> {
+  async getArtifacts(spaceId: string): Promise<ArtifactType[]> {
     const { data, error } = await this.supabase
       .from("artifacts")
       .select("*")
@@ -186,7 +250,7 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getArtifact(id: string): Promise<Artifact | null> {
+  async getArtifact(id: string): Promise<ArtifactType | null> {
     const { data, error } = await this.supabase
       .from("artifacts")
       .select("*")
@@ -199,7 +263,7 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     return this.toCamelCase(data);
   }
 
-  async saveArtifact(artifact: Artifact): Promise<Artifact> {
+  async saveArtifact(artifact: ArtifactType): Promise<ArtifactType> {
     const dbArtifact = this.toSnakeCase({
       ...artifact,
       updatedAt: new Date().toISOString(),
@@ -214,116 +278,109 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
   }
 
   async deleteArtifact(id: string): Promise<void> {
-    const { error } = await this.supabase.from("artifacts").delete().eq("id", id);
+    const { error } = await this.supabase
+      .from("artifacts")
+      .delete()
+      .eq("id", id);
     if (error) throw new Error(`Failed to delete artifact: ${error.message}`);
   }
 
-  async getArtifactsBySpace(spaceId: string): Promise<Artifact[]> {
+  async getArtifactsBySpace(spaceId: string): Promise<ArtifactType[]> {
     const { data, error } = await this.supabase
       .from("artifacts")
       .select("*")
       .eq("space_id", spaceId)
-      .is("task_id", null)
+      .is("conversation_id", null)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(`Failed to fetch space artifacts: ${error.message}`);
+    if (error)
+      throw new Error(`Failed to fetch space artifacts: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getArtifactsByTask(taskId: string): Promise<Artifact[]> {
+  async getArtifactsByConversation(conversationId: string): Promise<ArtifactType[]> {
     const { data, error } = await this.supabase
       .from("artifacts")
       .select("*")
-      .eq("task_id", taskId)
+      .eq("conversation_id", conversationId)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(`Failed to fetch task artifacts: ${error.message}`);
+    if (error)
+      throw new Error(`Failed to fetch conversation artifacts: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
   async getArtifactsByCategory(
-    id: string,
+    spaceOrConversationId: string,
     category: "input" | "intermediate" | "output",
-    isTask = false
-  ): Promise<Artifact[]> {
-    const field = isTask ? "task_id" : "space_id";
+    isConversation = false
+  ): Promise<ArtifactType[]> {
+    const field = isConversation ? "conversation_id" : "space_id";
     const { data, error } = await this.supabase
       .from("artifacts")
       .select("*")
-      .eq(field, id)
+      .eq(field, spaceOrConversationId)
       .eq("category", category)
       .order("created_at", { ascending: false });
-    if (error) throw new Error(`Failed to fetch categorized artifacts: ${error.message}`);
+    if (error)
+      throw new Error(
+        `Failed to fetch categorized artifacts: ${error.message}`
+      );
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  // Tasks ---------------------------------------------------------------
-  async getTasks(spaceId: string): Promise<Task[]> {
+  // Conversations -------------------------------------------------------
+  async getConversations(spaceId: string): Promise<ConversationType[]> {
     const { data, error } = await this.supabase
-      .from("tasks")
+      .from("conversations")
       .select("*")
       .eq("space_id", spaceId)
       .order("updated_at", { ascending: false });
-    if (error) throw new Error(`Failed to fetch tasks: ${error.message}`);
+    if (error) throw new Error(`Failed to fetch conversations: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getTask(id: string): Promise<Task | null> {
+  async getConversation(id: string): Promise<ConversationType | null> {
     const { data, error } = await this.supabase
-      .from("tasks")
+      .from("conversations")
       .select("*")
       .eq("id", id)
       .single();
     if (error) {
       if (error.code === "PGRST116") return null;
-      throw new Error(`Failed to fetch task: ${error.message}`);
+      throw new Error(`Failed to fetch conversation: ${error.message}`);
     }
     return this.toCamelCase(data);
   }
 
-  async saveTask(task: Task): Promise<Task> {
-    const dbTask = this.toSnakeCase({
-      ...task,
+  async saveConversation(conversation: ConversationType): Promise<ConversationType> {
+    const dbConversation = this.toSnakeCase({
+      ...conversation,
       updatedAt: new Date().toISOString(),
     });
     const { data, error } = await this.supabase
-      .from("tasks")
-      .upsert(dbTask)
+      .from("conversations")
+      .upsert(dbConversation)
       .select()
       .single();
-    if (error) throw new Error(`Failed to save task: ${error.message}`);
+    if (error) throw new Error(`Failed to save conversation: ${error.message}`);
     return this.toCamelCase(data);
   }
 
-  async deleteTask(id: string): Promise<void> {
-    const { error } = await this.supabase.from("tasks").delete().eq("id", id);
-    if (error) throw new Error(`Failed to delete task: ${error.message}`);
-  }
-
-  async getConversations(spaceId: string): Promise<Conversation[]> {
-    const tasks = await this.getTasks(spaceId);
-    return tasks as Conversation[];
-  }
-
-  async getConversation(id: string): Promise<Conversation | null> {
-    const task = await this.getTask(id);
-    return task as Conversation | null;
-  }
-
-  async saveConversation(conversation: Conversation): Promise<Conversation> {
-    return (await this.saveTask(conversation as unknown as Task)) as unknown as Conversation;
-  }
-
   async deleteConversation(id: string): Promise<void> {
-    await this.deleteTask(id);
+    const { error } = await this.supabase.from("conversations").delete().eq("id", id);
+    if (error) throw new Error(`Failed to delete conversation: ${error.message}`);
   }
 
   // Model Providers -----------------------------------------------------
-  async getModelProviders(): Promise<ModelProvider[]> {
-    const { data, error } = await this.supabase.from("model_providers").select("*");
-    if (error) throw new Error(`Failed to fetch model providers: ${error.message}`);
+  async getModelProviders(): Promise<ModelProviderType[]> {
+    const { data, error } = await this.supabase
+      .from("model_providers")
+      .select("*");
+    if (error)
+      throw new Error(`Failed to fetch model providers: ${error.message}`);
     return (data || []).map((row) => this.toCamelCase(row));
   }
 
-  async getModelProvider(id: string): Promise<ModelProvider | null> {
+  async getModelProvider(id: string): Promise<ModelProviderType | null> {
     const { data, error } = await this.supabase
       .from("model_providers")
       .select("*")
@@ -336,7 +393,7 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
     return this.toCamelCase(data);
   }
 
-  async saveModelProvider(provider: ModelProvider): Promise<ModelProvider> {
+  async saveModelProvider(provider: ModelProviderType): Promise<ModelProviderType> {
     const dbProvider = this.toSnakeCase({
       ...provider,
       updatedAt: new Date().toISOString(),
@@ -346,52 +403,18 @@ export class SupabaseResourceAdapter implements ResourceAdapter {
       .upsert(dbProvider)
       .select()
       .single();
-    if (error) throw new Error(`Failed to save model provider: ${error.message}`);
+    if (error)
+      throw new Error(`Failed to save model provider: ${error.message}`);
     return this.toCamelCase(data);
   }
 
   async deleteModelProvider(id: string): Promise<void> {
-    const { error } = await this.supabase.from("model_providers").delete().eq("id", id);
-    if (error) throw new Error(`Failed to delete model provider: ${error.message}`);
-  }
-
-  // Datasources ---------------------------------------------------------
-  async getDatasources(): Promise<Datasource[]> {
-    const { data, error } = await this.supabase.from("datasources").select("*");
-    if (error) throw new Error(`Failed to fetch datasources: ${error.message}`);
-    return (data || []).map((row) => this.toCamelCase(row));
-  }
-
-  async getDatasource(id: string): Promise<Datasource | null> {
-    const { data, error } = await this.supabase
-      .from("datasources")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw new Error(`Failed to fetch datasource: ${error.message}`);
-    }
-    return this.toCamelCase(data);
-  }
-
-  async saveDatasource(datasource: Datasource): Promise<Datasource> {
-    const dbDatasource = this.toSnakeCase({
-      ...datasource,
-      updatedAt: new Date().toISOString(),
-    });
-    const { data, error } = await this.supabase
-      .from("datasources")
-      .upsert(dbDatasource)
-      .select()
-      .single();
-    if (error) throw new Error(`Failed to save datasource: ${error.message}`);
-    return this.toCamelCase(data);
-  }
-
-  async deleteDatasource(id: string): Promise<void> {
-    const { error } = await this.supabase.from("datasources").delete().eq("id", id);
-    if (error) throw new Error(`Failed to delete datasource: ${error.message}`);
+    const { error } = await this.supabase
+      .from("model_providers")
+      .delete()
+      .eq("id", id);
+    if (error)
+      throw new Error(`Failed to delete model provider: ${error.message}`);
   }
 }
 

@@ -17,47 +17,63 @@
 
 "use server";
 
-import { getVibexDataManagerServer } from "@vibex/data";
+import { getSpaceManagerServer } from "vibex";
 import type {
-  Space,
-  Artifact,
-  Task,
-  Agent,
-  Tool,
-} from "@vibex/data";
-import type {
-  SpaceFilters,
-  ArtifactFilters,
-  TaskFilters,
-} from "@vibex/data";
+  SpaceType,
+  ArtifactType,
+  ConversationType,
+  AgentType,
+  ToolType,
+} from "@vibex/core";
+
+// Filter types
+export interface SpaceFilters {
+  userId?: string;
+  name?: string;
+  createdAfter?: Date;
+  createdBefore?: Date;
+}
+
+export interface ArtifactFilters {
+  spaceId?: string;
+  conversationId?: string;
+  category?: "input" | "intermediate" | "output";
+  mimeType?: string;
+}
+
+export interface ConversationFilters {
+  spaceId: string;
+  status?: "active" | "completed" | "archived";
+  createdAfter?: Date;
+}
 
 // ==================== Space Actions ====================
 
-export async function getSpace(spaceId: string): Promise<Space | null> {
-  const manager = getVibexDataManagerServer();
+export async function getSpace(spaceId: string): Promise<SpaceType | null> {
+  const manager = getSpaceManagerServer();
   return await manager.getSpace(spaceId);
 }
 
-export async function listSpaces(filters?: SpaceFilters): Promise<Space[]> {
-  const manager = getVibexDataManagerServer();
+export async function listSpaces(filters?: SpaceFilters): Promise<SpaceType[]> {
+  const manager = getSpaceManagerServer();
   return await manager.listSpaces(filters);
 }
 
-export async function createSpace(space: Partial<Space>): Promise<Space> {
-  const manager = getVibexDataManagerServer();
+export async function createSpace(space: Partial<SpaceType>): Promise<SpaceType> {
+  const manager = getSpaceManagerServer();
   return await manager.createSpace(space);
 }
 
 export async function updateSpace(
   spaceId: string,
-  updates: Partial<Space>
-): Promise<Space> {
-  const manager = getVibexDataManagerServer();
+  updates: Partial<SpaceType>
+): Promise<SpaceType> {
+  const manager = getSpaceManagerServer();
   return await manager.updateSpace(spaceId, updates);
 }
 
 export async function deleteSpace(spaceId: string): Promise<void> {
-  const manager = getVibexDataManagerServer();
+  const manager = getSpaceManagerServer();
   return await manager.deleteSpace(spaceId);
 }
 
@@ -66,30 +82,30 @@ export async function deleteSpace(spaceId: string): Promise<void> {
 export async function getArtifacts(
   spaceId: string,
   filters?: ArtifactFilters
-): Promise<Artifact[]> {
-  const manager = getVibexDataManagerServer();
+): Promise<ArtifactType[]> {
+  const manager = getSpaceManagerServer();
   return await manager.getArtifacts(spaceId, filters);
 }
 
-export async function getArtifact(artifactId: string): Promise<Artifact | null> {
-  const manager = getVibexDataManagerServer();
+export async function getArtifact(artifactId: string): Promise<ArtifactType | null> {
+  const manager = getSpaceManagerServer();
   return await manager.getArtifact(artifactId);
 }
 
 export async function createArtifact(
   spaceId: string,
-  artifact: Partial<Artifact>
-): Promise<Artifact> {
-  const manager = getVibexDataManagerServer();
+  artifact: Partial<ArtifactType>
+): Promise<ArtifactType> {
+  const manager = getSpaceManagerServer();
   return await manager.createArtifact(spaceId, artifact);
 }
 
 export async function updateArtifact(
   artifactId: string,
   spaceId: string,
-  updates: Partial<Artifact>
-): Promise<Artifact> {
-  const manager = getVibexDataManagerServer();
+  updates: Partial<ArtifactType>
+): Promise<ArtifactType> {
+  const manager = getSpaceManagerServer();
   return await manager.updateArtifact(artifactId, spaceId, updates);
 }
 
@@ -97,74 +113,74 @@ export async function deleteArtifact(
   artifactId: string,
   spaceId: string
 ): Promise<void> {
-  const manager = getVibexDataManagerServer();
+  const manager = getSpaceManagerServer();
   return await manager.deleteArtifact(artifactId, spaceId);
 }
 
 // ==================== Task Actions ====================
 
-export async function getTasks(
+export async function getConversations(
   spaceId: string,
-  filters?: TaskFilters
-): Promise<Task[]> {
-  const manager = getVibexDataManagerServer();
-  return await manager.getTasks(spaceId, filters);
+  filters?: ConversationFilters
+): Promise<ConversationType[]> {
+  const manager = getSpaceManagerServer();
+  return await manager.getConversations(spaceId, filters);
 }
 
-export async function getTask(taskId: string): Promise<Task | null> {
-  const manager = getVibexDataManagerServer();
-  return await manager.getTask(taskId);
+export async function getConversation(taskId: string): Promise<ConversationType | null> {
+  const manager = getSpaceManagerServer();
+  return await manager.getConversation(taskId);
 }
 
-export async function createTask(
+export async function createConversation(
   spaceId: string,
-  task: Partial<Task>
-): Promise<Task> {
-  const manager = getVibexDataManagerServer();
-  return await manager.createTask(spaceId, task);
+  task: Partial<ConversationType>
+): Promise<ConversationType> {
+  const manager = getSpaceManagerServer();
+  return await manager.createConversation(spaceId, task);
 }
 
-export async function updateTask(
+export async function updateConversation(
   taskId: string,
-  updates: Partial<Task>
-): Promise<Task> {
-  const manager = getVibexDataManagerServer();
-  return await manager.updateTask(taskId, updates);
+  updates: Partial<ConversationType>
+): Promise<ConversationType> {
+  const manager = getSpaceManagerServer();
+  return await manager.updateConversation(taskId, updates);
 }
 
-export async function deleteTask(taskId: string, spaceId: string): Promise<void> {
-  const manager = getVibexDataManagerServer();
-  return await manager.deleteTask(taskId, spaceId);
+export async function deleteConversation(taskId: string, spaceId: string): Promise<void> {
+  const manager = getSpaceManagerServer();
+  return await manager.deleteConversation(taskId, spaceId);
 }
 
 // ==================== Agent Actions ====================
 
-export async function getAgents(): Promise<Agent[]> {
-  const manager = getVibexDataManagerServer();
+export async function getAgents(): Promise<AgentType[]> {
+  const manager = getSpaceManagerServer();
   return await manager.getAgents();
 }
 
-export async function getAgent(agentId: string): Promise<Agent | null> {
-  const manager = getVibexDataManagerServer();
+export async function getAgent(agentId: string): Promise<AgentType | null> {
+  const manager = getSpaceManagerServer();
   return await manager.getAgent(agentId);
 }
 
 // ==================== Tool Actions ====================
 
-export async function getTools(): Promise<Tool[]> {
-  const manager = getVibexDataManagerServer();
+export async function getTools(): Promise<ToolType[]> {
+  const manager = getSpaceManagerServer();
   return await manager.getTools();
 }
 
-export async function getTool(toolId: string): Promise<Tool | null> {
-  const manager = getVibexDataManagerServer();
+export async function getTool(toolId: string): Promise<ToolType | null> {
+  const manager = getSpaceManagerServer();
   return await manager.getTool(toolId);
 }
 
 // ==================== Storage Actions ====================
 
 export async function getSpaceStorage(spaceId: string) {
-  const manager = getVibexDataManagerServer();
+  const manager = getSpaceManagerServer();
   return await manager.getSpaceStorage(spaceId);
 }
 
@@ -172,7 +188,7 @@ export async function deleteArtifactFile(
   spaceId: string,
   storageKey: string
 ): Promise<void> {
-  const manager = getVibexDataManagerServer();
+  const manager = getSpaceManagerServer();
   return await manager.deleteArtifactFile(spaceId, storageKey);
 }
 

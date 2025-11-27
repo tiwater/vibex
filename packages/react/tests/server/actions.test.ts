@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as actions from "../../src/server/actions";
-import { VibexDataManager } from "@vibex/data";
+import { SpaceManager } from "vibex";
 
-// Mock the DataManager
+// Mock the SpaceManager
 const mockManager = {
   getSpace: vi.fn(),
   listSpaces: vi.fn(),
@@ -11,10 +11,10 @@ const mockManager = {
   deleteSpace: vi.fn(),
   getArtifacts: vi.fn(),
   getArtifact: vi.fn(),
-} as unknown as VibexDataManager;
+} as unknown as SpaceManager;
 
-vi.mock("@vibex/data", () => ({
-  getVibexDataManagerServer: () => mockManager,
+vi.mock("vibex", () => ({
+  getSpaceManagerServer: () => mockManager,
   // Mock types/interfaces if needed
 }));
 

@@ -9,12 +9,22 @@
 
 import { useState, useEffect, useCallback } from "react";
 import * as vibexActions from "./server/actions";
-import type { Space, Artifact, Task, Agent, Tool } from "@vibex/data";
-import type {
-  SpaceFilters,
-  ArtifactFilters,
-  TaskFilters,
-} from "@vibex/data";
+import type { SpaceType, ArtifactType, ConversationType, AgentType, ToolType } from "@vibex/core";
+
+// Filter types
+export interface SpaceFilters {
+  name?: string;
+  tags?: string[];
+}
+
+export interface ArtifactFilters {
+  category?: "input" | "intermediate" | "output";
+  mimeType?: string;
+}
+
+export interface ConversationFilters {
+  title?: string;
+}
 
 // ==================== Space Hooks ====================
 

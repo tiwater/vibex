@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import type { StorageAdapter, ArtifactInfo } from "@vibex/data";
+import type { StorageAdapter, ArtifactInfo } from "@vibex/core";
 import { createAnonClient, createServiceRoleClient } from "./client";
 
 export interface SupabaseStorageConfig {

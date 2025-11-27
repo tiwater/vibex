@@ -5,7 +5,7 @@
  * Tools are discovered from tool classes using decorators.
  */
 
-import { CoreTool } from "@vibex/core";
+import type { CoreTool } from "@vibex/core";
 import { Tool } from "./base";
 
 // Import all tools
@@ -22,13 +22,14 @@ export interface ToolInfo {
   tags?: string[]; // Tags for categorization and filtering
   features?: string[]; // List of features the tool provides
   tools: string[]; // Keep for backward compatibility
-  functions?: any[]; // New field for function names/objects
+  functions?: unknown[]; // New field for function names/objects
   functionDetails?: Array<{
     name: string;
     description: string;
-    parameters: any;
+    parameters?: unknown;
+    inputSchema?: unknown;
   }>; // Detailed function info
-  configSchema?: any; // Configuration schema for the tool
+  configSchema?: unknown; // Configuration schema for the tool
   enabled?: boolean;
 }
 
@@ -42,17 +43,22 @@ const toolClasses = new Map<string, new () => Tool>([
   ["web", WebTool],
 ]);
 
+interface ToolConfig {
+  [key: string]: unknown;
+}
+
 /**
  * Load tool configuration through ResourceAdapter
  */
-async function loadToolConfig(toolId: string): Promise<any> {
+async function loadToolConfig(toolId: string): Promise<ToolConfig> {
   try {
-    const { getServerDataAdapter } = await import("../data/factory");
-    const adapter = getServerDataAdapter();
+    // Dynamic import to avoid circular dependency
+    const { getServerResourceAdapter } = await import("vibex");
+    const adapter = getServerResourceAdapter();
 
     // Get tool from adapter
     const tool = await adapter.getTool(toolId);
-    return tool?.config || {};
+    return ((tool as { config?: ToolConfig })?.config || {}) as ToolConfig;
   } catch (error) {
     console.error(`[loadToolConfig] Error loading config for ${toolId}:`, error);
     return {};

@@ -1,0 +1,236 @@
+# Package Structure & Responsibilities
+
+## Core Principle
+
+**Vibex is a Space-oriented collaborative workspace platform.** Unlike task-oriented frameworks, Vibex provides persistent workspaces where artifacts evolve through continuous user-agent collaboration.
+
+The `vibex` package is the pure runtime engine that manages Spaces, XAgents, and artifact evolution. It defines WHAT it needs, and `@vibex/space` provides HOW to persist it.
+
+## Package Responsibilities
+
+### `vibex` - The Space-Oriented Runtime
+
+**Position**: Central runtime that manages persistent workspaces and artifact evolution.
+
+**Contains**:
+
+- ✅ **Space Management**
+  - Space container (persistent workspace)
+  - Artifact management with version history
+  - Conversation history persistence
+  - Configuration management
+
+- ✅ **Mission/Plan/Task Management**
+  - Mission: User's substantial goals with lifecycle
+  - Plan: Strategy that evolves with feedback
+  - Task: Individual work items within a Plan
+
+- ✅ **XAgent (Project Manager)**
+  - User-facing interface for each Space
+  - Coordinates specialist agents
+  - Maintains context across sessions
+  - Creates and adapts Plans
+
+- ✅ **Specialist Agents**
+  - Base Agent class
+  - Agent registry
+  - Tool integration
+
+- ✅ **Execution Engine** (Internal)
+  - DAG-based execution for complex operations
+  - Pause/resume capability
+  - Human-in-the-loop steps
+
+- ✅ **Interfaces** for data, knowledge, storage (NOT implementations)
+
+**Does NOT contain**:
+
+- ❌ Storage implementations
+- ❌ Vector store implementations
+- ❌ Database adapters
+- ❌ Any persistence logic
+
+**Dependencies**:
+
+- Uses `@vibex/space` for ALL data operations
+- Uses `@vibex/tools` for tool implementations
+- Uses `@vibex/defaults` for configurations
+
+---
+
+### `@vibex/space` - Unified Data Persistence Layer
+
+**Position**: Manages **ALL** data used by the runtime engine.
+
+**Contains**:
+
+- ✅ **Structured Data** (via `ResourceAdapter`)
+  - Spaces, Missions, Plans, Tasks
+  - Artifacts metadata
+  - Agents, Tools configuration
+  - Model Providers, Datasources
+  - Local implementation (SQLite)
+  - Supabase implementation (PostgreSQL)
+
+- ✅ **Knowledge/Vector Data** (via `KnowledgeAdapter`)
+  - Document chunks and embeddings
+  - Vector search operations
+  - Dataset management
+  - Local implementation (JSON + in-memory)
+  - Supabase implementation (pgvector)
+
+- ✅ **File Storage** (via `StorageAdapter`)
+  - Artifact file content
+  - Blob management
+  - Version storage
+  - Local implementation (filesystem)
+  - Supabase implementation (Supabase Storage)
+
+- ✅ `VibexDataManager` - Unified access layer
+
+**Key Principle**: The runtime never touches storage directly. All data access goes through `VibexDataManager`.
+
+---
+
+### `@vibex/supabase` - Cloud Backend
+
+**Position**: Concrete Supabase implementations of `@vibex/space` adapters.
+
+**Contains**:
+
+- ✅ `SupabaseResourceAdapter`
+- ✅ `SupabaseStorageAdapter`
+- ✅ `SupabaseKnowledgeAdapter`
+
+---
+
+### `@vibex/tools` - Tool Library
+
+**Position**: First-party tool implementations.
+
+**Contains**:
+
+- ✅ Web browsing (Playwright)
+- ✅ File I/O
+- ✅ Search operations
+- ✅ Database tools
+- ✅ Browser Agent
+
+---
+
+### `@vibex/react` - React Integration
+
+**Position**: React-facing API for building frontends.
+
+**Contains**:
+
+- ✅ React hooks (`useSpace`, `useChat`, `useArtifact`)
+- ✅ Real-time artifact updates
+- ✅ Zustand store for client state
+- ✅ Server actions wrapper
+
+---
+
+### `@vibex/server` - Server Helpers
+
+**Position**: Server-only integration helpers.
+
+**Contains**:
+
+- ✅ Next.js route handlers
+- ✅ Server actions
+- ✅ Background workers
+
+---
+
+### `@vibex/defaults` - Configurations
+
+**Position**: Default configurations and templates.
+
+**Contains**:
+
+- ✅ Default agent configurations
+- ✅ Prompt templates
+- ✅ System defaults
+
+---
+
+## Data Flow
+
+```
+vibex (Runtime)
+    ↓ manages
+Space (Persistent Container)
+    ↓ contains
+Artifacts, History, Config
+    ↓ persisted via
+@vibex/space (Data Layer)
+    ↓ uses adapters from
+Local (SQLite/FS) or @vibex/supabase (Cloud)
+```
+
+## Key Concepts
+
+### Hierarchy
+
+```
+Space (persistent container)
+  └── Mission (user's substantial goal)
+        └── Plan (strategy, evolves)
+              └── Task[] (individual work items)
+```
+
+> **Note**: Our "Task" is different from AI SDK's "steps" (multi-turn tool loops). Vibex Tasks are higher-level work items.
+
+### Mission Lifecycle
+
+```typescript
+// Create a Space and start a Mission
+const space = await XAgent.start("Write my thesis");
+// Creates: Space + Mission("Write my thesis") + initial Plan
+
+// Work on Tasks within the Plan
+await xAgent.chat("Write the introduction"); // Executes Task, creates artifact v1
+await xAgent.chat("Make it more concise"); // Creates artifact v2
+
+// Resume later (next day, next week...)
+const space = await XAgent.resume(spaceId);
+await xAgent.chat("Now work on chapter 2"); // Full context preserved, Plan adapts
+```
+
+### Artifact Evolution
+
+```typescript
+// Artifacts are versioned automatically
+thesis.md
+├── v1: Initial draft
+├── v2: More concise
+├── v3: Added citations
+└── v4: Final polish
+
+// Can access any version
+const v2 = await space.getArtifactVersion("thesis.md", 2);
+```
+
+### Context Accumulation
+
+```typescript
+// Context builds up over the session
+await xAgent.chat("Research topic X"); // Context: research
+await xAgent.chat("Focus on Y aspect"); // Context: research + Y
+await xAgent.chat("Write a summary"); // Context: research + Y + findings
+// XAgent knows everything discussed
+```
+
+## Comparison to Task-Oriented Design
+
+| Aspect        | Task-Oriented         | Space-Oriented (Vibex)                      |
+| ------------- | --------------------- | ------------------------------------------- |
+| **Lifecycle** | Start → Execute → End | Create → Collaborate → Pause → Resume → ... |
+| **State**     | Ephemeral             | Persistent                                  |
+| **Artifacts** | Output files          | Living documents with history               |
+| **Context**   | Per-task              | Accumulated across sessions                 |
+| **Use Case**  | Automation scripts    | Document editing, research, collaboration   |
+
+
+

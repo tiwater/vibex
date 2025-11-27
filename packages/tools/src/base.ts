@@ -7,8 +7,8 @@ import { z } from 'zod/v3';
 import * as path from "path";
 import { promises as fs } from "fs";
 import "reflect-metadata";
-import { CoreTool } from "@vibex/core";
-import { getVibexRoot } from "@/lib/vibex-paths";
+import type { CoreTool } from "@vibex/core";
+import { getVibexRoot } from "./utils/paths";
 
 const TOOLS_METADATA_KEY = Symbol("tools");
 
@@ -291,10 +291,9 @@ export abstract class Tool {
         "Space ID not set. This tool requires space context."
       );
     }
-    // Use the storage module properly
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
-    const basePath = storage.getSpacePath();
+    // Use the vibex path utilities
+    const { getVibexPath } = await import("./utils/paths");
+    const basePath = getVibexPath("spaces", this.spaceId);
     return subPath ? path.join(basePath, subPath) : basePath;
   }
 
@@ -308,7 +307,7 @@ export abstract class Tool {
         "Space ID not set. This tool requires space context."
       );
     }
-    // Use the exact same root path logic as SpaceStorageFactory
+    // Use the root path from vibex path utilities
     const rootPath = Tool.getRootPath();
     const basePath = path.join(rootPath, "spaces", this.spaceId);
     return subPath ? path.join(basePath, subPath) : basePath;
@@ -344,6 +343,16 @@ export abstract class Tool {
   }
 
   /**
+   * Get storage instance for space operations
+   */
+  private async getStorage(): Promise<import("vibex").BaseStorage> {
+    const { BaseStorage } = await import("vibex");
+    const { getVibexPath } = await import("./utils/paths");
+    const basePath = getVibexPath("spaces", this.spaceId!);
+    return new BaseStorage(basePath);
+  }
+
+  /**
    * Read file from space artifacts directory
    */
   protected async readArtifactFile(
@@ -356,8 +365,7 @@ export abstract class Tool {
       );
     }
 
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
+    const storage = await this.getStorage();
 
     // Normalize path - remove "artifacts/" prefix if present since storage methods handle it
     const normalizedPath = filePath.startsWith("artifacts/")
@@ -383,8 +391,7 @@ export abstract class Tool {
       );
     }
 
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
+    const storage = await this.getStorage();
 
     // Normalize path - remove "artifacts/" prefix if present
     const normalizedPath = filePath.startsWith("artifacts/")
@@ -406,12 +413,11 @@ export abstract class Tool {
       );
     }
     try {
-      const { SpaceStorageFactory } = await import("../storage/space");
-      const storage = await SpaceStorageFactory.create(this.spaceId);
+      const storage = await this.getStorage();
 
-      // Try to get the artifact by filename - simple and direct
-      const artifact = await storage.getArtifact(filename);
-      return artifact !== null;
+      // Check if the artifact file exists
+      const artifactPath = `artifacts/${filename}`;
+      return await storage.exists(artifactPath);
     } catch {
       return false;
     }
@@ -449,8 +455,7 @@ export abstract class Tool {
       );
     }
 
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
+    const storage = await this.getStorage();
 
     // Normalize directory path
     const normalizedPath = dirPath.startsWith("artifacts/")
@@ -463,7 +468,7 @@ export abstract class Tool {
 
     if (!recursive) {
       // Filter to only direct children (no subdirectories)
-      return allFiles.filter((file) => !file.includes("/"));
+      return allFiles.filter((file: string) => !file.includes("/"));
     }
 
     return allFiles;
@@ -479,8 +484,7 @@ export abstract class Tool {
       );
     }
 
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
+    const storage = await this.getStorage();
 
     // Normalize path
     const normalizedPath = filePath.startsWith("artifacts/")
@@ -504,8 +508,7 @@ export abstract class Tool {
       );
     }
 
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
+    const storage = await this.getStorage();
 
     // Normalize paths
     const normalizedSource = sourcePath.startsWith("artifacts/")
@@ -536,8 +539,7 @@ export abstract class Tool {
       );
     }
 
-    const { SpaceStorageFactory } = await import("../storage/space");
-    const storage = await SpaceStorageFactory.create(this.spaceId);
+    const storage = await this.getStorage();
 
     // Normalize paths
     const normalizedSource = sourcePath.startsWith("artifacts/")
@@ -604,13 +606,14 @@ export abstract class Tool {
   getToolDetails(): Array<{
     name: string;
     description: string;
-    parameters: any;
+    inputSchema?: unknown;
+    parameters?: unknown;
   }> {
     const tools = this.getTools();
     return Object.entries(tools).map(([name, tool]) => ({
       name,
       description: tool.description,
-      inputSchema: tool.inputSchema?._def || tool.inputSchema || {},
+      inputSchema: (tool.inputSchema as { _def?: unknown })?._def || tool.inputSchema || {},
     }));
   }
 }

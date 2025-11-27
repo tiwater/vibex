@@ -1,85 +1,164 @@
-# VibeX Design & Architecture
+# Vibex Design & Architecture
 
-Welcome to the VibeX design documentation! This section provides comprehensive technical insights into how VibeX works internally, its architectural decisions, and the principles that guide its development.
+Welcome to the Vibex design documentation! This section provides comprehensive technical insights into how Vibex works internally, its architectural decisions, and the principles that guide its development.
+
+## 🎯 Core Philosophy: Space-Oriented Collaboration
+
+**Vibex is fundamentally different from task-oriented agent frameworks.**
+
+Most agent frameworks follow a "fire-and-forget" pattern:
+```
+User → "Do X" → Plan → Execute → Result → END
+```
+
+Vibex follows a **persistent, evolving workspace** pattern:
+```
+User → Space → XAgent → [Iterate on Artifacts] → [Continue Tomorrow] → [Evolve Further]
+              ↑                                          ↓
+              └────────── Persistent State ──────────────┘
+```
+
+### Why Space-Oriented?
+
+Real-world work is iterative. You don't write a document once—you draft, review, refine, and polish. Vibex is designed for this reality:
+
+- **Persistent Spaces**: Your work survives across sessions
+- **Evolving Artifacts**: Documents, code, and data improve over time
+- **Continuous Collaboration**: Talk to XAgent today, continue tomorrow
+- **Accumulated Context**: The system remembers everything about your project
 
 ## 🏗️ Architecture Overview
 
-VibeX is built as a lightweight micro-kernel that orchestrates specialized agents in a secure, observable, and scalable manner. The system transforms complex user requests into coordinated multi-agent workflows with complete auditability.
+Vibex is built as a **collaborative workspace platform** that orchestrates specialized agents in a secure, observable, and scalable manner. Unlike task runners, Vibex maintains persistent state and enables continuous iteration on artifacts.
 
 ### Key Design Principles
 
-- **Separation of Concerns** - Each component has a single, well-defined responsibility
-- **Centralized Orchestration** - Unified control plane for coordination and security
-- **Agent Autonomy** - Agents manage their own reasoning with private Brains
+- **Space-Centric** - All work happens within persistent Spaces that survive across sessions
+- **Artifact Evolution** - Documents and files are living entities that improve over time
+- **Continuous Collaboration** - Users interact with XAgent in ongoing conversations
+- **Session Continuity** - Return to your work tomorrow with full context preserved
+- **Agent Autonomy** - Agents manage their own reasoning with private context
 - **Event-Driven Architecture** - Asynchronous, structured communication
-- **Configuration-Driven** - Declarative team and workflow definitions
+- **Configuration-Driven** - Declarative agent and workflow definitions
 - **Security by Design** - Audited, policy-enforced external interactions
-- **Multi-Tenant Architecture** - User-scoped organizational separation (requires external auth for security)
-- **Taskspace Isolation** - Version-controlled, reproducible task environments
 
 ## 📚 Design Documentation
 
-### [System Architecture](/design/overview)
+### [System Architecture](/docs/design/system-architecture)
 
-Complete architectural overview covering the four-layer system design, collaboration models, and execution patterns. Includes detailed sequence diagrams and component interactions.
+Complete architectural overview covering the Space model, XAgent orchestration, and the data layer. Includes detailed diagrams of component interactions.
 
-### [Multi-Tenant Architecture](/design/multi-tenant-security)
+### [Space Lifecycle](/docs/design/task-lifecycle)
 
-Organizational separation architecture for multi-tenant deployments, covering user isolation patterns, taskspace segregation, and required authentication integration for secure deployments.
+Deep dive into how Spaces are created, how artifacts evolve, and how users collaborate with XAgent over time.
 
-### [State and Context Management](/design/state-and-context)
+### [Memory & Context](/docs/design/memory)
 
-Deep dive into how VibeX manages state, context, and memory across agents and tasks. Covers taskspace isolation, memory systems, and context propagation.
+Understanding the persistent memory system in Vibex, combining Space-scoped history with AI-friendly semantic memory.
 
-### [Tool Execution](/design/tool-execution)
+### [Tool Execution](/docs/design/tool-execution)
 
-Detailed explanation of the secure tool execution system, including validation, sandboxing, and the tool self-correction mechanism that enables reliable agent tool usage.
+Detailed explanation of the secure tool execution system, including validation, sandboxing, and the tool self-correction mechanism.
 
-### [Communication Patterns](/design/communication)
+### [Communication Patterns](/docs/design/communication)
 
-Event-driven communication architecture, message passing patterns, and how agents coordinate through the orchestrator and event bus.
+Event-driven communication architecture, message passing patterns, and how agents coordinate through XAgent.
+
+### [Security](/docs/design/security)
+
+Overview of the security model, including Space isolation, tool permissions, and audit logging.
 
 ## 🎯 Key Architectural Components
 
-### TaskExecutor
+### Space
+The **persistent container** for all work. A Space holds:
+- Artifacts (documents, code, data)
+- Conversation history across sessions
+- Configuration and preferences
+- Version history of all changes
 
-The primary workflow engine that owns the end-to-end lifecycle of tasks, manages taskspace provisioning, and coordinates agent invocations.
-
-### Lead
-
-The stateful "Project Manager" of the task. Creates a plan, assigns micro-tasks to specialist agents, and tracks progress to drive the workflow forward. Ships with a default implementation that uses LLM-based intelligent routing.
+### XAgent
+The **project manager** for each Space. XAgent:
+- Remembers the entire project history
+- Knows all artifacts in the Space
+- Coordinates specialist agents
+- Adapts plans based on evolving requirements
 
 ### Specialist Agents
+Single-purpose experts (Writer, Researcher, Developer, etc.) that XAgent delegates to. Each agent:
+- Has one clear responsibility
+- Operates on artifacts within the Space
+- Reports results back to XAgent
 
-Stateless, single-purpose experts defined by prompt files. Each agent has one clear responsibility (planning, research, writing, etc.) and is invoked by the Lead to perform specific micro-tasks. VibeX includes a standard library of common agents.
+### Workflow Engine
+The runtime kernel for complex multi-step operations. Used when a goal requires coordinated execution across multiple agents.
 
-### Agent Brain
+## 🔄 Interaction Patterns
 
-The reasoning engine that powers each agent. Handles LLM interactions, tool calling, and response generation with streaming support.
+### Pattern 1: Continuous Document Editing
+```typescript
+// Day 1: Start a document
+const space = await XAgent.start("Write my thesis");
+await space.uploadArtifact("thesis.md", initialContent);
+await xAgent.chat("Write the introduction");
 
-## 🔄 Execution Modes
+// Day 2: Continue refining
+const space = await XAgent.resume("thesis-space-id");
+await xAgent.chat("Make the abstract more concise");
 
-VibeX supports two primary execution patterns:
+// Day 3: Final polish
+await xAgent.chat("Review everything and fix any issues");
+```
 
-- **Autonomous Execution** - Fire-and-forget mode ideal for production workflows
-- **Interactive Execution** - Step-by-step control for debugging and human-in-the-loop scenarios
+### Pattern 2: Iterative Code Review
+```typescript
+const space = await XAgent.start("Review my PR");
+await space.uploadArtifact("changes.diff", diffContent);
+await xAgent.chat("Review this code for security issues");
+// XAgent remembers findings...
+await xAgent.chat("Now check for performance issues");
+// Context accumulates...
+await xAgent.chat("Generate a summary of all issues found");
+```
 
-## 🛡️ Security & Observability
+### Pattern 3: Multi-Session Research
+```typescript
+// Session 1: Gather sources
+await xAgent.chat("Research climate change impacts on agriculture");
+// Artifacts created: sources.md, notes.md
 
-Every interaction in VibeX is:
+// Session 2: Analyze
+await xAgent.chat("Synthesize the research into key findings");
+// Artifacts updated: findings.md
 
-- **Auditable** - Complete event logging of all decisions and actions
-- **Secure** - Sandboxed tool execution with policy enforcement
-- **Observable** - Real-time monitoring and debugging capabilities
-- **Reproducible** - Version-controlled taskspaces and deterministic execution
+// Session 3: Write
+await xAgent.chat("Write a report based on our findings");
+// Artifacts created: report.md
+```
+
+## 🛡️ Data Persistence
+
+Unlike ephemeral task runners, Vibex persists everything:
+
+- **Conversation History**: Every message across all sessions
+- **Artifact Versions**: Full history of document changes
+- **Agent Decisions**: Audit trail of all agent actions
+- **Context State**: Variables, preferences, and configuration
+
+This enables:
+- **Resume anytime**: Pick up where you left off
+- **Rollback**: Restore previous artifact versions
+- **Audit**: Review the complete history of changes
+- **Learning**: Agents can reference past decisions
 
 ## 🚀 Getting Started with Design Docs
 
-1. **Read [System Architecture](/design/overview)** - Get the big picture view
-1. **Dive into specific areas** based on your interests:
-   - Building tools? See [Tool Execution](/design/tool-execution)
-   - Working with state? Check [State and Context](/design/state-and-context)
-   - Integrating systems? Review [Communication](/design/communication)
+1. **Read [System Architecture](/docs/design/system-architecture)** - Understand the Space model
+2. **Explore [Space Lifecycle](/docs/design/task-lifecycle)** - See how work evolves
+3. **Dive into specific areas**:
+   - Building tools? See [Tool Execution](/docs/design/tool-execution)
+   - Managing state? Check [Memory](/docs/design/memory)
+   - Integrating systems? Review [Communication](/docs/design/communication)
 
 ## 🤝 Contributing to Design
 
@@ -91,4 +170,4 @@ The design documentation evolves with the framework. If you're:
 
 ---
 
-_This documentation reflects the current architecture of VibeX. For implementation details and API references, see the [API Documentation](/api)._
+_This documentation reflects the current architecture of Vibex. For implementation details and API references, see the [API Documentation](/docs/api)._
