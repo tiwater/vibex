@@ -10,5 +10,10 @@ export default {
   api: {
     title: "API",
     type: "page"
+  },
+  playground: {
+    title: "Playground",
+    type: "page",
+    href: "/playground"
   }
 }

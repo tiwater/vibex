@@ -1,12 +1,81 @@
 @import "tailwindcss";
 @import "nextra-theme-docs/style.css";
 @import "../styles/api.css";
-@variant dark (&:where(.dark *));
+
+@custom-variant dark (&:is(.dark *));
 
 /* Override Nextra's default max-width constraints for full-width layout */
 :root {
   --nextra-content-width: 100vw !important;
   --nextra-sidebar-width: 320px !important;
+  --radius: 0.625rem;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 9%;
+  --primary: 0 0% 13%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 13%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 0 0% 64%;
+  --chart-1: 25 95% 53%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 220 14% 46%;
+  --chart-4: 43 96% 56%;
+  --chart-5: 27 87% 67%;
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-primary: 0 0% 13%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 0 0% 13%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 0 0% 64%;
+}
+
+.dark {
+  --background: 0 0% 9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 13%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 13%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 13%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 18%;
+  --input: 0 0% 18%;
+  --ring: 0 0% 45%;
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+  --sidebar-background: 0 0% 13%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 224 64% 56%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 18%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 18%;
+  --sidebar-ring: 0 0% 45%;
 }
 
 /* Simplified sidebar width override */
@@ -17,21 +86,13 @@ aside[data-nextra-sidebar] {
 /* Smooth scrolling and stable scrollbar */
 html {
   scroll-behavior: smooth;
-  /* Always show scrollbar gutter to prevent navbar shift */
   scrollbar-gutter: stable;
 }
 
-/* Fallback for browsers that don't support scrollbar-gutter */
 @supports not (scrollbar-gutter: stable) {
   html {
     overflow-y: scroll;
   }
-}
-
-/* Custom gradient backgrounds for dark mode */
-.dark {
-  --gradient-from: theme('colors.gray.900');
-  --gradient-to: theme('colors.gray.800');
 }
 
 /* Enhanced button hover effects */
@@ -62,32 +123,31 @@ html {
 /* Enhanced code block styling */
 pre {
   border-radius: 12px !important;
-  border: 1px solid theme('colors.gray.200') !important;
-}
-
-.dark pre {
-  border-color: theme('colors.gray.700') !important;
+  border: 1px solid hsl(var(--border)) !important;
 }
 
 /* Syntax highlighting for bootstrap section */
 .keyword {
-  @apply text-purple-400 font-medium;
+  color: rgb(192, 132, 252);
+  font-weight: 500;
 }
 
 .function {
-  @apply text-blue-400 font-medium;
+  color: rgb(96, 165, 250);
+  font-weight: 500;
 }
 
 .string {
-  @apply text-emerald-400;
+  color: rgb(52, 211, 153);
 }
 
 .comment {
-  @apply text-slate-500 italic;
+  color: rgb(100, 116, 139);
+  font-style: italic;
 }
 
 .plain {
-  @apply text-slate-300;
+  color: rgb(203, 213, 225);
 }
 
 /* Custom callout styling */
@@ -101,12 +161,10 @@ a {
   text-decoration: none !important;
 }
 
-/* Specifically target button-style links */
 a.inline-flex {
   text-decoration: none !important;
 }
 
-/* Override Nextra link styles */
 .nextra-content a {
   text-decoration: none !important;
 }
@@ -122,3 +180,52 @@ a.inline-flex {
   }
 }
 
+/* Tailwind v4 theme extension for shadcn */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-sidebar-background: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}

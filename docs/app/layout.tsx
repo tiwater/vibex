@@ -25,9 +25,7 @@ const navbar = (
       </div>
     }
     projectLink="https://github.com/dustland/vibex"
-  >
-    <TryAppButton />
-  </Navbar>
+  />
 );
 
 export const metadata = {
