@@ -5,6 +5,7 @@ This example demonstrates Vibex's core capability: **persistent workspaces where
 ## What This Demonstrates
 
 ### 1. Multi-Session Persistence
+
 Unlike traditional AI assistants that forget everything after each conversation, Vibex maintains complete context across sessions:
 
 ```bash
@@ -19,6 +20,7 @@ pnpm start
 ```
 
 ### 2. Artifact Evolution
+
 Your thesis isn't just created—it evolves:
 
 ```
@@ -30,6 +32,7 @@ thesis.md
 ```
 
 ### 3. Context Accumulation
+
 Each conversation builds on previous ones:
 
 ```
@@ -39,6 +42,7 @@ Session 3: "Write conclusions" (knows everything discussed)
 ```
 
 ### 4. Plan Adaptation
+
 The plan evolves based on your feedback:
 
 ```
@@ -52,12 +56,14 @@ After feedback "Skip outline, I have one":
 ## Getting Started
 
 1. **Set up environment**
+
    ```bash
    cp .env.example .env
    # Add your OPENAI_API_KEY
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
@@ -69,13 +75,13 @@ After feedback "Skip outline, I have one":
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `status` | Show current progress |
-| `artifacts` | List all documents |
-| `history` | Show version history |
-| `plan` | Show current plan |
-| `quit` | Save and exit |
+| Command     | Description           |
+| ----------- | --------------------- |
+| `status`    | Show current progress |
+| `artifacts` | List all documents    |
+| `history`   | Show version history  |
+| `plan`      | Show current plan     |
+| `quit`      | Save and exit         |
 
 ## Example Session
 
@@ -132,14 +138,14 @@ Resume previous session? (y/n): y
 ## Why This Matters
 
 Traditional AI tools:
+
 - ❌ Forget context after each session
 - ❌ Can't track document versions
 - ❌ No persistent workspace
 
 Vibex:
+
 - ✅ Complete context preserved forever
 - ✅ Full version history of every document
 - ✅ Pick up exactly where you left off
 - ✅ Plans adapt to your feedback
-
-

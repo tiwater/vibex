@@ -18,6 +18,3 @@ export function getVibexRoot(): string {
 export function getVibexPath(...subPaths: string[]): string {
   return path.join(getVibexRoot(), ...subPaths);
 }
-
-
-

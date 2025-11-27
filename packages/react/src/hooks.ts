@@ -9,7 +9,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import * as vibexActions from "./server/actions";
-import type { SpaceType, ArtifactType, ConversationType, AgentType, ToolType } from "@vibex/core";
+import type {
+  SpaceType,
+  ArtifactType,
+  ConversationType,
+  AgentType,
+  ToolType,
+} from "@vibex/core";
+
+// Type aliases for convenience
+type Space = SpaceType;
+type Artifact = ArtifactType;
+type Task = ConversationType; // Tasks are conversations
+type Agent = AgentType;
+type Tool = ToolType;
 
 // Filter types
 export interface SpaceFilters {
@@ -25,6 +38,9 @@ export interface ArtifactFilters {
 export interface ConversationFilters {
   title?: string;
 }
+
+// TaskFilters is an alias for ConversationFilters
+export type TaskFilters = ConversationFilters;
 
 // ==================== Space Hooks ====================
 
@@ -212,7 +228,6 @@ export function useVibexArtifacts(
       try {
         const updated = await vibexActions.updateArtifact(
           artifactId,
-          spaceId,
           updates
         );
         setArtifacts((prev) =>

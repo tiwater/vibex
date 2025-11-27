@@ -53,6 +53,3 @@ export interface VibexConfig {
   streaming?: boolean;
   debug?: boolean;
 }
-
-
-

@@ -5,6 +5,7 @@ This example demonstrates Vibex's **knowledge accumulation** capabilities. Unlik
 ## What This Demonstrates
 
 ### 1. Knowledge Accumulation
+
 Research builds up over time:
 
 ```
@@ -17,6 +18,7 @@ Session 4: "Synthesize everything we've learned"
 ```
 
 ### 2. Source Management
+
 Add documents to your knowledge base:
 
 ```bash
@@ -26,6 +28,7 @@ The assistant can now reference this document in responses.
 ```
 
 ### 3. Research Synthesis
+
 Generate comprehensive summaries:
 
 ```bash
@@ -45,6 +48,7 @@ Based on our research across 5 sessions:
 ```
 
 ### 4. Artifact-Based Notes
+
 All research is automatically captured:
 
 ```
@@ -58,12 +62,14 @@ research-workspace/
 ## Getting Started
 
 1. **Set up environment**
+
    ```bash
    cp .env.example .env
    # Add your OPENAI_API_KEY
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
@@ -75,14 +81,14 @@ research-workspace/
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
+| Command      | Description                    |
+| ------------ | ------------------------------ |
 | `add <file>` | Add document to knowledge base |
-| `sources` | List all sources |
-| `notes` | Show research notes |
-| `synthesize` | Generate research synthesis |
-| `export` | Export findings to markdown |
-| `quit` | Save and exit |
+| `sources`    | List all sources               |
+| `notes`      | Show research notes            |
+| `synthesize` | Generate research synthesis    |
+| `export`     | Export findings to markdown    |
+| `quit`       | Save and exit                  |
 
 ## Example Session
 
@@ -125,14 +131,14 @@ Would you like me to dive deeper into any of these?
 ## Why This Matters
 
 Traditional research tools:
+
 - ❌ Start fresh each session
 - ❌ Can't accumulate knowledge
 - ❌ No source tracking
 
 Vibex Research Assistant:
+
 - ✅ Knowledge persists forever
 - ✅ Sources are tracked and cited
 - ✅ Research synthesizes automatically
 - ✅ Export anytime to markdown
-
-

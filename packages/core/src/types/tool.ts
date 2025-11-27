@@ -45,4 +45,3 @@ export type CoreTool = ToolDefinition;
  * @deprecated Use ToolMetadata instead.
  */
 export type ToolInfo = ToolMetadata;
-

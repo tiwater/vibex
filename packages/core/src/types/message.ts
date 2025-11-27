@@ -28,6 +28,3 @@ export interface VibexMessage {
  * Alias for VibexMessage
  */
 export type Message = VibexMessage;
-
-
-

@@ -73,6 +73,3 @@ export const DefaultPaths = {
   config: () => getDefaultsSubPath("config"),
   datasources: () => getDefaultsSubPath("datasources"),
 } as const;
-
-
-

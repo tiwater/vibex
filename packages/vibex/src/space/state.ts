@@ -69,7 +69,7 @@ interface VibexState {
   setLoading: (key: string, value: boolean) => void;
   setError: (key: string, error: Error | null) => void;
 
-  // Sync actions (sync with VibexDataManager)
+  // Sync actions (sync with SpaceManager)
   syncSpaces: () => Promise<void>;
   syncArtifacts: (spaceId: string) => Promise<void>;
   syncConversations: (spaceId: string) => Promise<void>;

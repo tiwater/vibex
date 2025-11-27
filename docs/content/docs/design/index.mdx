@@ -7,11 +7,13 @@ Welcome to the Vibex design documentation! This section provides comprehensive t
 **Vibex is fundamentally different from task-oriented agent frameworks.**
 
 Most agent frameworks follow a "fire-and-forget" pattern:
+
 ```
 User → "Do X" → Plan → Execute → Result → END
 ```
 
 Vibex follows a **persistent, evolving workspace** pattern:
+
 ```
 User → Space → XAgent → [Iterate on Artifacts] → [Continue Tomorrow] → [Evolve Further]
               ↑                                          ↓
@@ -71,31 +73,39 @@ Overview of the security model, including Space isolation, tool permissions, and
 ## 🎯 Key Architectural Components
 
 ### Space
+
 The **persistent container** for all work. A Space holds:
+
 - Artifacts (documents, code, data)
 - Conversation history across sessions
 - Configuration and preferences
 - Version history of all changes
 
 ### XAgent
+
 The **project manager** for each Space. XAgent:
+
 - Remembers the entire project history
 - Knows all artifacts in the Space
 - Coordinates specialist agents
 - Adapts plans based on evolving requirements
 
 ### Specialist Agents
+
 Single-purpose experts (Writer, Researcher, Developer, etc.) that XAgent delegates to. Each agent:
+
 - Has one clear responsibility
 - Operates on artifacts within the Space
 - Reports results back to XAgent
 
 ### Workflow Engine
+
 The runtime kernel for complex multi-step operations. Used when a goal requires coordinated execution across multiple agents.
 
 ## 🔄 Interaction Patterns
 
 ### Pattern 1: Continuous Document Editing
+
 ```typescript
 // Day 1: Start a document
 const space = await XAgent.start("Write my thesis");
@@ -111,6 +121,7 @@ await xAgent.chat("Review everything and fix any issues");
 ```
 
 ### Pattern 2: Iterative Code Review
+
 ```typescript
 const space = await XAgent.start("Review my PR");
 await space.uploadArtifact("changes.diff", diffContent);
@@ -122,6 +133,7 @@ await xAgent.chat("Generate a summary of all issues found");
 ```
 
 ### Pattern 3: Multi-Session Research
+
 ```typescript
 // Session 1: Gather sources
 await xAgent.chat("Research climate change impacts on agriculture");
@@ -146,6 +158,7 @@ Unlike ephemeral task runners, Vibex persists everything:
 - **Context State**: Variables, preferences, and configuration
 
 This enables:
+
 - **Resume anytime**: Pick up where you left off
 - **Rollback**: Restore previous artifact versions
 - **Audit**: Review the complete history of changes

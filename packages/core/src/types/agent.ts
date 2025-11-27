@@ -52,6 +52,3 @@ export interface AgentResponse {
   reasoningText?: string;
   metadata?: Record<string, unknown>;
 }
-
-
-

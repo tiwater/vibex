@@ -1,15 +1,15 @@
 /**
  * Vibex Server Actions
- * 
+ *
  * This file contains Next.js Server Actions that expose Vibex functionality
  * to client components. All Vibex operations must go through these actions
  * since Vibex requires server-side access to Supabase.
- * 
+ *
  * Usage in client components:
  * ```tsx
  * "use client";
  * import { getSpace, updateSpace } from "@/vibex/server/actions";
- * 
+ *
  * const space = await getSpace(spaceId);
  * await updateSpace(spaceId, { name: "New Name" });
  * ```
@@ -42,8 +42,7 @@ export interface ArtifactFilters {
 }
 
 export interface ConversationFilters {
-  spaceId: string;
-  status?: "active" | "completed" | "archived";
+  title?: string;
   createdAfter?: Date;
 }
 
@@ -59,7 +58,9 @@ export async function listSpaces(filters?: SpaceFilters): Promise<SpaceType[]> {
   return await manager.listSpaces(filters);
 }
 
-export async function createSpace(space: Partial<SpaceType>): Promise<SpaceType> {
+export async function createSpace(
+  space: Partial<SpaceType>
+): Promise<SpaceType> {
   const manager = getSpaceManagerServer();
   return await manager.createSpace(space);
 }
@@ -87,7 +88,9 @@ export async function getArtifacts(
   return await manager.getArtifacts(spaceId, filters);
 }
 
-export async function getArtifact(artifactId: string): Promise<ArtifactType | null> {
+export async function getArtifact(
+  artifactId: string
+): Promise<ArtifactType | null> {
   const manager = getSpaceManagerServer();
   return await manager.getArtifact(artifactId);
 }
@@ -102,11 +105,10 @@ export async function createArtifact(
 
 export async function updateArtifact(
   artifactId: string,
-  spaceId: string,
   updates: Partial<ArtifactType>
 ): Promise<ArtifactType> {
   const manager = getSpaceManagerServer();
-  return await manager.updateArtifact(artifactId, spaceId, updates);
+  return await manager.updateArtifact(artifactId, updates);
 }
 
 export async function deleteArtifact(
@@ -127,7 +129,9 @@ export async function getConversations(
   return await manager.getConversations(spaceId, filters);
 }
 
-export async function getConversation(taskId: string): Promise<ConversationType | null> {
+export async function getConversation(
+  taskId: string
+): Promise<ConversationType | null> {
   const manager = getSpaceManagerServer();
   return await manager.getConversation(taskId);
 }
@@ -148,7 +152,10 @@ export async function updateConversation(
   return await manager.updateConversation(taskId, updates);
 }
 
-export async function deleteConversation(taskId: string, spaceId: string): Promise<void> {
+export async function deleteConversation(
+  taskId: string,
+  spaceId: string
+): Promise<void> {
   const manager = getSpaceManagerServer();
   return await manager.deleteConversation(taskId, spaceId);
 }
@@ -177,6 +184,48 @@ export async function getTool(toolId: string): Promise<ToolType | null> {
   return await manager.getTool(toolId);
 }
 
+// ==================== Task Actions (Aliases for Conversation) ====================
+// Tasks are conversations in Vibex, these provide backward-compatible naming
+
+export interface TaskFilters {
+  title?: string;
+  createdAfter?: Date;
+}
+
+export async function getTasks(
+  spaceId: string,
+  filters?: TaskFilters
+): Promise<ConversationType[]> {
+  return getConversations(spaceId, filters);
+}
+
+export async function getTask(
+  taskId: string
+): Promise<ConversationType | null> {
+  return getConversation(taskId);
+}
+
+export async function createTask(
+  spaceId: string,
+  task: Partial<ConversationType>
+): Promise<ConversationType> {
+  return createConversation(spaceId, task);
+}
+
+export async function updateTask(
+  taskId: string,
+  updates: Partial<ConversationType>
+): Promise<ConversationType> {
+  return updateConversation(taskId, updates);
+}
+
+export async function deleteTask(
+  taskId: string,
+  spaceId: string
+): Promise<void> {
+  return deleteConversation(taskId, spaceId);
+}
+
 // ==================== Storage Actions ====================
 
 export async function getSpaceStorage(spaceId: string) {
@@ -191,5 +240,3 @@ export async function deleteArtifactFile(
   const manager = getSpaceManagerServer();
   return await manager.deleteArtifactFile(spaceId, storageKey);
 }
-
-

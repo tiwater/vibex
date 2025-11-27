@@ -121,7 +121,9 @@ export class BrowserAgent extends Agent {
       this.browser = await chromium.launch({ headless: this.headless });
     }
     if (!this.browserContext) {
-      this.browserContext = await this.browser.newContext({ viewport: this.viewport });
+      this.browserContext = await this.browser.newContext({
+        viewport: this.viewport,
+      });
     }
     if (!this.page) {
       this.page = await this.browserContext.newPage();

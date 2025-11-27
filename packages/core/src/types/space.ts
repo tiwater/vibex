@@ -215,7 +215,7 @@ export interface ArtifactInfo {
  * ResourceAdapter - Core interface for data persistence
  *
  * Implementations handle local files (SQLite) or remote database/API.
- * This is an internal interface; external code should use VibexDataManager.
+ * This is an internal interface; external code should use SpaceManager.
  */
 export interface ResourceAdapter {
   // Agents

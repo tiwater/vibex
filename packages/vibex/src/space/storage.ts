@@ -109,6 +109,14 @@ export class BaseStorage {
   }
 
   /**
+   * Read file as buffer (binary)
+   */
+  async readFile(relativePath: string): Promise<Buffer> {
+    const fullPath = this.getPath(relativePath);
+    return this.adapter.readFile(fullPath);
+  }
+
+  /**
    * Write file (text or binary)
    */
   async writeFile(relativePath: string, data: Buffer | string): Promise<void> {
