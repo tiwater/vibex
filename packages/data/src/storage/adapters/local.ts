@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
 import type { StorageAdapter, ArtifactInfo } from '../base';
-import { LocalDataAdapter } from '../../adapters/local';
+import { LocalResourceAdapter } from '../../adapters/local';
 
 function resolveRoot(): string {
   return process.env.VIBEX_STORAGE_PATH || path.join(os.homedir(), '.vibex');
@@ -18,10 +18,10 @@ function resolveRoot(): string {
  * Local filesystem adapter
  */
 export class LocalStorageAdapter implements StorageAdapter {
-  private dataAdapter: LocalDataAdapter;
+  private resourceAdapter: LocalResourceAdapter;
 
   constructor() {
-    this.dataAdapter = new LocalDataAdapter();
+    this.resourceAdapter = new LocalResourceAdapter();
   }
 
   async readFile(filepath: string): Promise<Buffer> {
@@ -88,7 +88,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     };
     
     // We need to cast because ArtifactInfo subset of Artifact but Artifact requires spaceId
-    await this.dataAdapter.saveArtifact(fullArtifact);
+    await this.resourceAdapter.saveArtifact(fullArtifact);
     
     return artifact;
   }
@@ -108,7 +108,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
   
   async getArtifactInfo(spaceId: string, artifactId: string): Promise<ArtifactInfo | null> {
-    const artifact = await this.dataAdapter.getArtifact(artifactId, spaceId);
+    const artifact = await this.resourceAdapter.getArtifact(artifactId, spaceId);
     if (!artifact) return null;
     
     // Return as ArtifactInfo (strip extra fields if needed, but they are compatible)
@@ -126,7 +126,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
   
   async listArtifacts(spaceId: string): Promise<ArtifactInfo[]> {
-    const artifacts = await this.dataAdapter.getArtifacts(spaceId);
+    const artifacts = await this.resourceAdapter.getArtifacts(spaceId);
     return artifacts.map(a => ({
       id: a.id,
       storageKey: a.storageKey,
@@ -149,6 +149,6 @@ export class LocalStorageAdapter implements StorageAdapter {
     await this.deleteFile(filePath);
     
     // Delete metadata
-    await this.dataAdapter.deleteArtifact(artifactId, spaceId);
+    await this.resourceAdapter.deleteArtifact(artifactId, spaceId);
   }
 }

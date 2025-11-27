@@ -5,7 +5,7 @@
  * Knows nothing about specific tool implementations.
  */
 
-import { z } from "zod";
+import { z } from 'zod/v3';
 
 // Core tool interface that AI SDK expects
 export interface CoreTool {
@@ -28,8 +28,8 @@ export async function buildToolMap(
   const tools: Record<string, CoreTool> = {};
 
   // Load MCP server configurations to determine tool types
-  const { getServerDataAdapter } = await import("@vibex/data");
-  const adapter = getServerDataAdapter();
+  const { getServerResourceAdapter } = await import("@vibex/data");
+  const adapter = getServerResourceAdapter();
   const mcpServers = await adapter.getTools();
   const mcpServerIds = new Set(mcpServers.map((s: any) => s.id));
 
@@ -110,7 +110,7 @@ async function loadMcpTools(ids: string[]): Promise<Record<string, CoreTool>> {
 
         // TODO: Re-enable when MCP support is implemented
         /*
-        const adapter = getServerDataAdapter();
+        const adapter = getServerResourceAdapter();
         const serverTools = await adapter.getTools();
         const server = serverTools.find((t: any) => t.id === serverId);
 

@@ -10,13 +10,13 @@
 import { Agent, AgentContext, AgentResponse } from "../agent/agent";
 import { AgentConfig } from "../config";
 import { Space } from "../space/space";
-import { getServerDataAdapter } from "@vibex/data";
+import { getServerResourceAdapter } from "@vibex/data";
 import { Plan } from "../space/plan";
 import { Task, TaskStatus } from "../space/task";
 import { generateObject } from "ai";
 import type { StreamTextResult } from "ai";
 type StreamTextResultType = StreamTextResult<Record<string, any>, any>;
-import { z } from "zod";
+import { z } from "zod/v3";
 import { WorkflowEngine } from "../workflow/engine";
 import { Workflow } from "../workflow/types";
 import type { VibexMessage } from "../space/message";
@@ -271,12 +271,12 @@ Use "condition" for decision points.`,
     if (!agent) {
       // Load agent on demand
       console.log(`[XAgent] Loading agent '${targetAgent}' on demand`);
-      const dataAdapter = getServerDataAdapter();
-      const agentConfig = await dataAdapter.getAgent(targetAgent);
+      const resourceAdapter = getServerResourceAdapter();
+      const agentConfig = await resourceAdapter.getAgent(targetAgent);
       if (!agentConfig) {
         throw new Error(`Agent '${targetAgent}' not found`);
       }
-      if (typeof agentConfig !== 'object' || agentConfig === null) {
+      if (typeof agentConfig !== "object" || agentConfig === null) {
         throw new Error(`Invalid agent config for '${targetAgent}'`);
       }
       agent = new Agent(agentConfig as AgentConfig);
@@ -320,14 +320,14 @@ Use "condition" for decision points.`,
     console.log(`[XAgent] Parallel execution: ${agentIds.length} agents`);
 
     // Ensure all agents are loaded
-    const dataAdapter = getServerDataAdapter();
+    const resourceAdapter = getServerResourceAdapter();
     for (const agentId of agentIds) {
       if (!this.space.getAgent(agentId)) {
-        const agentConfig = await dataAdapter.getAgent(agentId);
+        const agentConfig = await resourceAdapter.getAgent(agentId);
         if (!agentConfig) {
           throw new Error(`Agent '${agentId}' not found`);
         }
-        if (typeof agentConfig !== 'object' || agentConfig === null) {
+        if (typeof agentConfig !== "object" || agentConfig === null) {
           throw new Error(`Invalid agent config for '${agentId}'`);
         }
         const agent = new Agent(agentConfig as AgentConfig);
@@ -360,16 +360,18 @@ Use "condition" for decision points.`,
     // Aggregate results - create a mock StreamTextResult for parallel execution
     // This is a simplified return type for parallel execution
     // In a real implementation, this would need to properly construct a StreamTextResult
-    const aggregatedText = results.map((r) => `[${r.agentId}]: ${r.result.text}`).join("\n\n");
+    const aggregatedText = results
+      .map((r) => `[${r.agentId}]: ${r.result.text}`)
+      .join("\n\n");
     // Return a minimal StreamTextResult-like object
     // Note: This is a workaround - proper implementation would require full StreamTextResult construction
     return {
       textStream: async function* () {
-        yield { type: 'text-delta' as const, textDelta: aggregatedText };
+        yield { type: "text-delta" as const, textDelta: aggregatedText };
       },
       fullStream: async function* () {
-        yield { type: 'text-delta' as const, textDelta: aggregatedText };
-        yield { type: 'finish' as const, finishReason: 'stop' as const };
+        yield { type: "text-delta" as const, textDelta: aggregatedText };
+        yield { type: "finish" as const, finishReason: "stop" as const };
       },
       text: aggregatedText,
     } as any as StreamTextResultType;
@@ -384,9 +386,10 @@ Use "condition" for decision points.`,
     metadata?: Record<string, unknown>
   ): Promise<void> {
     // Get taskId from metadata, or use "default" for legacy support
-    const taskId = (metadata?.taskId as string | undefined) || 
-                   (metadata?.conversationId as string | undefined) || 
-                   "default";
+    const taskId =
+      (metadata?.taskId as string | undefined) ||
+      (metadata?.conversationId as string | undefined) ||
+      "default";
     const task = this.space.getOrCreateTask(taskId);
 
     const existingMessages = task.history.getMessages();
@@ -563,7 +566,7 @@ Use "condition" for decision points.`,
           })
         )
         .describe("New tasks to add"),
-      reasoning: z.string().describe("Explanation of the plan changes"),
+      reasoningText: z.string().describe("Explanation of the plan changes"),
     });
 
     const prompt = `
@@ -641,7 +644,7 @@ Modify, remove, or add tasks as needed to better achieve the goal.
     await this.space.createPlan(adaptedPlan);
 
     // Log the reasoning
-    console.log("[Plan Adaptation]", result.object.reasoning);
+    console.log("[Plan Adaptation]", result.object.reasoningText);
 
     return adaptedPlan;
   }

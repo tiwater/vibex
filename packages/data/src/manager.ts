@@ -2,7 +2,7 @@
  * VibexDataManager - Unified Data Access Layer
  *
  * This is the single source of truth for all Vibex data operations.
- * It unifies DataAdapter (metadata) and SpaceStorage (files) into one interface.
+ * It unifies ResourceAdapter (resources), KnowledgeAdapter (vectors), and StorageAdapter (files) into one interface.
  *
  * Key features:
  * - Unified query interface for spaces, artifacts, tasks, agents, tools
@@ -11,10 +11,10 @@
  * - Optimistic updates
  */
 
-import type { DataAdapter } from "./adapter";
+import type { ResourceAdapter } from "./adapter";
 import type { Space as DataSpace, Artifact, Task, Agent, Tool } from "./types";
 import type { KnowledgeAdapter, Dataset, KnowledgeDocument, DocumentChunk } from "./knowledge/adapter";
-import { getDataAdapter, getKnowledgeAdapter } from "./factory";
+import { getResourceAdapter, getKnowledgeAdapter } from "./factory";
 import { SpaceStorageFactory } from "./storage/space";
 import type { SpaceStorage as SpaceStorageType } from "./storage/space";
 
@@ -45,17 +45,17 @@ export type SubscriptionCallback<T> = (data: T) => void;
  * VibexDataManager - Central data access layer
  */
 export class VibexDataManager {
-  private dataAdapter: DataAdapter;
+  private resourceAdapter: ResourceAdapter;
   private knowledgeAdapter: KnowledgeAdapter;
   private cache: Map<string, { data: any; timestamp: number }>;
   private subscriptions: Map<string, Set<SubscriptionCallback<any>>>;
   private cacheTTL: number = 5 * 60 * 1000; // 5 minutes default
 
-  constructor(dataAdapter?: DataAdapter, knowledgeAdapter?: KnowledgeAdapter) {
+  constructor(resourceAdapter?: ResourceAdapter, knowledgeAdapter?: KnowledgeAdapter) {
     // If no adapter provided, try to get one from factory
     // Note: This will fail for database mode on client side, which is intended
     // as client side should use server actions, not VibexDataManager directly
-    this.dataAdapter = dataAdapter || getDataAdapter();
+    this.resourceAdapter = resourceAdapter || getResourceAdapter();
     this.knowledgeAdapter = knowledgeAdapter || getKnowledgeAdapter();
     this.cache = new Map();
     this.subscriptions = new Map();
@@ -69,8 +69,8 @@ export class VibexDataManager {
    */
   static async createServer(): Promise<VibexDataManager> {
     // Dynamic import to avoid bundling server code in client bundle
-    const { getServerDataAdapter } = await import("./factory");
-    return new VibexDataManager(getServerDataAdapter());
+    const { getServerResourceAdapter } = await import("./factory");
+    return new VibexDataManager(getServerResourceAdapter());
   }
 
   /**
@@ -82,8 +82,8 @@ export class VibexDataManager {
       throw new Error("createServerSync() can only be called on the server");
     }
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getServerDataAdapter } = require("./factory");
-    return new VibexDataManager(getServerDataAdapter());
+    const { getServerResourceAdapter } = require("./factory");
+    return new VibexDataManager(getServerResourceAdapter());
   }
 
   /**
@@ -155,7 +155,7 @@ export class VibexDataManager {
     const cached = this.getCached<DataSpace>(cacheKey);
     if (cached) return cached;
 
-    const space = await this.dataAdapter.getSpace(spaceId);
+    const space = await this.resourceAdapter.getSpace(spaceId);
     if (space) {
       this.setCache(cacheKey, space);
     }
@@ -170,7 +170,7 @@ export class VibexDataManager {
     const cached = this.getCached<DataSpace[]>(cacheKey);
     if (cached) return cached;
 
-    let spaces = await this.dataAdapter.getSpaces();
+    let spaces = await this.resourceAdapter.getSpaces();
 
     // Apply filters
     if (filters) {
@@ -205,7 +205,7 @@ export class VibexDataManager {
    * Create a new space
    */
   async createSpace(space: Partial<DataSpace>): Promise<DataSpace> {
-    const newSpace = await this.dataAdapter.saveSpace({
+    const newSpace = await this.resourceAdapter.saveSpace({
       id: space.id || `space-${Date.now()}`,
       name: space.name || "New Space",
       description: space.description,
@@ -238,7 +238,7 @@ export class VibexDataManager {
       throw new Error(`Space ${spaceId} not found`);
     }
 
-    const updated = await this.dataAdapter.saveSpace({
+    const updated = await this.resourceAdapter.saveSpace({
       ...existing,
       ...updates,
       updatedAt: new Date().toISOString(),
@@ -259,7 +259,7 @@ export class VibexDataManager {
    * Delete a space
    */
   async deleteSpace(spaceId: string): Promise<void> {
-    await this.dataAdapter.deleteSpace(spaceId);
+    await this.resourceAdapter.deleteSpace(spaceId);
 
     // Invalidate caches
     this.invalidateCache("space:");
@@ -337,7 +337,7 @@ export class VibexDataManager {
     const cached = this.getCached<Artifact[]>(cacheKey);
     if (cached) return cached;
 
-    let artifacts = await this.dataAdapter.getArtifacts(spaceId);
+    let artifacts = await this.resourceAdapter.getArtifacts(spaceId);
 
     // Apply filters
     if (filters) {
@@ -364,7 +364,7 @@ export class VibexDataManager {
     const cached = this.getCached<Artifact>(cacheKey);
     if (cached) return cached;
 
-    const artifact = await this.dataAdapter.getArtifact(artifactId);
+    const artifact = await this.resourceAdapter.getArtifact(artifactId);
     if (artifact) {
       this.setCache(cacheKey, artifact);
     }
@@ -378,7 +378,7 @@ export class VibexDataManager {
     spaceId: string,
     artifact: Partial<Artifact>
   ): Promise<Artifact> {
-    const newArtifact = await this.dataAdapter.saveArtifact({
+    const newArtifact = await this.resourceAdapter.saveArtifact({
       id: artifact.id || `artifact-${Date.now()}`,
       spaceId,
       userId: artifact.userId,
@@ -416,7 +416,7 @@ export class VibexDataManager {
       throw new Error(`Artifact ${artifactId} not found`);
     }
 
-    const updated = await this.dataAdapter.saveArtifact({
+    const updated = await this.resourceAdapter.saveArtifact({
       ...existing,
       ...updates,
       updatedAt: new Date().toISOString(),
@@ -441,7 +441,7 @@ export class VibexDataManager {
    * Delete an artifact
    */
   async deleteArtifact(artifactId: string, spaceId: string): Promise<void> {
-    await this.dataAdapter.deleteArtifact(artifactId);
+    await this.resourceAdapter.deleteArtifact(artifactId);
 
     // Invalidate caches
     this.invalidateCache(`artifact:${artifactId}`);
@@ -489,7 +489,7 @@ export class VibexDataManager {
     const cached = this.getCached<Task[]>(cacheKey);
     if (cached) return cached;
 
-    let tasks = await this.dataAdapter.getTasks(spaceId);
+    let tasks = await this.resourceAdapter.getTasks(spaceId);
 
     // Apply filters
     if (filters) {
@@ -516,7 +516,7 @@ export class VibexDataManager {
     const cached = this.getCached<Task>(cacheKey);
     if (cached) return cached;
 
-    const task = await this.dataAdapter.getTask(taskId);
+    const task = await this.resourceAdapter.getTask(taskId);
     if (task) {
       this.setCache(cacheKey, task);
     }
@@ -527,7 +527,7 @@ export class VibexDataManager {
    * Create a new task
    */
   async createTask(spaceId: string, task: Partial<Task>): Promise<Task> {
-    const newTask = await this.dataAdapter.saveTask({
+    const newTask = await this.resourceAdapter.saveTask({
       id: task.id || `task-${Date.now()}`,
       spaceId,
       userId: task.userId,
@@ -557,7 +557,7 @@ export class VibexDataManager {
       throw new Error(`Task ${taskId} not found`);
     }
 
-    const updated = await this.dataAdapter.saveTask({
+    const updated = await this.resourceAdapter.saveTask({
       ...existing,
       ...updates,
       updatedAt: new Date().toISOString(),
@@ -578,7 +578,7 @@ export class VibexDataManager {
    * Delete a task
    */
   async deleteTask(taskId: string, spaceId: string): Promise<void> {
-    await this.dataAdapter.deleteTask(taskId);
+    await this.resourceAdapter.deleteTask(taskId);
 
     // Invalidate caches
     this.invalidateCache(`task:${taskId}`);
@@ -626,7 +626,7 @@ export class VibexDataManager {
     const cached = this.getCached<Agent[]>(cacheKey);
     if (cached) return cached;
 
-    const agents = await this.dataAdapter.getAgents();
+    const agents = await this.resourceAdapter.getAgents();
     this.setCache(cacheKey, agents);
     return agents;
   }
@@ -639,7 +639,7 @@ export class VibexDataManager {
     const cached = this.getCached<Agent>(cacheKey);
     if (cached) return cached;
 
-    const agent = await this.dataAdapter.getAgent(agentId);
+    const agent = await this.resourceAdapter.getAgent(agentId);
     if (agent) {
       this.setCache(cacheKey, agent);
     }
@@ -656,7 +656,7 @@ export class VibexDataManager {
     const cached = this.getCached<Tool[]>(cacheKey);
     if (cached) return cached;
 
-    const tools = await this.dataAdapter.getTools();
+    const tools = await this.resourceAdapter.getTools();
     this.setCache(cacheKey, tools);
     return tools;
   }
@@ -669,7 +669,7 @@ export class VibexDataManager {
     const cached = this.getCached<Tool>(cacheKey);
     if (cached) return cached;
 
-    const tool = await this.dataAdapter.getTool(toolId);
+    const tool = await this.resourceAdapter.getTool(toolId);
     if (tool) {
       this.setCache(cacheKey, tool);
     }

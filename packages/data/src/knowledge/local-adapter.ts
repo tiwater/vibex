@@ -9,11 +9,52 @@ import type {
   DocumentChunk 
 } from "./adapter";
 
+/**
+ * Local in-memory vector store implementation
+ * Moved from @vibex/core to @vibex/data as it's a storage implementation
+ */
+class LocalVectorStore {
+  private documents: DocumentChunk[] = [];
+
+  async addDocuments(documents: DocumentChunk[]): Promise<void> {
+    this.documents.push(...documents);
+  }
+
+  async similaritySearch(query: number[], k: number): Promise<DocumentChunk[]> {
+    // Simple cosine similarity
+    const scores = this.documents.map(doc => ({
+      doc,
+      score: this.cosineSimilarity(query, doc.embedding!),
+    }));
+
+    scores.sort((a, b) => b.score - a.score);
+    return scores.slice(0, k).map(s => s.doc);
+  }
+
+  async deleteDocuments(ids: string[]): Promise<void> {
+    this.documents = this.documents.filter(doc => !ids.includes(doc.id));
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    if (normA === 0 || normB === 0) return 0;
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+}
+
 export class LocalKnowledgeAdapter implements KnowledgeAdapter {
   private configDir: string;
   private datasetsPath: string;
   private documentsPath: string;
   private vectorsPath: string;
+  private vectorStore: LocalVectorStore;
 
   constructor(basePath?: string) {
     // Use provided path or default from VibexPaths
@@ -21,6 +62,7 @@ export class LocalKnowledgeAdapter implements KnowledgeAdapter {
     this.datasetsPath = path.join(this.configDir, "datasets.json");
     this.documentsPath = path.join(this.configDir, "documents.json");
     this.vectorsPath = path.join(this.configDir, "vectors.json");
+    this.vectorStore = new LocalVectorStore();
   }
 
   private async ensureDir(): Promise<void> {
@@ -126,59 +168,55 @@ export class LocalKnowledgeAdapter implements KnowledgeAdapter {
     }
   }
 
+  private async ensureVectorStoreLoaded(): Promise<void> {
+    // Load chunks from disk into vector store if not already loaded
+    const chunks = await this.loadChunks();
+    if (chunks.length > 0) {
+      // Clear and reload to avoid duplicates
+      this.vectorStore = new LocalVectorStore();
+      await this.vectorStore.addDocuments(chunks);
+    }
+  }
+
   private async saveAllChunks(chunks: DocumentChunk[]): Promise<void> {
     await this.ensureDir();
     await fs.writeFile(this.vectorsPath, JSON.stringify(chunks, null, 2));
   }
 
   async saveChunks(newChunks: DocumentChunk[]): Promise<void> {
+    // Ensure vector store is loaded
+    await this.ensureVectorStoreLoaded();
+    
+    // Save to vector store for fast in-memory search
+    await this.vectorStore.addDocuments(newChunks);
+    
+    // Also persist to disk
     const chunks = await this.loadChunks();
-    // Append or replace? Usually append.
-    // We might want to deduplicate by ID if needed.
     const existingIds = new Set(chunks.map(c => c.id));
     const toAdd = newChunks.filter(c => !existingIds.has(c.id));
     
-    // If we want to support updates, we should replace.
-    // For now, simple append of new IDs.
     chunks.push(...toAdd);
     await this.saveAllChunks(chunks);
   }
 
   async deleteChunks(ids: string[]): Promise<void> {
+    // Ensure vector store is loaded
+    await this.ensureVectorStoreLoaded();
+    
+    // Delete from vector store
+    await this.vectorStore.deleteDocuments(ids);
+    
+    // Also delete from disk
     const chunks = await this.loadChunks();
     const filtered = chunks.filter(c => !ids.includes(c.id));
     await this.saveAllChunks(filtered);
   }
 
   async searchChunks(queryVector: number[], k: number): Promise<DocumentChunk[]> {
-    const chunks = await this.loadChunks();
+    // Ensure vector store is loaded
+    await this.ensureVectorStoreLoaded();
     
-    // Calculate cosine similarity
-    const scored = chunks.map(chunk => {
-      if (!chunk.embedding) return { chunk, score: -1 };
-      return {
-        chunk,
-        score: this.cosineSimilarity(queryVector, chunk.embedding)
-      };
-    });
-
-    // Sort by score descending
-    scored.sort((a, b) => b.score - a.score);
-
-    return scored.slice(0, k).map(s => s.chunk);
-  }
-
-  private cosineSimilarity(a: number[], b: number[]): number {
-    if (a.length !== b.length) return 0;
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-    if (normA === 0 || normB === 0) return 0;
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    // Use in-memory vector store for fast search
+    return this.vectorStore.similaritySearch(queryVector, k);
   }
 }

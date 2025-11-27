@@ -1,4 +1,4 @@
-import { useChat } from '@ai-sdk/react';
+import { useChat, DefaultChatTransport } from '@ai-sdk/react';
 import type { UseChatOptions, UseChatHelpers } from '@ai-sdk/react';
 import { useMemo } from 'react';
 
@@ -30,8 +30,10 @@ export function useVibexChat({
   const chat = useChat({
     ...options,
     body,
-    // Default to the standard Vibex API endpoint
-    api: options.api ?? '/api/chat',
+
+    transport: new DefaultChatTransport({
+      api: options.api ?? '/api/chat'
+    })
   });
 
   return {

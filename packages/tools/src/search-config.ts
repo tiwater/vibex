@@ -3,7 +3,7 @@
  * Focuses on Tavily and Serper as primary providers
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 export type SearchProvider = 'tavily' | 'serper';
 

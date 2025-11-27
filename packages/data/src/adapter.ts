@@ -1,7 +1,7 @@
 /**
- * DataAdapter interface for accessing agents, tools, spaces, etc.
+ * ResourceAdapter interface for accessing core resources (agents, tools, spaces, tasks, etc.)
  * This is an internal interface used by VibexDataManager.
- * External code should use VibexDataManager, not DataAdapter directly.
+ * External code should use VibexDataManager, not ResourceAdapter directly.
  */
 
 import type {
@@ -16,10 +16,10 @@ import type {
 } from "./types";
 
 /**
- * Internal adapter interface for data persistence
+ * ResourceAdapter - manages core system resources (Spaces, Tasks, Agents, Tools, Artifacts)
  * Implementations handle local files or remote database/API
  */
-export interface DataAdapter {
+export interface ResourceAdapter {
   // Agents
   getAgents(): Promise<Agent[]>;
   getAgent(id: string): Promise<Agent | null>;

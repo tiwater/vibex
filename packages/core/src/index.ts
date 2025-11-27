@@ -28,11 +28,10 @@ export * from "./orchestration/result-processor";
 export * from "./workflow/types";
 export * from "./workflow/engine";
 
-// Knowledge subsystem
+// Knowledge subsystem (interfaces only - implementations in @vibex/data)
 
 export * from "./knowledge/rag";
 export * from "./knowledge/rag-embeddings";
-export * from "./knowledge/rag-memory-store";
 
 // Config types
 export type {

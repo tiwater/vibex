@@ -2,7 +2,7 @@
  * FileTool using unified decorator for cleaner code
  */
 
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { promises as fs } from "fs";
 import * as path from "path";
 import {

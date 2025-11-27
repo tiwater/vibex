@@ -2,7 +2,7 @@
  * WebTool - Simplified version using external services (Firecrawl/Jina)
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { Tool, ToolFunction, ToolMetadata, ToolConfig, ConfigSchema } from './base';
 
 export class WebTool extends Tool {

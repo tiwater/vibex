@@ -1,4 +1,4 @@
-import type { DataAdapter } from "@vibex/data";
+import type { ResourceAdapter } from "@vibex/data";
 import type {
   Agent,
   Tool,
@@ -15,7 +15,7 @@ import { createServiceRoleClient } from "./client";
  * SupabaseDatabaseAdapter - Direct Supabase/PostgreSQL database access
  * Mirrors the previous implementation from @vibex/data but lives in @vibex/supabase now.
  */
-export class SupabaseDataAdapter implements DataAdapter {
+export class SupabaseResourceAdapter implements ResourceAdapter {
   private supabase = createServiceRoleClient();
 
   // Helper conversions --------------------------------------------------
@@ -395,6 +395,6 @@ export class SupabaseDataAdapter implements DataAdapter {
   }
 }
 
-export function createSupabaseDataAdapter(): DataAdapter {
-  return new SupabaseDataAdapter();
+export function createSupabaseResourceAdapter(): ResourceAdapter {
+  return new SupabaseResourceAdapter();
 }

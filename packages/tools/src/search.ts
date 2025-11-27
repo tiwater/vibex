@@ -2,7 +2,7 @@
  * Simplified SearchTool - Focuses on essential search functionality
  */
 
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { Tool, ToolFunction, ToolMetadata, ToolConfig, ConfigSchema } from './base';
 import { SearchConfigManager, SearchProvider, SEARCH_PROVIDERS } from './search-config';
 

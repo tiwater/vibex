@@ -3,7 +3,7 @@
  * Provides decorator-based tool extraction for multi-tool providers
  */
 
-import { z } from "zod";
+import { z } from 'zod/v3';
 import * as path from "path";
 import { promises as fs } from "fs";
 import "reflect-metadata";
@@ -610,7 +610,7 @@ export abstract class Tool {
     return Object.entries(tools).map(([name, tool]) => ({
       name,
       description: tool.description,
-      parameters: tool.inputSchema?._def || tool.inputSchema || {},
+      inputSchema: tool.inputSchema?._def || tool.inputSchema || {},
     }));
   }
 }

@@ -1,9 +1,9 @@
 /**
- * LocalDataAdapter - SQLite-based data storage
+ * LocalResourceAdapter - SQLite-based resource storage
  * Uses ~/.vibex/vibex.db for structured data
  */
 
-import type { DataAdapter } from "../adapter";
+import type { ResourceAdapter } from "../adapter";
 import type {
   Agent,
   Tool,
@@ -36,7 +36,7 @@ function resolveRoot(): string {
   return process.env.VIBEX_STORAGE_PATH || path.join(os.homedir(), ".vibex");
 }
 
-export class LocalDataAdapter implements DataAdapter {
+export class LocalResourceAdapter implements ResourceAdapter {
   private db: Database.Database;
 
   constructor() {

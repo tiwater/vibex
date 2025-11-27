@@ -1,5 +1,8 @@
 /**
  * RAG Interfaces
+ * 
+ * These interfaces define what the core runtime needs for knowledge/RAG operations.
+ * Implementations are provided by @vibex/data package.
  */
 
 export interface DocumentChunk {
@@ -9,22 +12,39 @@ export interface DocumentChunk {
   embedding?: number[];
 }
 
+/**
+ * VectorStore interface - defines vector operations needed by core
+ * Implementations are in @vibex/data (LocalVectorStore, SupabaseVectorStore, etc.)
+ */
 export interface VectorStore {
   addDocuments(documents: DocumentChunk[]): Promise<void>;
   similaritySearch(query: number[], k: number): Promise<DocumentChunk[]>;
   deleteDocuments(ids: string[]): Promise<void>;
 }
 
+/**
+ * EmbeddingModel interface - defines embedding operations
+ * Implementation uses AI SDK (AIEmbeddingModel in this package)
+ */
 export interface EmbeddingModel {
   embedDocuments(texts: string[]): Promise<number[][]>;
   embedQuery(text: string): Promise<number[]>;
 }
 
-import { getVibexDataManagerServer } from "@vibex/data";
+/**
+ * KnowledgeDataManager - Interface for knowledge/RAG data operations
+ * Implemented by VibexDataManager in @vibex/data
+ */
+export interface KnowledgeDataManager {
+  saveChunks(chunks: DocumentChunk[]): Promise<void>;
+  searchChunks(vector: number[], k: number): Promise<DocumentChunk[]>;
+  deleteChunks(ids: string[]): Promise<void>;
+}
 
 export class KnowledgeBase {
   constructor(
-    private embeddings: EmbeddingModel
+    private embeddings: EmbeddingModel,
+    private dataManager: KnowledgeDataManager
   ) {}
 
   async addText(text: string, metadata: Record<string, unknown> = {}): Promise<void> {
@@ -39,14 +59,12 @@ export class KnowledgeBase {
       embedding: vectors[i],
     }));
 
-    const dataManager = getVibexDataManagerServer();
-    await dataManager.saveChunks(docs);
+    await this.dataManager.saveChunks(docs);
   }
 
   async query(text: string, k: number = 5): Promise<DocumentChunk[]> {
     const vector = await this.embeddings.embedQuery(text);
-    const dataManager = getVibexDataManagerServer();
-    return dataManager.searchChunks(vector, k);
+    return this.dataManager.searchChunks(vector, k);
   }
 
   private chunkText(text: string, size: number = 1000): string[] {

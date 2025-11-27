@@ -26,7 +26,7 @@ export interface AgentContext {
 export interface AgentResponse {
   text: string;
   toolCalls?: any[];
-  reasoning?: string;
+  reasoningText?: string;
   metadata?: Record<string, any>;
 }
 

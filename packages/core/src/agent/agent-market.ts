@@ -7,7 +7,7 @@
  */
 
 import { AgentConfig } from "../config";
-import { getServerDataAdapter } from "@vibex/data";
+import { getServerResourceAdapter } from "@vibex/data";
 
 /**
  * Agent template metadata - extends AgentConfig with market-specific fields
@@ -435,7 +435,7 @@ export class AgentMarket {
    */
   static async isTemplateInstalled(templateId: string): Promise<boolean> {
     try {
-      const adapter = getServerDataAdapter();
+      const adapter = getServerResourceAdapter();
       const agents = await adapter.getAgents();
       return agents.some((agent) => agent.id === templateId);
     } catch {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { VibexDataManager } from "../src/manager";
-import { DataAdapter } from "../src/adapter";
+import { ResourceAdapter } from "../src/adapter";
 
 // Mock the factory functions
 const mockAdapter = {
@@ -20,11 +20,25 @@ const mockAdapter = {
   getAgent: vi.fn(),
   getTools: vi.fn(),
   getTool: vi.fn(),
-} as unknown as DataAdapter;
+} as unknown as ResourceAdapter;
+
+const mockKnowledgeAdapter = {
+  getDatasets: vi.fn(),
+  getDataset: vi.fn(),
+  saveDataset: vi.fn(),
+  deleteDataset: vi.fn(),
+  getDocuments: vi.fn(),
+  addDocument: vi.fn(),
+  deleteDocument: vi.fn(),
+  saveChunks: vi.fn(),
+  searchChunks: vi.fn(),
+  deleteChunks: vi.fn(),
+} as unknown as any;
 
 vi.mock("../src/factory", () => ({
-  getDataAdapter: () => mockAdapter,
-  getServerDataAdapter: () => mockAdapter,
+  getResourceAdapter: () => mockAdapter,
+  getServerResourceAdapter: () => mockAdapter,
+  getKnowledgeAdapter: () => mockKnowledgeAdapter,
 }));
 
 describe("VibexDataManager", () => {
@@ -32,7 +46,7 @@ describe("VibexDataManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    manager = new VibexDataManager(mockAdapter);
+    manager = new VibexDataManager(mockAdapter, mockKnowledgeAdapter);
   });
 
   describe("Space Operations", () => {

@@ -43,7 +43,7 @@ const toolClasses = new Map<string, new () => Tool>([
 ]);
 
 /**
- * Load tool configuration through DataAdapter
+ * Load tool configuration through ResourceAdapter
  */
 async function loadToolConfig(toolId: string): Promise<any> {
   try {
@@ -105,43 +105,43 @@ const staticFunctionDetails = {
       name: "createFile",
       description:
         "Create a new file or overwrite an existing file with the specified content. Creates parent directories if they don't exist.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "readFile",
       description:
         "Read the contents of a file from the file system. Returns the file content along with metadata like size and modification time.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "deleteFile",
       description:
         "Delete a file from the file system. This operation is irreversible. The file must exist or an error will be thrown.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "listFiles",
       description:
         "List all files in a directory with optional recursive traversal and pattern filtering. Returns an array of file paths.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "moveFile",
       description:
         "Move or rename a file from one location to another. Creates parent directories if needed. The source file will no longer exist after this operation.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "copyFile",
       description:
         "Copy a file from one location to another. Creates parent directories if needed. The source file remains unchanged.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "fileExists",
       description:
         "Check if a file or directory exists at the specified path. Returns existence status and file metadata if it exists.",
-      parameters: {},
+      inputSchema: {},
     },
   ],
   search: [
@@ -149,7 +149,7 @@ const staticFunctionDetails = {
       name: "search",
       description:
         "Search the web for information using configured search providers (Tavily or Serper). Returns relevant web pages with titles, URLs, and snippets.",
-      parameters: {},
+      inputSchema: {},
     },
   ],
   web: [
@@ -157,19 +157,19 @@ const staticFunctionDetails = {
       name: "fetchWebpage",
       description:
         "Extract and parse web page content into structured formats (markdown, text, HTML). Supports JavaScript-rendered pages and can capture metadata, links, and images. Uses Firecrawl or Jina services for reliable extraction.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "crawlWebsite",
       description:
         "Crawl a website to extract content from multiple pages. Follows links up to a specified depth and returns structured content from all discovered pages. Useful for documentation sites, blogs, or comprehensive site analysis.",
-      parameters: {},
+      inputSchema: {},
     },
     {
       name: "checkUrl",
       description:
         "Check if a URL is accessible and retrieve basic information about the resource. Returns HTTP status, content type, size, and last modified date without downloading the full content.",
-      parameters: {},
+      inputSchema: {},
     },
   ],
 };

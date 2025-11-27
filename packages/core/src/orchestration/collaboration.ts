@@ -283,7 +283,7 @@ export class ParallelExecutionEngine {
         result: {
           text: result.text || "",
           toolCalls: result.toolCalls,
-          reasoning: result.reasoning,
+          reasoningText: result.reasoningText,
           metadata: result.metadata,
         },
         duration,

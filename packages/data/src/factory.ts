@@ -1,22 +1,22 @@
 /**
- * DataAdapterFactory - Creates appropriate data adapter based on configuration
+ * ResourceAdapterFactory - Creates appropriate resource adapter based on configuration
  * Internal to Vibex - external code should use VibexDataManager
  */
 
-import type { DataAdapter } from "./adapter";
-import { LocalDataAdapter } from "./adapters/local";
-// SupabaseDatabaseAdapter is NOT imported here - it's imported dynamically in getServerDataAdapter()
+import type { ResourceAdapter } from "./adapter";
+import { LocalResourceAdapter } from "./adapters/local";
+// SupabaseResourceAdapter is NOT imported here - it's imported dynamically in getServerResourceAdapter()
 // to avoid bundling server code (next/headers) in client bundle
 
 export type DataMode = "local" | "database" | "auto";
 
-export class DataAdapterFactory {
-  private static instance: DataAdapter | null = null;
+export class ResourceAdapterFactory {
+  private static instance: ResourceAdapter | null = null;
 
   /**
-   * Create or get singleton data adapter instance
+   * Create or get singleton resource adapter instance
    */
-  static create(mode?: DataMode): DataAdapter {
+  static create(mode?: DataMode): ResourceAdapter {
     if (this.instance) {
       return this.instance;
     }
@@ -29,8 +29,8 @@ export class DataAdapterFactory {
       );
     }
 
-    console.log("[VibexDataAdapter] Using local mode (SQLite + filesystem)");
-    this.instance = new LocalDataAdapter();
+    console.log("[VibexResourceAdapter] Using local mode (SQLite + filesystem)");
+    this.instance = new LocalResourceAdapter();
 
     return this.instance;
   }
@@ -63,27 +63,27 @@ export class DataAdapterFactory {
 }
 
 /**
- * Get data adapter for client-side and general use
+ * Get resource adapter for client-side and general use
  * Internal to Vibex - use VibexDataManager instead
  */
-export function getDataAdapter(): DataAdapter {
-  return DataAdapterFactory.create();
+export function getResourceAdapter(): ResourceAdapter {
+  return ResourceAdapterFactory.create();
 }
 
 /**
- * Get data adapter for server-side API routes
+ * Get resource adapter for server-side API routes
  * Uses direct Supabase access in database mode (not API calls)
  *
  * NOTE: This function uses server-only imports and should only be called
  * from server-side code (API routes, server components, server actions).
  */
-export function getServerDataAdapter(): DataAdapter {
+export function getServerResourceAdapter(): ResourceAdapter {
   // Check we're on the server
   if (typeof window !== "undefined") {
-    throw new Error("getServerDataAdapter() can only be called on the server");
+    throw new Error("getServerResourceAdapter() can only be called on the server");
   }
 
-  const mode = DataAdapterFactory.getCurrentMode();
+  const mode = ResourceAdapterFactory.getCurrentMode();
 
   if (mode === "database") {
     throw new Error(
@@ -91,8 +91,8 @@ export function getServerDataAdapter(): DataAdapter {
     );
   }
 
-  console.log("[VibexDataAdapter] Server: Using local mode (file-based)");
-  return new LocalDataAdapter();
+    console.log("[VibexResourceAdapter] Server: Using local mode (file-based)");
+    return new LocalResourceAdapter();
 }
 
 /**

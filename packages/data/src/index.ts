@@ -9,10 +9,10 @@ export { getVibexDataManager, getVibexDataManagerServer } from "./manager";
 export type { VibexDataManager } from "./manager";
 
 // Core data contracts
-export type { DataAdapter } from "./adapter";
+export type { ResourceAdapter } from "./adapter";
 
 // Export factory functions for server usage (API routes)
-export { getDataAdapter, getServerDataAdapter } from "./factory";
+export { getResourceAdapter, getServerResourceAdapter } from "./factory";
 export * from "./types";
 
 // Knowledge

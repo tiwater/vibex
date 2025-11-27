@@ -1,7 +1,7 @@
 import { Agent, AgentContext } from "./agent";
 import { AgentConfig } from "../config";
 import { chromium, Browser, BrowserContext, Page } from "playwright";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { tool } from "ai";
 
 export interface BrowserAgentConfig extends AgentConfig {
@@ -36,7 +36,7 @@ export class BrowserAgent extends Agent {
       "navigate",
       tool({
         description: "Navigate to a URL",
-        parameters: z.object({ url: z.string().url() }),
+        inputSchema: z.object({ url: z.string().url() }),
         execute: (async ({ url }: { url: string }) => {
           await this.ensurePage();
           await this.page!.goto(url);
@@ -49,7 +49,7 @@ export class BrowserAgent extends Agent {
       "click",
       tool({
         description: "Click an element specified by a selector",
-        parameters: z.object({ selector: z.string() }),
+        inputSchema: z.object({ selector: z.string() }),
         execute: (async ({ selector }: { selector: string }) => {
           await this.ensurePage();
           await this.page!.click(selector);
@@ -62,7 +62,7 @@ export class BrowserAgent extends Agent {
       "type",
       tool({
         description: "Type text into an element",
-        parameters: z.object({ selector: z.string(), text: z.string() }),
+        inputSchema: z.object({ selector: z.string(), text: z.string() }),
         execute: (async ({ selector, text }: { selector: string; text: string }) => {
           await this.ensurePage();
           await this.page!.fill(selector, text);
@@ -75,7 +75,7 @@ export class BrowserAgent extends Agent {
       "screenshot",
       tool({
         description: "Take a screenshot of the current page",
-        parameters: z.object({ fullPage: z.boolean().optional() }),
+        inputSchema: z.object({ fullPage: z.boolean().optional() }),
         execute: (async ({ fullPage }: { fullPage?: boolean }) => {
           await this.ensurePage();
           const buffer = await this.page!.screenshot({ fullPage });
@@ -91,7 +91,7 @@ export class BrowserAgent extends Agent {
       "get_content",
       tool({
         description: "Get the text content of the page",
-        parameters: z.object({}),
+        inputSchema: z.object({}),
         execute: (async () => {
           await this.ensurePage();
           const content = await this.page!.content();
@@ -105,7 +105,7 @@ export class BrowserAgent extends Agent {
       "evaluate",
       tool({
         description: "Evaluate JavaScript on the page",
-        parameters: z.object({ script: z.string() }),
+        inputSchema: z.object({ script: z.string() }),
         execute: (async ({ script }: { script: string }) => {
           await this.ensurePage();
           const result = await this.page!.evaluate(script);
