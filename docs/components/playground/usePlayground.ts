@@ -52,15 +52,26 @@ export function usePlayground() {
   // Send a message to the real backend
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim()) return;
+      if (!content.trim()) {
+        console.log("[Playground] sendMessage: empty content, skipping");
+        return;
+      }
 
       console.log("[Playground] Sending message:", content.slice(0, 50));
+      console.log("[Playground] chat object:", {
+        hasAppend: typeof chat.append === "function",
+        chatKeys: Object.keys(chat),
+      });
 
       try {
+        if (!chat.append) {
+          throw new Error("chat.append is not a function");
+        }
         await chat.append({
           role: "user",
           content,
         });
+        console.log("[Playground] Message sent successfully");
       } catch (err) {
         console.error("[Playground] Failed to send message:", err);
         setError(err instanceof Error ? err.message : "Failed to send message");
@@ -93,4 +104,4 @@ export function usePlayground() {
 }
 
 // Re-export types for convenience
-export type { XChatMessage, ChatMode };
+export type { XChatMessage };

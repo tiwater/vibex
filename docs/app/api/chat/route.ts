@@ -1,5 +1,10 @@
-import { XAgent, XChatMode } from "vibex";
-import type { UIMessage } from "ai";
+import {
+  XAgent,
+  XChatMode,
+  fromXChatMessage,
+  getTextFromXChatMessage,
+} from "vibex";
+import type { XChatMessage } from "@vibex/react";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,25 +14,6 @@ const DEFAULT_MODEL = "anthropic/claude-sonnet-4";
 
 // Valid chat modes
 const VALID_MODES: XChatMode[] = ["ask", "plan", "agent"];
-
-// Extract text from UIMessage parts
-function getTextFromUIMessage(msg: UIMessage): string {
-  return msg.parts
-    .filter((p): p is { type: "text"; text: string } => p.type === "text")
-    .map((p) => p.text)
-    .join("");
-}
-
-// Convert UIMessage to XMessage format
-function uiToXMessage(msg: UIMessage): {
-  role: "user" | "assistant" | "system";
-  content: string;
-} {
-  return {
-    role: msg.role as "user" | "assistant" | "system",
-    content: getTextFromUIMessage(msg),
-  };
-}
 
 export async function POST(req: Request) {
   try {
@@ -41,13 +27,13 @@ export async function POST(req: Request) {
 
     // Get the last user message text (for space naming)
     const lastMessage = messages?.[messages.length - 1] as
-      | UIMessage
+      | XChatMessage
       | undefined;
     if (!lastMessage || lastMessage.role !== "user") {
       return new Response("No user message found", { status: 400 });
     }
 
-    const lastContent = getTextFromUIMessage(lastMessage);
+    const lastContent = getTextFromXChatMessage(lastMessage);
     if (!lastContent) {
       return new Response("Empty message content", { status: 400 });
     }
@@ -85,8 +71,8 @@ export async function POST(req: Request) {
       return new Response(`Invalid chat mode: ${chatMode}`, { status: 400 });
     }
 
-    // Convert UIMessages to XMessages format
-    const xMessages = (messages as UIMessage[]).map(uiToXMessage);
+    // Convert XChatMessages to XMessages format
+    const xMessages = (messages as XChatMessage[]).map(fromXChatMessage);
 
     console.log(
       "[Chat API] Streaming with",

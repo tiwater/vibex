@@ -89,175 +89,186 @@ const InlineCode = ({ children }: { children: React.ReactNode }) => (
 
 export function Markdown({ children, className }: MarkdownProps) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkBreaks]}
-      components={{
-        code({ inline, className, children, ...props }: any) {
-          const match = /language-(\w+)/.exec(className || "");
-          const language = match?.[1];
-          const codeContent = String(children).replace(/\n$/, "");
+    <div
+      className={cn("text-sm text-foreground/90 leading-relaxed", className)}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkBreaks]}
+        components={{
+          code({ inline, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || "");
+            const language = match?.[1];
+            const codeContent = String(children).replace(/\n$/, "");
 
-          if (inline) {
-            return <InlineCode>{children}</InlineCode>;
-          }
+            if (inline) {
+              return <InlineCode>{children}</InlineCode>;
+            }
 
-          return <CodeBlock language={language}>{codeContent}</CodeBlock>;
-        },
-        a({ children, ...props }: any) {
-          return (
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-violet-600 dark:text-violet-400 hover:underline"
-              {...props}
-            >
-              {children}
-            </a>
-          );
-        },
-        img({ ...props }: any) {
-          return (
-            <img
-              className="max-w-full h-auto rounded-lg my-4"
-              alt={props.alt || "image"}
-              {...props}
-            />
-          );
-        },
-        table({ children, ...props }: any) {
-          return (
-            <div className="my-4 overflow-x-auto rounded-lg border border-border">
-              <table
-                className="min-w-full divide-y divide-border"
+            return <CodeBlock language={language}>{codeContent}</CodeBlock>;
+          },
+          a({ children, ...props }: any) {
+            return (
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-violet-600 dark:text-violet-400 hover:underline"
                 {...props}
               >
                 {children}
-              </table>
-            </div>
-          );
-        },
-        thead({ children, ...props }: any) {
-          return (
-            <thead className="bg-muted/50" {...props}>
-              {children}
-            </thead>
-          );
-        },
-        th({ children, ...props }: any) {
-          return (
-            <th
-              className="px-3 py-2 text-left text-xs font-semibold text-foreground"
-              {...props}
-            >
-              {children}
-            </th>
-          );
-        },
-        td({ children, ...props }: any) {
-          return (
-            <td
-              className="px-3 py-2 text-sm border-t border-border"
-              {...props}
-            >
-              {children}
-            </td>
-          );
-        },
-        blockquote({ children, ...props }: any) {
-          return (
-            <blockquote
-              className="border-l-3 border-violet-500/50 pl-4 italic my-4 text-muted-foreground"
-              {...props}
-            >
-              {children}
-            </blockquote>
-          );
-        },
-        ul({ children, ...props }: any) {
-          return (
-            <ul className="list-disc list-outside ml-4 my-2 space-y-1" {...props}>
-              {children}
-            </ul>
-          );
-        },
-        ol({ children, ...props }: any) {
-          return (
-            <ol
-              className="list-decimal list-outside ml-4 my-2 space-y-1"
-              {...props}
-            >
-              {children}
-            </ol>
-          );
-        },
-        li({ children, ...props }: any) {
-          return (
-            <li className="text-sm leading-relaxed" {...props}>
-              {children}
-            </li>
-          );
-        },
-        p({ children, ...props }: any) {
-          // Use div to avoid hydration errors when code blocks are inside
-          return (
-            <div className="my-2 leading-relaxed" {...props}>
-              {children}
-            </div>
-          );
-        },
-        h1({ children, ...props }: any) {
-          return (
-            <h1 className="text-xl font-bold mt-6 mb-3 text-foreground" {...props}>
-              {children}
-            </h1>
-          );
-        },
-        h2({ children, ...props }: any) {
-          return (
-            <h2 className="text-lg font-bold mt-5 mb-2 text-foreground" {...props}>
-              {children}
-            </h2>
-          );
-        },
-        h3({ children, ...props }: any) {
-          return (
-            <h3 className="text-base font-semibold mt-4 mb-2 text-foreground" {...props}>
-              {children}
-            </h3>
-          );
-        },
-        h4({ children, ...props }: any) {
-          return (
-            <h4 className="text-sm font-semibold mt-3 mb-1 text-foreground" {...props}>
-              {children}
-            </h4>
-          );
-        },
-        hr({ ...props }: any) {
-          return <hr className="my-4 border-border" {...props} />;
-        },
-        strong({ children, ...props }: any) {
-          return (
-            <strong className="font-semibold text-foreground" {...props}>
-              {children}
-            </strong>
-          );
-        },
-        em({ children, ...props }: any) {
-          return (
-            <em className="italic" {...props}>
-              {children}
-            </em>
-          );
-        },
-      }}
-      className={cn(
-        "text-sm text-foreground/90 leading-relaxed",
-        className
-      )}
-    >
-      {children}
-    </ReactMarkdown>
+              </a>
+            );
+          },
+          img({ ...props }: any) {
+            return (
+              <img
+                className="max-w-full h-auto rounded-lg my-4"
+                alt={props.alt || "image"}
+                {...props}
+              />
+            );
+          },
+          table({ children, ...props }: any) {
+            return (
+              <div className="my-4 overflow-x-auto rounded-lg border border-border">
+                <table className="min-w-full divide-y divide-border" {...props}>
+                  {children}
+                </table>
+              </div>
+            );
+          },
+          thead({ children, ...props }: any) {
+            return (
+              <thead className="bg-muted/50" {...props}>
+                {children}
+              </thead>
+            );
+          },
+          th({ children, ...props }: any) {
+            return (
+              <th
+                className="px-3 py-2 text-left text-xs font-semibold text-foreground"
+                {...props}
+              >
+                {children}
+              </th>
+            );
+          },
+          td({ children, ...props }: any) {
+            return (
+              <td
+                className="px-3 py-2 text-sm border-t border-border"
+                {...props}
+              >
+                {children}
+              </td>
+            );
+          },
+          blockquote({ children, ...props }: any) {
+            return (
+              <blockquote
+                className="border-l-3 border-violet-500/50 pl-4 italic my-4 text-muted-foreground"
+                {...props}
+              >
+                {children}
+              </blockquote>
+            );
+          },
+          ul({ children, ...props }: any) {
+            return (
+              <ul
+                className="list-disc list-outside ml-4 my-2 space-y-1"
+                {...props}
+              >
+                {children}
+              </ul>
+            );
+          },
+          ol({ children, ...props }: any) {
+            return (
+              <ol
+                className="list-decimal list-outside ml-4 my-2 space-y-1"
+                {...props}
+              >
+                {children}
+              </ol>
+            );
+          },
+          li({ children, ...props }: any) {
+            return (
+              <li className="text-sm leading-relaxed" {...props}>
+                {children}
+              </li>
+            );
+          },
+          p({ children, ...props }: any) {
+            // Use div to avoid hydration errors when code blocks are inside
+            return (
+              <div className="my-2 leading-relaxed" {...props}>
+                {children}
+              </div>
+            );
+          },
+          h1({ children, ...props }: any) {
+            return (
+              <h1
+                className="text-xl font-bold mt-6 mb-3 text-foreground"
+                {...props}
+              >
+                {children}
+              </h1>
+            );
+          },
+          h2({ children, ...props }: any) {
+            return (
+              <h2
+                className="text-lg font-bold mt-5 mb-2 text-foreground"
+                {...props}
+              >
+                {children}
+              </h2>
+            );
+          },
+          h3({ children, ...props }: any) {
+            return (
+              <h3
+                className="text-base font-semibold mt-4 mb-2 text-foreground"
+                {...props}
+              >
+                {children}
+              </h3>
+            );
+          },
+          h4({ children, ...props }: any) {
+            return (
+              <h4
+                className="text-sm font-semibold mt-3 mb-1 text-foreground"
+                {...props}
+              >
+                {children}
+              </h4>
+            );
+          },
+          hr({ ...props }: any) {
+            return <hr className="my-4 border-border" {...props} />;
+          },
+          strong({ children, ...props }: any) {
+            return (
+              <strong className="font-semibold text-foreground" {...props}>
+                {children}
+              </strong>
+            );
+          },
+          em({ children, ...props }: any) {
+            return (
+              <em className="italic" {...props}>
+                {children}
+              </em>
+            );
+          },
+        }}
+      >
+        {children}
+      </ReactMarkdown>
+    </div>
   );
 }
-

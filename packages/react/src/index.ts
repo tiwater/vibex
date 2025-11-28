@@ -49,6 +49,7 @@ export {
   getPendingApprovals,
   createUserMessage,
   isStatusLoading,
+  xChatMessageToXMessage,
   // Re-exported from core
   getTextFromParts,
   contentToParts,
@@ -76,3 +77,9 @@ export { XProvider } from "./provider";
 // ============================================================================
 
 export * from "./error-boundary";
+
+// ============================================================================
+// AI SDK Type Re-exports (for API routes)
+// ============================================================================
+
+export type { UIMessage } from "@ai-sdk/react";

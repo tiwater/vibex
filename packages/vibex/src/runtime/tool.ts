@@ -49,18 +49,26 @@ export async function buildToolMap(
   // Load custom tools if needed
   if (customToolIds.length > 0) {
     try {
-      // @ts-ignore - @vibex/tools may not be built yet
-      const toolsModule = await import("@vibex/tools");
-      const buildCustomToolMap = (toolsModule as any).buildToolMap;
-      if (buildCustomToolMap) {
-        const customTools = buildCustomToolMap(customToolIds, context);
-        Object.assign(tools, customTools);
+      // Dynamic import with variable to prevent TypeScript from statically resolving
+      // @vibex/tools is an optional package that may not be installed
+      const toolsPackageName = "@vibex/tools";
+      // @ts-ignore - Optional package, may not be installed
+      const toolsModule = await import(toolsPackageName).catch(() => null);
+      if (toolsModule) {
+        const buildCustomToolMap = (toolsModule as any).buildToolMap;
+        if (buildCustomToolMap) {
+          const customTools = buildCustomToolMap(customToolIds, context);
+          Object.assign(tools, customTools);
+        }
       }
     } catch (error) {
-      console.warn(
-        `[Tools] Failed to load custom tools from @vibex/tools:`,
-        error
-      );
+      // Silently ignore - @vibex/tools is optional
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          `[Tools] Failed to load custom tools from @vibex/tools:`,
+          error
+        );
+      }
     }
   }
 

@@ -266,3 +266,81 @@ export function createUserMessage(text: string): CreateXMessage {
 export function isStatusLoading(status: XChatStatus): boolean {
   return status === "streaming" || status === "submitted";
 }
+
+/**
+ * Convert XChatMessage (client-side) to XMessage (server-side)
+ * This is used in API routes to convert client messages to server format
+ * Returns the XMessage type used by the vibex package (content is required)
+ */
+export function xChatMessageToXMessage(msg: XChatMessage): {
+  id?: string;
+  role: "system" | "user" | "assistant" | "function" | "data" | "tool";
+  content: any;
+  metadata?: {
+    agentName?: string;
+    timestamp?: number;
+    [key: string]: any;
+  };
+} {
+  // Convert XChatMessage (client-side) to XMessage (server-side)
+  // Use the vibex package's XMessage format (content is required, not optional)
+  // If parts exist, convert them to content array format
+  let content: any = msg.content || "";
+
+  // If parts exist, convert to content array format for vibex compatibility
+  if (msg.parts && msg.parts.length > 0) {
+    content = msg.parts.map((part) => {
+      if (part.type === "text") {
+        return { type: "text", text: part.text };
+      } else if (part.type === "tool-call") {
+        return {
+          type: "tool-call",
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          args: part.args || {},
+        };
+      } else if (part.type === "tool-result") {
+        return {
+          type: "tool-result",
+          toolCallId: part.toolCallId,
+          toolName: part.toolName,
+          result: part.result,
+        };
+      } else if (part.type === "artifact") {
+        return {
+          type: "artifact",
+          artifactId: part.artifactId,
+          title: part.title,
+          version: part.version,
+        };
+      } else if (part.type === "reasoning") {
+        return {
+          type: "reasoning",
+          text: part.text,
+        };
+      }
+      return { type: "text", text: "" };
+    });
+  }
+
+  const xMessage = {
+    id: msg.id,
+    role: msg.role as
+      | "system"
+      | "user"
+      | "assistant"
+      | "function"
+      | "data"
+      | "tool",
+    content, // Always present
+    metadata: {
+      ...msg.metadata,
+      // Add timestamp if createdAt is available
+      ...(msg.createdAt && { timestamp: msg.createdAt.getTime() }),
+      // Add agentName if available
+      ...(msg.agentName && { agentName: msg.agentName }),
+    },
+  };
+
+  return xMessage;
+}
