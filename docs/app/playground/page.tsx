@@ -119,9 +119,6 @@ export default function PlaygroundPage() {
             <CardHeader className="py-2.5 px-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-500/20">
-                    <Sparkles className="w-4 h-4 shrink-0 text-white" />
-                  </div>
                   <div>
                     <CardTitle className="text-sm font-semibold">
                       X Playground
@@ -138,52 +135,47 @@ export default function PlaygroundPage() {
                     }
                     variant="outline"
                     size="sm"
-                    className="bg-muted/50 rounded-lg p-0.5 border-0"
+                    className="rounded-lg p-0.5 border-0"
                   >
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <ToggleGroupItem
-                          value="ask"
-                          className="h-7 px-2.5 text-xs border-0 text-muted-foreground hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:font-semibold transition-all"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 mr-1 shrink-0" />
-                          Ask
-                        </ToggleGroupItem>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs">
-                        Direct response, no multi-agent
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <ToggleGroupItem
-                          value="plan"
-                          className="h-7 px-2.5 text-xs border-0 text-muted-foreground hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:font-semibold transition-all"
-                        >
-                          <ListTodo className="w-3.5 h-3.5 mr-1 shrink-0" />
-                          Plan
-                        </ToggleGroupItem>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs">
-                        Create plan for approval first
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <ToggleGroupItem
-                          value="agent"
-                          className="h-7 px-2.5 text-xs border-0 text-muted-foreground hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:font-semibold transition-all"
-                        >
-                          <Zap className="w-3.5 h-3.5 mr-1 shrink-0" />
-                          Agent
-                        </ToggleGroupItem>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs">
-                        Auto-execute with multi-agent
-                      </TooltipContent>
-                    </Tooltip>
+                    {[
+                      {
+                        label: "Ask",
+                        value: "ask",
+                        icon: MessageSquare,
+                        description: "Direct response, no multi-agent",
+                      },
+                      {
+                        label: "Plan",
+                        value: "plan",
+                        icon: ListTodo,
+                        description: "Create plan for approval first",
+                      },
+                      {
+                        label: "Agent",
+                        value: "agent",
+                        icon: Zap,
+                        description: "Auto-execute with multi-agent",
+                      },
+                    ].map(({ label, value, icon: Icon, description }) => (
+                      <Tooltip key={value}>
+                        <TooltipTrigger asChild>
+                          <ToggleGroupItem
+                            value={value}
+                            className={`h-7 px-2 text-xs transition-all ${
+                              (value as ChatMode) === chatMode
+                                ? "bg-muted text-foreground border-border shadow-sm font-semibold"
+                                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                            }`}
+                          >
+                            <Icon className="w-3 h-3 shrink-0" />
+                            {label}
+                          </ToggleGroupItem>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs">
+                          {description}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
                   </ToggleGroup>
 
                   {/* Status badges */}
@@ -218,15 +210,15 @@ export default function PlaygroundPage() {
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
               {/* Messages */}
               {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center max-w-md px-8">
+                <div className="flex-1 flex items-start justify-center overflow-auto">
+                  <div className="text-center max-w-md px-8 pt-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-6"
                     >
                       <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-violet-500/20">
-                        <Users className="w-10 h-10 shrink-0 text-white" />
+                        <Sparkles className="w-10 h-10 shrink-0 text-white" />
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold text-foreground mb-2">

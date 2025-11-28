@@ -32,8 +32,7 @@ const navbar = (
 export const metadata = {
   metadataBase: new URL("https://vibex.supen.ai/"),
   title: {
-    default:
-      "VibeX – Space-Oriented Collaborative Workspace Platform for AI Agents",
+    default: "VibeX - Evolve with Dedicated Agentic Teams",
     template: "%s | VibeX",
   },
   description:

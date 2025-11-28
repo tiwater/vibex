@@ -88,7 +88,13 @@ export async function POST(req: Request) {
     // Convert UIMessages to XMessages format
     const xMessages = (messages as UIMessage[]).map(uiToXMessage);
 
-    console.log("[Chat API] Streaming with", xMessages.length, "messages", "mode:", chatMode);
+    console.log(
+      "[Chat API] Streaming with",
+      xMessages.length,
+      "messages",
+      "mode:",
+      chatMode
+    );
 
     // Stream the response
     const stream = await xAgent.streamText({

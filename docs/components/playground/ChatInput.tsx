@@ -74,7 +74,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="p-4 border-t bg-background">
+    <div className="p-3">
       <div className="relative">
         <Textarea
           ref={textareaRef}
@@ -82,7 +82,7 @@ export function ChatInput({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder="What would you like to do? (Press Enter to send)"
-          className="min-h-[60px] max-h-[200px] pr-14 resize-none"
+          className="min-h-[60px] max-h-[200px] pr-14 resize-none bg-background"
           rows={2}
         />
         <Button
