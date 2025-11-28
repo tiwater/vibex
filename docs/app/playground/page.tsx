@@ -35,7 +35,6 @@ import {
   ToolsList,
   ArtifactsList,
   CodeSandbox,
-  FeatureHighlights,
 } from "@/components/playground";
 
 export default function PlaygroundPage() {
@@ -260,28 +259,37 @@ export default function PlaygroundPage() {
                 onValueChange={setActiveTab}
                 className="flex flex-col h-full"
               >
-                <div className="border-b px-4 flex items-center justify-between">
-                  <TabsList className="h-12 bg-transparent">
-                    <TabsTrigger value="chat" className="gap-2">
+                <div className="border-b px-4 py-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <TabsList className="!flex flex-1 flex-wrap gap-2 bg-transparent p-0 min-h-[3rem] w-full lg:w-auto">
+                    <TabsTrigger
+                      value="chat"
+                      className="gap-2 flex-1 min-w-[140px] sm:min-w-0 sm:flex-initial"
+                    >
                       <MessageSquare className="w-4 h-4 shrink-0" />
                       Chat
                     </TabsTrigger>
-                    <TabsTrigger value="code" className="gap-2">
+                    <TabsTrigger
+                      value="code"
+                      className="gap-2 flex-1 min-w-[140px] sm:min-w-0 sm:flex-initial"
+                    >
                       <Terminal className="w-4 h-4 shrink-0" />
                       Code
                     </TabsTrigger>
-                    <TabsTrigger value="artifacts" className="gap-2">
+                    <TabsTrigger
+                      value="artifacts"
+                      className="gap-2 flex-1 min-w-[140px] sm:min-w-0 sm:flex-initial"
+                    >
                       <FileText className="w-4 h-4 shrink-0" />
                       Artifacts
                     </TabsTrigger>
                   </TabsList>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     <Select
                       value={selectedAgent}
                       onValueChange={setSelectedAgent}
                     >
-                      <SelectTrigger className="w-[160px] h-8 text-sm">
+                      <SelectTrigger className="w-full sm:w-[160px] h-8 text-sm">
                         <SelectValue placeholder="Select agent" />
                       </SelectTrigger>
                       <SelectContent>
@@ -297,8 +305,11 @@ export default function PlaygroundPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Separator orientation="vertical" className="h-5" />
-                    <div className="flex items-center gap-2">
+                    <Separator
+                      orientation="vertical"
+                      className="h-6 hidden sm:block"
+                    />
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                       <Switch
                         checked={streamingEnabled}
                         onCheckedChange={setStreamingEnabled}
@@ -361,10 +372,6 @@ export default function PlaygroundPage() {
           </div>
         </div>
 
-        {/* Feature Highlights */}
-        <div className="max-w-[1800px] mx-auto px-4 pb-8">
-          <FeatureHighlights />
-        </div>
       </div>
     </TooltipProvider>
   );
