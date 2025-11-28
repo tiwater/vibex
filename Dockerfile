@@ -1,0 +1,51 @@
+# Dockerfile for Railway deployment
+FROM node:20-alpine AS base
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY packages/core/package.json ./packages/core/
+COPY packages/local/package.json ./packages/local/
+COPY packages/react/package.json ./packages/react/
+COPY packages/vibex/package.json ./packages/vibex/
+COPY packages/tools/package.json ./packages/tools/
+COPY packages/defaults/package.json ./packages/defaults/
+COPY packages/supabase/package.json ./packages/supabase/
+COPY docs/package.json ./docs/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source files
+COPY . .
+
+# Build
+RUN pnpm turbo run build --filter=@vibex/docs
+
+# Production stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# Copy built application
+COPY --from=base /app/docs/.next ./docs/.next
+COPY --from=base /app/docs/public ./docs/public
+COPY --from=base /app/docs/package.json ./docs/
+COPY --from=base /app/docs/node_modules ./docs/node_modules
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/package.json ./
+
+WORKDIR /app/docs
+
+EXPOSE 3000
+ENV PORT=3000
+ENV NODE_ENV=production
+
+CMD ["pnpm", "start"]
+
