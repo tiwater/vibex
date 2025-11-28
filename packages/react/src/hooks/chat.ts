@@ -151,7 +151,7 @@ export function useXChat({
   const uiInitialMessages = useMemo(() => {
     if (!initialMessages) return undefined;
     return initialMessages.map(xToUiMessage);
-  }, []);
+  }, [initialMessages]);
 
   // Create transport with custom body for spaceId, agentId, metadata
   const transport = useMemo(() => {

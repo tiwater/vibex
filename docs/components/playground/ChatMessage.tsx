@@ -98,28 +98,56 @@ function ToolStatusBadge({ status }: { status?: string }) {
 }
 
 // Render a single message part
-function MessagePart({ part }: { part: XChatPart }) {
+function MessagePart({ part, isUser }: { part: XChatPart; isUser?: boolean }) {
   switch (part.type) {
     case "text":
       if (!part.text) return null;
-      return <Markdown>{part.text}</Markdown>;
+      return (
+        <div
+          className={
+            isUser ? "text-primary-foreground **:text-primary-foreground" : ""
+          }
+        >
+          <Markdown>{part.text}</Markdown>
+        </div>
+      );
 
     case "tool-call":
       return (
-        <div className="my-2 p-3 bg-muted/50 rounded-lg border border-border">
+        <div
+          className={`my-2 p-3 rounded-lg border ${
+            isUser
+              ? "bg-primary-foreground/10 border-primary-foreground/20"
+              : "bg-muted/50 border-border"
+          }`}
+        >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 shrink-0 text-violet-500" />
-              <span className="font-medium text-sm">{part.toolName}</span>
+              <Wrench
+                className={`w-4 h-4 shrink-0 ${isUser ? "text-primary-foreground" : "text-violet-500"}`}
+              />
+              <span
+                className={`font-medium text-sm ${isUser ? "text-primary-foreground" : ""}`}
+              >
+                {part.toolName}
+              </span>
             </div>
             <ToolStatusBadge status={part.status} />
           </div>
           {part.args && Object.keys(part.args).length > 0 && (
             <details className="text-xs">
-              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+              <summary
+                className={`cursor-pointer ${isUser ? "text-primary-foreground/80 hover:text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
                 View arguments
               </summary>
-              <pre className="mt-2 p-2 bg-background rounded text-xs overflow-x-auto">
+              <pre
+                className={`mt-2 p-2 rounded text-xs overflow-x-auto ${
+                  isUser
+                    ? "bg-primary-foreground/5 text-primary-foreground"
+                    : "bg-background"
+                }`}
+              >
                 {JSON.stringify(part.args, null, 2)}
               </pre>
             </details>
@@ -215,12 +243,22 @@ export function ChatMessage({ message }: ChatMessageProps) {
           {/* Render parts if available, otherwise render content */}
           {hasParts ? (
             message.parts!.map((part, idx) => (
-              <MessagePart key={idx} part={part} />
+              <MessagePart key={idx} part={part} isUser={isUser} />
             ))
           ) : displayText ? (
-            <Markdown>{displayText}</Markdown>
+            <div
+              className={
+                isUser
+                  ? "text-primary-foreground [&_*]:text-primary-foreground"
+                  : ""
+              }
+            >
+              <Markdown>{displayText}</Markdown>
+            </div>
           ) : (
-            <span className="text-sm text-muted-foreground italic">
+            <span
+              className={`text-sm ${isUser ? "text-primary-foreground" : "text-muted-foreground"} italic`}
+            >
               Generating response...
             </span>
           )}

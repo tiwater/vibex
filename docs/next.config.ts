@@ -23,9 +23,10 @@ export default withNextra({
   },
   webpack(config, { isServer }) {
     // rule.exclude doesn't work starting from Next.js 15
-    const { test: _test, ...imageLoaderOptions } = config.module.rules.find(
-      (rule) => rule.test?.test?.(".svg")
+    const imageRule = config.module.rules.find((rule) =>
+      rule.test?.test?.(".svg")
     );
+    const { test: _test, ...imageLoaderOptions } = imageRule || {};
     config.module.rules.push({
       test: /\.svg$/,
       oneOf: [
