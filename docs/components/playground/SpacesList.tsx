@@ -23,8 +23,8 @@ export function SpacesList({
   onCreateSpace,
 }: SpacesListProps) {
   return (
-    <Card className="flex-1 max-h-[45vh]">
-      <CardHeader className="pb-3">
+    <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <CardHeader className="pb-3 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
             <FolderOpen className="w-4 h-4 shrink-0" />
@@ -40,22 +40,22 @@ export function SpacesList({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[180px] px-4 pb-4">
+      <CardContent className="flex-1 min-h-0 p-0">
+        <ScrollArea className="h-full px-4 pb-4">
           <div className="space-y-2">
             {spaces.map((space) => (
               <motion.div
                 key={space.id}
                 whileHover={{ scale: 1.02 }}
-                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`p-3 rounded-lg cursor-pointer transition-colors overflow-hidden ${
                   currentSpace?.id === space.id
-                    ? "bg-violet-100 dark:bg-violet-900/30 border border-violet-300 dark:border-violet-700"
-                    : "bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    ? "bg-violet-500/10 border border-violet-500/30"
+                    : "bg-muted/50 hover:bg-muted"
                 }`}
                 onClick={() => onSelectSpace(space)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0 overflow-hidden">
                     <h4 className="font-medium text-sm truncate">{space.name}</h4>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
                       {space.goal}
@@ -63,7 +63,7 @@ export function SpacesList({
                   </div>
                   <Badge
                     variant={space.status === "active" ? "default" : "secondary"}
-                    className="text-[10px] px-1.5 py-0 ml-2"
+                    className="text-[10px] px-1.5 py-0 shrink-0"
                   >
                     {space.status}
                   </Badge>

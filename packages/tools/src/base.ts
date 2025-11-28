@@ -3,7 +3,7 @@
  * Provides decorator-based tool extraction for multi-tool providers
  */
 
-import { z } from 'zod/v3';
+import { z } from "zod/v3";
 import * as path from "path";
 import { promises as fs } from "fs";
 import "reflect-metadata";
@@ -155,7 +155,7 @@ export interface ToolMetadata {
  * Base class for tools - a single class can provide multiple related tool methods
  *
  * Provides standardized space-aware file operations that automatically handle
- * Vibex space storage structure (.vibex/{spaceId}/artifacts/).
+ * VibeX space storage structure (.vibex/{spaceId}/artifacts/).
  *
  * Example usage in a custom tool:
  * ```typescript
@@ -287,9 +287,7 @@ export abstract class Tool {
    */
   protected async getSpacePathAsync(subPath: string = ""): Promise<string> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
     // Use the vibex path utilities
     const { getVibexPath } = await import("./utils/paths");
@@ -303,9 +301,7 @@ export abstract class Tool {
 
   protected getSpacePath(subPath: string = ""): string {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
     // Use the root path from vibex path utilities
     const rootPath = Tool.getRootPath();
@@ -360,9 +356,7 @@ export abstract class Tool {
     encoding: BufferEncoding = "utf8"
   ): Promise<string> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     const storage = await this.getStorage();
@@ -386,9 +380,7 @@ export abstract class Tool {
     encoding: BufferEncoding = "utf8"
   ): Promise<void> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     const storage = await this.getStorage();
@@ -408,9 +400,7 @@ export abstract class Tool {
    */
   protected async artifactFileExists(filename: string): Promise<boolean> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
     try {
       const storage = await this.getStorage();
@@ -430,9 +420,7 @@ export abstract class Tool {
    */
   protected async getArtifactFileStats(filePath: string) {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     // For local storage, we can still use fs.stat on the resolved path
@@ -450,9 +438,7 @@ export abstract class Tool {
     recursive: boolean = false
   ): Promise<string[]> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     const storage = await this.getStorage();
@@ -461,7 +447,9 @@ export abstract class Tool {
     const normalizedPath = dirPath.startsWith("artifacts/")
       ? dirPath.substring(10)
       : dirPath;
-    const searchPath = normalizedPath ? `artifacts/${normalizedPath}` : "artifacts";
+    const searchPath = normalizedPath
+      ? `artifacts/${normalizedPath}`
+      : "artifacts";
 
     // Get list of files from storage
     const allFiles = await storage.list(searchPath);
@@ -479,9 +467,7 @@ export abstract class Tool {
    */
   protected async deleteArtifactFile(filePath: string): Promise<void> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     const storage = await this.getStorage();
@@ -503,9 +489,7 @@ export abstract class Tool {
     destPath: string
   ): Promise<void> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     const storage = await this.getStorage();
@@ -534,9 +518,7 @@ export abstract class Tool {
     destPath: string
   ): Promise<void> {
     if (!this.spaceId) {
-      throw new Error(
-        "Space ID not set. This tool requires space context."
-      );
+      throw new Error("Space ID not set. This tool requires space context.");
     }
 
     const storage = await this.getStorage();
@@ -613,7 +595,10 @@ export abstract class Tool {
     return Object.entries(tools).map(([name, tool]) => ({
       name,
       description: tool.description,
-      inputSchema: (tool.inputSchema as { _def?: unknown })?._def || tool.inputSchema || {},
+      inputSchema:
+        (tool.inputSchema as { _def?: unknown })?._def ||
+        tool.inputSchema ||
+        {},
     }));
   }
 }

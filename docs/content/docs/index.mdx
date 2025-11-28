@@ -1,28 +1,62 @@
 # Documentation
 
-Welcome to the VibeX documentation. VibeX is an open-source framework for building, observing, and orchestrating autonomous multi-agent systems.
+Welcome to the VibeX documentation. VibeX is a **Space-oriented Collaborative Workspace Platform** for building persistent, evolving AI agent systems with TypeScript.
 
 ## Quick Links
 
-- [Getting Started](/docs/getting-started) - Start building with VibeX
-- [Tutorials](/docs/tutorials) - Step-by-step guides
-- [System Design](/docs/design) - Architecture and design principles
-- [Configuration Reference](/docs/reference/configuration) - Detailed configuration options
-- [REST API](/api) - Interactive API documentation
+- [Getting Started](/docs/getting-started) — Create your first Space with XAgent
+- [Tutorials](/docs/tutorials) — Step-by-step guides for common workflows
+- [System Design](/docs/design) — Architecture and design principles
+- [SDK Reference](/sdk) — Complete TypeScript API documentation
+- [Glossary](/docs/glossary) — Key terminology and concepts
 
 ## Overview
 
 VibeX provides a comprehensive framework for creating intelligent agent systems with:
 
-- **Multi-Agent Orchestration** - Coordinate multiple AI agents working together
-- **Tool Integration** - Built-in tools and easy custom tool creation
-- **Memory Systems** - Advanced memory management for context retention
-- **Event-Driven Architecture** - Reactive system design with event buses
-- **Storage Solutions** - Multiple storage backends for persistence
-- **Security & Isolation** - Secure execution environments
+- 🏠 **Persistent Spaces** — Your work survives across sessions with full context preservation
+- 📄 **Artifact Evolution** — Documents and files improve over time with automatic version history
+- 🤖 **Multi-Agent Orchestration** — XAgent coordinates specialist agents (Writer, Researcher, Developer, etc.)
+- 🔧 **Rich Tool Library** — Web browsing, file I/O, search operations, and more out of the box
+- 💾 **Storage Agnostic** — Seamlessly switch between local (SQLite/Filesystem) and cloud (Supabase/PostgreSQL)
+- ⚛️ **React Integration** — First-class React hooks and components for building UIs
+- 🔄 **Session Continuity** — Resume any workspace at any time with full context
+
+## Core Philosophy
+
+Unlike traditional task-oriented frameworks that simply execute and terminate, VibeX provides **persistent workspaces** where artifacts evolve through continuous user-agent collaboration.
+
+```typescript
+// Day 1: Start a document
+const xAgent = await XAgent.start("Write my thesis");
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Write the introduction" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+await space.persistState();
+
+// Day 2: Continue refining
+const xAgent = await XAgent.resume(spaceId);
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Make it more concise" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+```
+
+## Packages
+
+| Package | Description |
+| ------- | ----------- |
+| [`vibex`](https://npm.im/vibex) | Core runtime engine — manages Spaces, XAgents, and artifact evolution |
+| [`@vibex/core`](https://npm.im/@vibex/core) | Shared types, interfaces, and utilities |
+| [`@vibex/react`](https://npm.im/@vibex/react) | React hooks and components (`useSpace`, `useChat`, `useArtifact`) |
+| [`@vibex/tools`](https://npm.im/@vibex/tools) | Standard tool library (web browsing, file I/O, search) |
+| [`@vibex/supabase`](https://npm.im/@vibex/supabase) | Cloud backend adapter for Supabase |
+| [`@vibex/defaults`](https://npm.im/@vibex/defaults) | Default agent configurations and prompt templates |
 
 ## Getting Help
 
 - Browse the documentation sections on the left
-- Check out our [GitHub repository](https://github.com/dustland/vibex)
-- View the [API Reference](/api) for detailed endpoint documentation
+- Check out our [GitHub repository](https://github.com/tiwater/vibex)
+- Explore [example projects](https://github.com/tiwater/vibex/tree/main/examples)
+- View the [SDK Reference](/sdk) for detailed API documentation

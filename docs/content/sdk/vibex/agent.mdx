@@ -1,0 +1,186 @@
+# agent
+
+*Module: [`vibex/agent`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts)*
+
+Agent - Config-driven agent implementation
+
+Agents are defined entirely by configuration, not code.
+Each agent is instantiated from a config object that defines
+its role, tools, and LLM settings.
+
+## Classes
+
+### Agent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L37" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Config-driven Agent implementation
+No subclasses needed - behavior is entirely config-driven
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `description` | `string` |  |
+| `config` | `AgentConfig` |  |
+| `provider` | `string` |  |
+| `model` | `string` |  |
+| `temperature` | `number` |  |
+| `maxOutputTokens` | `number` |  |
+| `topP` | `number` |  |
+| `frequencyPenalty` | `number` |  |
+| `presencePenalty` | `number` |  |
+| `systemPrompt` | `string` |  |
+| `tools` | `string[]` |  |
+| `personality` | `string` |  |
+
+**Methods:**
+
+#### getModel
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L247" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get the model provider for this agent
+
+```typescript
+function getModel(context?: {
+    spaceId?: string;
+    userId?: string;
+  }): LanguageModel
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `context` | `\{ spaceId?: string; userId?: string; \}` (optional) |  |
+
+---
+
+#### prepareDebugInfo
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L293" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Prepare debug info without actually calling streamText
+Returns all the parameters that would be sent to the LLM
+
+```typescript
+function prepareDebugInfo(options: {
+    messages: XMessage[];
+    system?: string;
+    spaceId?: string;
+    metadata?: Record<string, any>;
+  }): Promise<{
+    systemPrompt: string;
+    tools: any;
+    model: any;
+    agentInfo: any;
+    messages: any[];
+  }>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `object` |  |
+
+---
+
+#### streamText
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L379" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Stream text - works with XMessage[] internally
+Converts to ModelMessage[] only when calling AI SDK
+
+```typescript
+function streamText(options: {
+    messages: XMessage[];
+    system?: string;
+    spaceId?: string;
+    metadata?: Record<string, any>;
+    [key: string]: any; // Allow all other AI SDK options to pass through
+  }): Promise<any>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `object` |  |
+
+---
+
+#### generateText
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L525" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Generate text - works with XMessage[] internally
+Converts to ModelMessage[] only when calling AI SDK
+
+```typescript
+function generateText(options: {
+    messages: XMessage[];
+    system?: string;
+    spaceId?: string;
+    metadata?: Record<string, any>;
+    [key: string]: any;
+  }): Promise<any>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `object` |  |
+
+---
+
+#### getSummary
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L600" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get agent summary
+
+```typescript
+function getSummary(): Record<string, any>
+```
+
+---
+
+---
+
+## Interfaces
+
+### AgentContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L19" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `taskId` | `string` |   (optional) |
+| `conversationHistory` | `ConversationHistory` |  |
+| `metadata` | `Record<string, any>` |   (optional) |
+
+---
+
+### AgentResponse
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/agent.ts#L26" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `text` | `string` |  |
+| `toolCalls` | `any[]` |   (optional) |
+| `reasoningText` | `string` |   (optional) |
+| `metadata` | `Record<string, any>` |   (optional) |
+
+---

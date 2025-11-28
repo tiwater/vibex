@@ -1,18 +1,18 @@
 /**
- * Message types for Vibex - Using AI SDK v5 types directly
+ * Message types for VibeX - Using AI SDK v5 types directly
  */
 
 // Define message type compatible with AI SDK
 export type ModelMessage = {
-  role: 'system' | 'user' | 'assistant' | 'function' | 'data' | 'tool';
+  role: "system" | "user" | "assistant" | "function" | "data" | "tool";
   content: string | any[];
 };
 
 // Extend ModelMessage to include our metadata
-export interface VibexMessage {
-  role: 'system' | 'user' | 'assistant' | 'function' | 'data' | 'tool';
+export interface XMessage {
+  role: "system" | "user" | "assistant" | "function" | "data" | "tool";
   content: any;
-  id?: string;  // Message ID (includes agent prefix for tracking)
+  id?: string; // Message ID (includes agent prefix for tracking)
   metadata?: {
     agentName?: string;
     timestamp?: number;
@@ -20,29 +20,29 @@ export interface VibexMessage {
   };
 }
 
-// Use VibexMessage as our Message type
-export type Message = VibexMessage;
+// Use XMessage as our Message type
+export type Message = XMessage;
 
 /**
  * Get text content from a message
  */
 export function getTextContent(message: Message): string {
   if (!message || !message.content) {
-    return '';
+    return "";
   }
-  
-  if (typeof message.content === 'string') {
+
+  if (typeof message.content === "string") {
     return message.content;
   }
-  
+
   if (Array.isArray(message.content)) {
     return message.content
-      .filter((part: any) => part && part.type === 'text')
-      .map((part: any) => part.text || '')
-      .join(' ');
+      .filter((part: any) => part && part.type === "text")
+      .map((part: any) => part.text || "")
+      .join(" ");
   }
-  
-  return '';
+
+  return "";
 }
 
 /**
@@ -51,7 +51,7 @@ export function getTextContent(message: Message): string {
 export interface QueuedMessage {
   id: string;
   content: string;
-  status: 'queued' | 'processing' | 'completed' | 'error';
+  status: "queued" | "processing" | "completed" | "error";
   timestamp: number;
   edited?: boolean;
   error?: string;
@@ -89,11 +89,11 @@ export class MessageQueue {
     const message: QueuedMessage = {
       id: `msg-${this.nextId++}`,
       content,
-      status: 'queued',
+      status: "queued",
       timestamp: Date.now(),
       metadata,
     };
-    
+
     this.queue.push(message);
     this.notify();
     return message.id;
@@ -105,7 +105,7 @@ export class MessageQueue {
   next(): QueuedMessage | undefined {
     const message = this.queue.shift();
     if (message) {
-      message.status = 'processing';
+      message.status = "processing";
       this.current = message;
       this.processing = true;
       this.notify();
@@ -118,7 +118,7 @@ export class MessageQueue {
    */
   complete(messageId: string) {
     if (this.current?.id === messageId) {
-      this.current.status = 'completed';
+      this.current.status = "completed";
       this.current = undefined;
       this.processing = false;
       this.notify();
@@ -130,7 +130,7 @@ export class MessageQueue {
    */
   error(messageId: string, error: string) {
     if (this.current?.id === messageId) {
-      this.current.status = 'error';
+      this.current.status = "error";
       this.current.error = error;
       this.current = undefined;
       this.processing = false;
@@ -142,7 +142,7 @@ export class MessageQueue {
    * Remove message from queue
    */
   remove(messageId: string): boolean {
-    const index = this.queue.findIndex(m => m.id === messageId);
+    const index = this.queue.findIndex((m) => m.id === messageId);
     if (index > -1) {
       this.queue.splice(index, 1);
       this.notify();
@@ -155,7 +155,7 @@ export class MessageQueue {
    * Reorder queue
    */
   reorder(messageId: string, newIndex: number) {
-    const currentIndex = this.queue.findIndex(m => m.id === messageId);
+    const currentIndex = this.queue.findIndex((m) => m.id === messageId);
     if (currentIndex > -1 && newIndex >= 0 && newIndex < this.queue.length) {
       const [message] = this.queue.splice(currentIndex, 1);
       this.queue.splice(newIndex, 0, message);
@@ -167,8 +167,8 @@ export class MessageQueue {
    * Edit queued message
    */
   edit(messageId: string, content: string) {
-    const message = this.queue.find(m => m.id === messageId);
-    if (message && message.status === 'queued') {
+    const message = this.queue.find((m) => m.id === messageId);
+    if (message && message.status === "queued") {
       message.content = content;
       message.edited = true;
       this.notify();
@@ -221,7 +221,7 @@ export class MessageQueue {
    */
   private notify() {
     const state = this.getState();
-    this.listeners.forEach(listener => listener(state));
+    this.listeners.forEach((listener) => listener(state));
   }
 }
 
@@ -234,8 +234,8 @@ export class ConversationHistory {
   add(message: Message): void {
     // Ensure message has an ID
     if (!message.id) {
-      const agentName = message.metadata?.agentName || 'unknown';
-      const prefix = agentName.toLowerCase().replace(/\s+/g, '-');
+      const agentName = message.metadata?.agentName || "unknown";
+      const prefix = agentName.toLowerCase().replace(/\s+/g, "-");
       const randomId = Math.random().toString(36).substring(2, 10);
       message.id = `${prefix}_${randomId}`;
     }
@@ -257,40 +257,42 @@ export class ConversationHistory {
   toModelMessages(): ModelMessage[] {
     // Convert to AI SDK format, cleaning content appropriately
     return this.messages
-      .map(msg => {
+      .map((msg) => {
         // Skip tool messages - they can't be passed without their parent tool_calls
-        if (msg.role === 'tool') {
+        if (msg.role === "tool") {
           return null;
         }
-        
+
         // Clean content to be AI SDK compatible
         let cleanContent: any = msg.content;
-        
+
         // If content is an array, extract only text parts
         if (Array.isArray(msg.content)) {
-          const textParts = msg.content.filter((part: any) => part.type === 'text');
+          const textParts = msg.content.filter(
+            (part: any) => part.type === "text"
+          );
           if (textParts.length > 0) {
             // Join all text parts into a single string
             cleanContent = textParts
-              .map((part: any) => part.text || '')
+              .map((part: any) => part.text || "")
               .filter((text: string) => text)
-              .join('\n');
+              .join("\n");
           } else {
             // No text content, skip this message
             return null;
           }
         }
-        
+
         // Skip messages with no content
         if (!cleanContent) {
           return null;
         }
-        
+
         return {
           role: msg.role,
           content: cleanContent,
         };
       })
-      .filter(msg => msg !== null) as ModelMessage[];
+      .filter((msg) => msg !== null) as ModelMessage[];
   }
 }

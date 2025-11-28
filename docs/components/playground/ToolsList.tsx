@@ -17,14 +17,14 @@ interface ToolsListProps {
 
 export function ToolsList({ tools }: ToolsListProps) {
   return (
-    <Card className="flex-1 max-h-[45vh]">
-      <CardHeader className="pb-3">
+    <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <CardHeader className="pb-3 shrink-0">
         <CardTitle className="text-sm flex items-center gap-2">
           <Wrench className="w-4 h-4 shrink-0" />
           Tools
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 px-4 pb-4">
+      <CardContent className="flex-1 min-h-0 p-0 overflow-auto px-4 pb-4">
         <Accordion type="single" collapsible>
           {TOOL_CATEGORIES.map((category) => (
             <AccordionItem key={category} value={category} className="border-b-0">
@@ -38,7 +38,7 @@ export function ToolsList({ tools }: ToolsListProps) {
                     .map((tool) => (
                       <div
                         key={tool.name}
-                        className="p-2 rounded-md bg-slate-50 dark:bg-slate-800/50 text-xs"
+                        className="p-2 rounded-md bg-muted/50 text-xs"
                       >
                         <code className="text-violet-600 dark:text-violet-400">
                           {tool.name}

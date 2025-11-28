@@ -1,0 +1,323 @@
+# plan
+
+*Module: [`vibex/plan`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts)*
+
+Plan - Strategy for achieving a Mission
+
+A Plan contains the breakdown of Tasks needed to complete a Mission.
+Plans can evolve as the Mission progresses - tasks can be added,
+removed, or reordered based on user feedback and agent discoveries.
+
+Hierarchy:
+  Space (persistent container)
+    └── Mission (user's intent)
+          └── Plan (strategy) ‹-- This file
+                └── Task[] (individual work items)
+
+## Classes
+
+### Plan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L33" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `goal` | `string` |  |
+| `tasks` | `Task[]` |  |
+| `metadata` | `Record<string, unknown>` |  |
+| `createdAt` | `Date` |  |
+| `updatedAt` | `Date` |  |
+
+**Methods:**
+
+#### addTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L51" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Add a task to the plan
+
+```typescript
+function addTask(task: Task): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `task` | `Task` |  |
+
+---
+
+#### createTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L59" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Create and add a new task
+
+```typescript
+function createTask(config: TaskConfig): Task
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `config` | `TaskConfig` |  |
+
+---
+
+#### removeTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L68" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Remove a task from the plan
+
+```typescript
+function removeTask(taskId: string): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+
+---
+
+#### getTaskById
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L81" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get task by ID
+
+```typescript
+function getTaskById(taskId: string): Task | undefined
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+
+---
+
+#### updateTaskStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L88" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Update a task's status
+
+```typescript
+function updateTaskStatus(taskId: string, status: TaskStatus): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `status` | `TaskStatus` |  |
+
+---
+
+#### getNextActionableTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L102" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get the next task that can be started
+
+```typescript
+function getNextActionableTask(): Task | undefined
+```
+
+---
+
+#### getAllActionableTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L109" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all tasks that can be started (for parallel execution)
+
+```typescript
+function getAllActionableTasks(maxTasks?: number): Task[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `maxTasks` | `number` (optional) |  |
+
+---
+
+#### getTasksByStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L117" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get tasks by status
+
+```typescript
+function getTasksByStatus(status: TaskStatus): Task[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `status` | `TaskStatus` |  |
+
+---
+
+#### getTasksByAssignee
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L124" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get tasks assigned to a specific agent
+
+```typescript
+function getTasksByAssignee(assignee: string): Task[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `assignee` | `string` |  |
+
+---
+
+#### isComplete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L131" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if all tasks are complete
+
+```typescript
+function isComplete(): boolean
+```
+
+---
+
+#### hasFailedTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L145" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if any tasks have failed
+
+```typescript
+function hasFailedTasks(): boolean
+```
+
+---
+
+#### hasBlockedTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L152" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if any tasks are blocked
+
+```typescript
+function hasBlockedTasks(): boolean
+```
+
+---
+
+#### getProgressSummary
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L159" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get a summary of plan progress
+
+```typescript
+function getProgressSummary(): PlanSummary
+```
+
+---
+
+#### reorderTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L202" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Reorder tasks in the plan
+
+```typescript
+function reorderTasks(fromIndex: number, toIndex: number): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `fromIndex` | `number` |  |
+| `toIndex` | `number` |  |
+
+---
+
+#### toJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L220" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Serialize to JSON
+
+```typescript
+function toJSON(): Record<string, unknown>
+```
+
+---
+
+#### fromJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L234" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Deserialize from JSON
+
+```typescript
+function fromJSON(data: Record<string, unknown>): Plan
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `data` | `Record<string, unknown>` |  |
+
+---
+
+---
+
+## Interfaces
+
+### PlanSummary
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L17" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `totalTasks` | `number` |  |
+| `completedTasks` | `number` |  |
+| `runningTasks` | `number` |  |
+| `pendingTasks` | `number` |  |
+| `failedTasks` | `number` |  |
+| `blockedTasks` | `number` |  |
+| `progressPercentage` | `number` |  |
+
+---
+
+### PlanConfig
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/plan.ts#L27" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `goal` | `string` |  |
+| `tasks` | `Task[]` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+
+---

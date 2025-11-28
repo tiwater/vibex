@@ -1,7 +1,7 @@
 /**
  * Research Assistant Example
  *
- * Demonstrates Vibex's knowledge accumulation capabilities.
+ * Demonstrates VibeX's knowledge accumulation capabilities.
  * Unlike one-shot research tools, this assistant builds a persistent
  * knowledge base that grows across sessions.
  *
@@ -27,7 +27,7 @@ function prompt(question: string): Promise<string> {
 }
 
 async function main() {
-  console.log("\n🔬 Research Assistant - Vibex Demo");
+  console.log("\n🔬 Research Assistant - VibeX Demo");
   console.log("━".repeat(50));
   console.log("Build a persistent knowledge base across sessions.");
   console.log("Your research accumulates and synthesizes over time.\n");

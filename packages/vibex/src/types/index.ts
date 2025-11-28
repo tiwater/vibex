@@ -1,7 +1,7 @@
 /**
- * Types for Vibex
+ * Types for X
  *
- * Re-exports from @vibex/core plus any vibex-specific types
+ * Re-exports from @vibex/core plus any X-specific types
  */
 
 // Re-export types from @vibex/core
@@ -17,15 +17,15 @@ export type {
 
   // Message types
   ModelMessage,
-  VibexMessage,
+  XMessage,
   Message,
 
   // Common types
-  VibexError,
+  XError,
   StreamChunk,
   ModelConfig,
   StorageConfig,
-  VibexConfig,
+  XConfig,
 
   // Data types
   SpaceType,

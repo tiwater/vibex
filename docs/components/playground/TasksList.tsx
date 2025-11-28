@@ -13,23 +13,23 @@ interface TasksListProps {
 
 export function TasksList({ tasks }: TasksListProps) {
   return (
-    <Card className="flex-1 max-h-[45vh]">
-      <CardHeader className="pb-3">
+    <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <CardHeader className="pb-3 shrink-0">
         <CardTitle className="text-sm flex items-center gap-2">
           <Layers className="w-4 h-4 shrink-0" />
           Active Tasks
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className="h-[180px] px-4 pb-4">
+      <CardContent className="flex-1 min-h-0 p-0">
+        <ScrollArea className="h-full px-4 pb-4">
           <div className="space-y-2">
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50"
+                className="p-3 rounded-lg bg-muted/50 overflow-hidden"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{task.title}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate flex-1 min-w-0">{task.title}</span>
                   <Badge
                     variant={
                       task.status === "completed"
@@ -38,7 +38,7 @@ export function TasksList({ tasks }: TasksListProps) {
                           ? "secondary"
                           : "outline"
                     }
-                    className={`text-[10px] ${
+                    className={`text-[10px] shrink-0 ${
                       task.status === "completed"
                         ? "bg-emerald-500"
                         : task.status === "running"
@@ -55,7 +55,7 @@ export function TasksList({ tasks }: TasksListProps) {
                   </p>
                 )}
                 {task.progress !== undefined && (
-                  <div className="mt-2 h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${task.progress}%` }}

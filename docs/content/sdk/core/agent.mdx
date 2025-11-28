@@ -1,0 +1,83 @@
+# agent
+
+_Module: [`@vibex/core/agent`](https://github.com/tiwater/vibex/blob/main/packages/core/src/types/agent.ts)_
+
+Agent Types - Shared interfaces for agents
+
+## Interfaces
+
+### AgentConfig
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/agent.ts#L8"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Agent Types - Shared interfaces for agents
+
+**Properties:**
+
+| Name               | Type       | Description |
+| ------------------ | ---------- | ----------- |
+| `id`               | `string`   | (optional)  |
+| `name`             | `string`   |             |
+| `description`      | `string`   |             |
+| `provider`         | `string`   | (optional)  |
+| `model`            | `string`   | (optional)  |
+| `llm`              | `object`   | (optional)  |
+| `systemPrompt`     | `string`   | (optional)  |
+| `tools`            | `string[]` | (optional)  |
+| `personality`      | `string`   | (optional)  |
+| `temperature`      | `number`   | (optional)  |
+| `maxOutputTokens`  | `number`   | (optional)  |
+| `topP`             | `number`   | (optional)  |
+| `frequencyPenalty` | `number`   | (optional)  |
+| `presencePenalty`  | `number`   | (optional)  |
+| `promptFile`       | `string`   | (optional)  |
+
+---
+
+### AgentContext
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/agent.ts#L40"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Agent context - runtime context passed to agents
+
+**Properties:**
+
+| Name       | Type                      | Description |
+| ---------- | ------------------------- | ----------- |
+| `spaceId`  | `string`                  |             |
+| `taskId`   | `string`                  | (optional)  |
+| `metadata` | `Record<string, unknown>` | (optional)  |
+
+---
+
+### AgentResponse
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/agent.ts#L49"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Agent response - what an agent returns after processing
+
+**Properties:**
+
+| Name            | Type                      | Description |
+| --------------- | ------------------------- | ----------- |
+| `text`          | `string`                  |             |
+| `toolCalls`     | `unknown[]`               | (optional)  |
+| `reasoningText` | `string`                  | (optional)  |
+| `metadata`      | `Record<string, unknown>` | (optional)  |
+
+---

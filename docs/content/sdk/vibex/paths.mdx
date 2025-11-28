@@ -1,0 +1,56 @@
+# paths
+
+*Module: [`vibex/paths`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/paths.ts)*
+
+Centralized VibeX path resolution utility
+
+Handles the difference between local development and Railway deployment:
+- Local: ~/.vibex (os.homedir() + '.vibex')
+- Railway: /vibex (VIBEX_STORAGE_PATH environment variable)
+
+## Functions
+
+### getVibexRoot
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/paths.ts#L16" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get the root VibeX directory path
+Respects VIBEX_STORAGE_PATH environment variable for Railway deployment
+
+```typescript
+function getVibexRoot(): string
+```
+
+---
+
+### getVibexPath
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/paths.ts#L24" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get a path within the VibeX directory structure
+
+```typescript
+function getVibexPath(subPaths: string[]): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `subPaths` | `string[]` |  |
+
+---
+
+## Constants
+
+### VibexPaths
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/paths.ts#L31" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get common VibeX directory paths
+
+```typescript
+const VibexPaths: { readonly root: () => string; readonly config: () => string; readonly spaces: () => string; readonly defaults: () => string; readonly mcpServers: () => string; readonly mcpServerShared: () => string; ... 8 more ...; readonly spaceArtifacts: (spaceId: string) => string; }
+```
+
+---

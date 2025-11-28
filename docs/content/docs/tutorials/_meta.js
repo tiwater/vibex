@@ -1,8 +1,12 @@
 export default {
-  "0-bootstrap": "First Project",
-  "1-first-agent": "First Agent",
-  "2-multi-agent": "Multi-Agent Collaboration",
-  "3-custom-tools": "Tools",
+  index: {
+    title: "Tutorials",
+    display: "hidden",
+  },
+  "0-bootstrap": "Bootstrap",
+  "1-first-agent": "Your First Agent",
+  "2-multi-agent": "Multi-Agent Teams",
+  "3-custom-tools": "Custom Tools",
   "4-configuration": "Configuration",
-  "91-comprehensive-systems": "A Complete Example"
+  "91-comprehensive-systems": "Advanced Systems"
 }

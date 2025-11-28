@@ -1,86 +1,181 @@
-import { Callout } from "nextra/components";
-import { Link } from "nextra/components";
+import { Callout, Steps, Tabs } from "nextra/components";
 
 # Getting Started with VibeX
 
-Welcome to VibeX! This guide will walk you through the basics of setting up your first multi-agent team.
+Welcome to VibeX! This guide will walk you through setting up your first persistent workspace with AI agents.
+
+## What is VibeX?
+
+VibeX is a **Space-oriented Collaborative Workspace Platform** designed for persistent, evolving work with AI agents. Unlike traditional task-oriented frameworks that simply execute and terminate, VibeX provides **persistent workspaces** where artifacts evolve through continuous user-agent collaboration.
+
+| Aspect           | Task-Oriented (Others)           | Space-Oriented (VibeX)                     |
+| ---------------- | -------------------------------- | ------------------------------------------ |
+| **Mental Model** | "Run a task, get a result, done" | "Enter a space, evolve artifacts, iterate" |
+| **Lifecycle**    | One-shot execution               | Persistent, continuous collaboration       |
+| **State**        | Ephemeral (task context)         | Persistent (space with history)            |
+| **Artifacts**    | Output files                     | Living documents that evolve               |
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Node.js 18+** installed
+- **pnpm 9+** (recommended) or npm/yarn
+- An **LLM API key** (OpenAI, Anthropic, DeepSeek, etc.)
 
 ## Installation
 
-First, make sure you have Python 3.8+ installed. Then, you can install VibeX using pip:
+<Tabs items={['pnpm', 'npm', 'yarn']}>
+  <Tabs.Tab>
+    ```bash
+    pnpm add vibex
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    npm install vibex
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    yarn add vibex
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## Quick Start
+
+### 1. Set Up Your Environment
+
+Create a `.env` file with your API key:
 
 ```bash
-pip install vibex
+# For OpenAI
+OPENAI_API_KEY=sk-your-key-here
+
+# Or for DeepSeek
+DEEPSEEK_API_KEY=your-key-here
+
+# Or for Anthropic
+ANTHROPIC_API_KEY=your-key-here
 ```
 
-## Your First Agent Team
+### 2. Create Your First Workspace
 
-Let's create a simple agent team with a writer and a reviewer.
+Create a new TypeScript file (e.g., `index.ts`):
 
-### 1. Configure Your Team
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
 
-Create a `team.yaml` file to define your agents:
+async function main() {
+  // Start a new persistent workspace
+  const xAgent = await XAgent.start("Write my thesis on AI");
+  const space = xAgent.getSpace();
 
-```yaml
-# team.yaml
-agents:
-  - name: writer
-    description: "A professional writer who creates high-quality content."
-    prompt_file: "writer.md"
-  - name: reviewer
-    description: "A meticulous reviewer who checks for clarity and accuracy."
-    prompt_file: "reviewer.md"
+  console.log(`✨ Created Space: ${space.spaceId}`);
+
+  // Stream a response from XAgent
+  const stream = await xAgent.streamText({
+    messages: [
+      { role: "user", content: "Write an introduction paragraph" }
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+
+  // Print the streamed response
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+
+  // Save the workspace state
+  await space.persistState();
+  console.log(`\n💾 Saved! Resume with: SPACE_ID=${space.spaceId}`);
+}
+
+main().catch(console.error);
 ```
 
-### 2. Create Agent Prompts
+### 3. Run Your Code
 
-Create the prompt files for your agents:
-
-```markdown
-# writer.md
-
-You are a professional writer. Your task is to create a well-structured and engaging article based on the user's request.
-```
-
-```markdown
-# reviewer.md
-
-You are a meticulous reviewer. Your task is to review the writer's work for clarity, accuracy, and overall quality. Provide feedback for improvement.
-```
-
-### 3. Run Your Team
-
-Now, you can use VibeX to run your agent team. Create a Python script:
-
-```python
-import asyncio
-from vibex import XAgent
-
-async def main():
-    # Start a new project
-    x = await XAgent.start(
-        goal="Write a short blog post about the benefits of remote work.",
-        config_path="team.yaml"
-    )
-
-    # Autonomously execute the project
-    while not x.is_complete():
-        response = await x.step()
-        print(response)
-
-    print("Project completed!")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+```bash
+npx tsx index.ts
 ```
 
 <Callout type="info">
-  When you run this script, VibeX will orchestrate the writer and reviewer
-  agents to collaboratively create and refine the blog post.
+  Note the `Space ID` that's printed — you'll use it to resume your workspace later!
 </Callout>
+
+## Resuming Your Workspace
+
+This is VibeX's superpower: **persistent workspaces**. You can continue your work anytime:
+
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
+
+async function main() {
+  // Resume an existing workspace
+  const xAgent = await XAgent.resume(process.env.SPACE_ID!);
+  const space = xAgent.getSpace();
+
+  console.log(`📂 Resumed Space: ${space.name}`);
+  console.log(`📊 Goal: ${space.goal}`);
+  console.log(`💬 Previous messages: ${space.history.messages.length}`);
+
+  // Continue the conversation - XAgent remembers everything!
+  const stream = await xAgent.streamText({
+    messages: [
+      { role: "user", content: "Now expand on what you wrote before" }
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+
+  await space.persistState();
+}
+
+main().catch(console.error);
+```
+
+## Core Concepts
+
+### Space
+
+A **Space** is a persistent container for all your work:
+
+- Holds artifacts (documents, code, data)
+- Preserves conversation history across sessions
+- Stores configuration and preferences
+- Maintains version history of all changes
+
+### XAgent
+
+**XAgent** is the project manager for each Space:
+
+- Remembers the entire project history
+- Knows all artifacts in the Space
+- Coordinates specialist agents (Writer, Researcher, Developer, etc.)
+- Adapts plans based on evolving requirements
+
+### Artifacts
+
+**Artifacts** are living documents that evolve over time:
+
+- Documents, code, and data that improve through collaboration
+- Full version history for rollback
+- Can be created, updated, and managed by agents
 
 ## What's Next?
 
-- **Explore the Core Concepts**: Learn about Agents, Tools, and the VibeX architecture in the [Design Principles](/docs/design/design-principles) section.
-- **Build Custom Tools**: Extend your agents' capabilities by creating your own [custom tools](/docs/reference/tools).
-- **Check out the Examples**: See more advanced use cases in the `examples` directory of the VibeX repository.
+- **[Tutorials](/docs/tutorials)** — Step-by-step guides for common use cases
+- **[Design Principles](/docs/design)** — Understand the architecture
+- **[SDK Reference](/sdk)** — Complete API documentation
+- **[Examples](https://github.com/tiwater/vibex/tree/main/examples)** — Real-world code examples
+
+<Callout type="success">
+  **Tip**: Check out the [examples folder](https://github.com/tiwater/vibex/tree/main/examples) for complete, runnable projects including thesis writing, research assistants, and code review tools.
+</Callout>

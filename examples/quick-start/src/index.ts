@@ -1,7 +1,7 @@
 /**
  * Interactive Quick Start
  *
- * A simple interactive demo of Vibex capabilities.
+ * A simple interactive demo of VibeX capabilities.
  */
 
 import "dotenv/config";
@@ -20,7 +20,7 @@ function prompt(question: string): Promise<string> {
 }
 
 async function main() {
-  console.log("\n⚡ Vibex Quick Start");
+  console.log("\n⚡ VibeX Quick Start");
   console.log("━".repeat(40));
 
   // Check for existing space

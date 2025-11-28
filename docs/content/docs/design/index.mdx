@@ -1,10 +1,10 @@
-# Vibex Design & Architecture
+# VibeX Design & Architecture
 
-Welcome to the Vibex design documentation! This section provides comprehensive technical insights into how Vibex works internally, its architectural decisions, and the principles that guide its development.
+Welcome to the VibeX design documentation! This section provides comprehensive technical insights into how VibeX works internally, its architectural decisions, and the principles that guide its development.
 
 ## 🎯 Core Philosophy: Space-Oriented Collaboration
 
-**Vibex is fundamentally different from task-oriented agent frameworks.**
+**VibeX is fundamentally different from task-oriented agent frameworks.**
 
 Most agent frameworks follow a "fire-and-forget" pattern:
 
@@ -12,7 +12,7 @@ Most agent frameworks follow a "fire-and-forget" pattern:
 User → "Do X" → Plan → Execute → Result → END
 ```
 
-Vibex follows a **persistent, evolving workspace** pattern:
+VibeX follows a **persistent, evolving workspace** pattern:
 
 ```
 User → Space → XAgent → [Iterate on Artifacts] → [Continue Tomorrow] → [Evolve Further]
@@ -22,7 +22,7 @@ User → Space → XAgent → [Iterate on Artifacts] → [Continue Tomorrow] →
 
 ### Why Space-Oriented?
 
-Real-world work is iterative. You don't write a document once—you draft, review, refine, and polish. Vibex is designed for this reality:
+Real-world work is iterative. You don't write a document once—you draft, review, refine, and polish. VibeX is designed for this reality:
 
 - **Persistent Spaces**: Your work survives across sessions
 - **Evolving Artifacts**: Documents, code, and data improve over time
@@ -31,7 +31,7 @@ Real-world work is iterative. You don't write a document once—you draft, revie
 
 ## 🏗️ Architecture Overview
 
-Vibex is built as a **collaborative workspace platform** that orchestrates specialized agents in a secure, observable, and scalable manner. Unlike task runners, Vibex maintains persistent state and enables continuous iteration on artifacts.
+VibeX is built as a **collaborative workspace platform** that orchestrates specialized agents in a secure, observable, and scalable manner. Unlike task runners, VibeX maintains persistent state and enables continuous iteration on artifacts.
 
 ### Key Design Principles
 
@@ -46,7 +46,7 @@ Vibex is built as a **collaborative workspace platform** that orchestrates speci
 
 ## 📚 Design Documentation
 
-### [System Architecture](/docs/design/system-architecture)
+### [System Architecture](/docs/design/architecture)
 
 Complete architectural overview covering the Space model, XAgent orchestration, and the data layer. Includes detailed diagrams of component interactions.
 
@@ -56,7 +56,7 @@ Deep dive into how Spaces are created, how artifacts evolve, and how users colla
 
 ### [Memory & Context](/docs/design/memory)
 
-Understanding the persistent memory system in Vibex, combining Space-scoped history with AI-friendly semantic memory.
+Understanding the persistent memory system in VibeX, combining Space-scoped history with AI-friendly semantic memory.
 
 ### [Tool Execution](/docs/design/tool-execution)
 
@@ -150,7 +150,7 @@ await xAgent.chat("Write a report based on our findings");
 
 ## 🛡️ Data Persistence
 
-Unlike ephemeral task runners, Vibex persists everything:
+Unlike ephemeral task runners, VibeX persists everything:
 
 - **Conversation History**: Every message across all sessions
 - **Artifact Versions**: Full history of document changes
@@ -166,7 +166,7 @@ This enables:
 
 ## 🚀 Getting Started with Design Docs
 
-1. **Read [System Architecture](/docs/design/system-architecture)** - Understand the Space model
+1. **Read [System Architecture](/docs/design/architecture)** - Understand the Space model
 2. **Explore [Space Lifecycle](/docs/design/task-lifecycle)** - See how work evolves
 3. **Dive into specific areas**:
    - Building tools? See [Tool Execution](/docs/design/tool-execution)
@@ -183,4 +183,4 @@ The design documentation evolves with the framework. If you're:
 
 ---
 
-_This documentation reflects the current architecture of Vibex. For implementation details and API references, see the [API Documentation](/docs/api)._
+_This documentation reflects the current architecture of VibeX. For implementation details and API references, see the [SDK Documentation](/sdk)._

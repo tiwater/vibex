@@ -2,15 +2,15 @@
 
 ## Core Principle
 
-**Vibex is a Space-oriented collaborative workspace platform.** Unlike task-oriented frameworks, Vibex provides persistent workspaces where artifacts evolve through continuous user-agent collaboration.
+**VibeX is a Space-oriented collaborative workspace platform.** Unlike task-oriented frameworks, VibeX provides persistent workspaces where artifacts evolve through continuous user-agent collaboration.
 
-The `vibex` package is the pure runtime engine that manages Spaces, XAgents, and artifact evolution. It defines WHAT it needs, and `@vibex/space` provides HOW to persist it.
+The `vibex` package is the unified runtime engine that manages Spaces, XAgents, artifact evolution, and defines adapter interfaces. Storage implementations are provided by `@vibex/local` (SQLite/filesystem) and `@vibex/supabase` (cloud).
 
 ## Package Responsibilities
 
 ### `vibex` - The Space-Oriented Runtime
 
-**Position**: Central runtime that manages persistent workspaces and artifact evolution.
+**Position**: Central runtime that manages persistent workspaces, artifact evolution, and defines data interfaces.
 
 **Contains**:
 
@@ -19,6 +19,7 @@ The `vibex` package is the pure runtime engine that manages Spaces, XAgents, and
   - Artifact management with version history
   - Conversation history persistence
   - Configuration management
+  - `SpaceManager` - Unified access layer
 
 - ✅ **Mission/Plan/Task Management**
   - Mission: User's substantial goals with lifecycle
@@ -35,72 +36,65 @@ The `vibex` package is the pure runtime engine that manages Spaces, XAgents, and
   - Base Agent class
   - Agent registry
   - Tool integration
+  - Agent factory (`createVibexAgent`)
 
 - ✅ **Execution Engine** (Internal)
   - DAG-based execution for complex operations
   - Pause/resume capability
   - Human-in-the-loop steps
 
-- ✅ **Interfaces** for data, knowledge, storage (NOT implementations)
+- ✅ **Adapter Interfaces** (`ResourceAdapter`, `StorageAdapter`, `KnowledgeAdapter`)
 
 **Does NOT contain**:
 
-- ❌ Storage implementations
-- ❌ Vector store implementations
-- ❌ Database adapters
-- ❌ Any persistence logic
+- ❌ Storage implementations (see `@vibex/local`, `@vibex/supabase`)
 
 **Dependencies**:
 
-- Uses `@vibex/space` for ALL data operations
+- Uses `@vibex/core` for shared types
 - Uses `@vibex/tools` for tool implementations
 - Uses `@vibex/defaults` for configurations
 
 ---
 
-### `@vibex/space` - Unified Data Persistence Layer
+### `@vibex/core` - Shared Types
 
-**Position**: Manages **ALL** data used by the runtime engine.
+**Position**: Type definitions shared across all packages.
 
 **Contains**:
 
-- ✅ **Structured Data** (via `ResourceAdapter`)
-  - Spaces, Missions, Plans, Tasks
-  - Artifacts metadata
-  - Agents, Tools configuration
-  - Model Providers, Datasources
-  - Local implementation (SQLite)
-  - Supabase implementation (PostgreSQL)
+- ✅ Agent types (`AgentConfig`, `AgentContext`, `AgentResponse`)
+- ✅ Tool types (`CoreTool`, `ToolInfo`)
+- ✅ Message types (`ModelMessage`, `XMessage`, `XMessagePart`)
+- ✅ Space types (data models for persistence)
+- ✅ Adapter interfaces (`ResourceAdapter`, `StorageAdapter`, `KnowledgeAdapter`)
+- ✅ Common types (`XError`, `StreamChunk`, `ModelConfig`)
 
-- ✅ **Knowledge/Vector Data** (via `KnowledgeAdapter`)
-  - Document chunks and embeddings
-  - Vector search operations
-  - Dataset management
-  - Local implementation (JSON + in-memory)
-  - Supabase implementation (pgvector)
+**Key Principle**: No runtime code, only type definitions.
 
-- ✅ **File Storage** (via `StorageAdapter`)
-  - Artifact file content
-  - Blob management
-  - Version storage
-  - Local implementation (filesystem)
-  - Supabase implementation (Supabase Storage)
+---
 
-- ✅ `VibexDataManager` - Unified access layer
+### `@vibex/local` - Local Storage Implementations
 
-**Key Principle**: The runtime never touches storage directly. All data access goes through `VibexDataManager`.
+**Position**: Local/offline storage implementations using SQLite and filesystem.
+
+**Contains**:
+
+- ✅ `LocalResourceAdapter` - SQLite for structured data
+- ✅ `LocalStorageAdapter` - Filesystem for artifact files
+- ✅ `LocalKnowledgeAdapter` - JSON + in-memory vectors
 
 ---
 
 ### `@vibex/supabase` - Cloud Backend
 
-**Position**: Concrete Supabase implementations of `@vibex/space` adapters.
+**Position**: Supabase implementations for cloud deployment.
 
 **Contains**:
 
-- ✅ `SupabaseResourceAdapter`
-- ✅ `SupabaseStorageAdapter`
-- ✅ `SupabaseKnowledgeAdapter`
+- ✅ `SupabaseResourceAdapter` - PostgreSQL for structured data
+- ✅ `SupabaseStorageAdapter` - Supabase Storage for files
+- ✅ `SupabaseKnowledgeAdapter` - pgvector for embeddings
 
 ---
 
@@ -124,22 +118,10 @@ The `vibex` package is the pure runtime engine that manages Spaces, XAgents, and
 
 **Contains**:
 
-- ✅ React hooks (`useSpace`, `useChat`, `useArtifact`)
-- ✅ Real-time artifact updates
-- ✅ Zustand store for client state
+- ✅ React hooks (`useXChat`)
+- ✅ Message types (`XChatMessage`, `XChatStatus`)
+- ✅ Utility functions for message handling
 - ✅ Server actions wrapper
-
----
-
-### `@vibex/server` - Server Helpers
-
-**Position**: Server-only integration helpers.
-
-**Contains**:
-
-- ✅ Next.js route handlers
-- ✅ Server actions
-- ✅ Background workers
 
 ---
 
@@ -149,9 +131,10 @@ The `vibex` package is the pure runtime engine that manages Spaces, XAgents, and
 
 **Contains**:
 
-- ✅ Default agent configurations
+- ✅ Default agent configurations (YAML)
 - ✅ Prompt templates
-- ✅ System defaults
+- ✅ Space templates
+- ✅ Tool configurations
 
 ---
 
@@ -164,9 +147,9 @@ Space (Persistent Container)
     ↓ contains
 Artifacts, History, Config
     ↓ persisted via
-@vibex/space (Data Layer)
-    ↓ uses adapters from
-Local (SQLite/FS) or @vibex/supabase (Cloud)
+SpaceManager + Adapters
+    ↓ uses implementations from
+@vibex/local (SQLite/FS) or @vibex/supabase (Cloud)
 ```
 
 ## Key Concepts
@@ -180,7 +163,7 @@ Space (persistent container)
               └── Task[] (individual work items)
 ```
 
-> **Note**: Our "Task" is different from AI SDK's "steps" (multi-turn tool loops). Vibex Tasks are higher-level work items.
+> **Note**: Our "Task" is different from AI SDK's "steps" (multi-turn tool loops). VibeX Tasks are higher-level work items.
 
 ### Mission Lifecycle
 
@@ -224,13 +207,10 @@ await xAgent.chat("Write a summary"); // Context: research + Y + findings
 
 ## Comparison to Task-Oriented Design
 
-| Aspect        | Task-Oriented         | Space-Oriented (Vibex)                      |
+| Aspect        | Task-Oriented         | Space-Oriented (VibeX)                      |
 | ------------- | --------------------- | ------------------------------------------- |
 | **Lifecycle** | Start → Execute → End | Create → Collaborate → Pause → Resume → ... |
 | **State**     | Ephemeral             | Persistent                                  |
 | **Artifacts** | Output files          | Living documents with history               |
 | **Context**   | Per-task              | Accumulated across sessions                 |
 | **Use Case**  | Automation scripts    | Document editing, research, collaboration   |
-
-
-

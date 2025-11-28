@@ -1,406 +1,374 @@
 # Configuration Reference
 
-This guide provides a comprehensive reference for configuring VibeX teams using YAML files. VibeX uses a declarative configuration approach that allows you to define agent teams, their capabilities, and collaboration patterns without writing code.
+This guide provides a comprehensive reference for configuring VibeX applications. VibeX uses a combination of environment variables, TypeScript configuration, and optional YAML files for agent definitions.
 
-## Configuration Structure
+## Environment Variables
 
-The top-level configuration file defines a team of agents and their collaboration settings. Here's the complete schema:
+### LLM Provider Keys
 
-```yaml
-# Team identification
-name: "Your Team Name" # Required: A descriptive name for your team
-description: "Team description" # Optional: What this team does
+VibeX automatically detects the LLM provider based on which environment variable is set:
 
-# Taskspace configuration
-output_dir: "taskspace" # Optional: Where to store outputs (default: "taskspace")
+```bash
+# OpenAI (recommended)
+OPENAI_API_KEY=sk-your-key
 
-# Agent definitions
-agents: # Required: List of agents in the team
-  - "researcher" # Can be preset names (strings)
-  - name: "custom_agent" # Or detailed agent configurations
-    description: "Custom agent"
-    prompt_file: "prompts/custom.md"
-    tools: ["web_search", "write_file"]
+# Anthropic
+ANTHROPIC_API_KEY=your-key
 
-# Agent collaboration
-handoffs: # Optional: Define agent handoff rules
-  - from_agent: "researcher"
-    to_agent: "writer"
-    condition: "When research is complete"
-    priority: 1 # Optional: Higher = higher priority
+# DeepSeek (cost-effective)
+DEEPSEEK_API_KEY=your-key
 
-# Advanced configurations
-collaboration_patterns: [] # Optional: Custom collaboration patterns
-tools: [] # Optional: Custom tool definitions
-guardrail_policies: [] # Optional: Safety and compliance rules
-memory: {} # Optional: Memory system configuration
-execution: {} # Optional: Task execution settings
-orchestrator: {} # Optional: Orchestrator (X) configuration
-deployment_config: {} # Optional: Deployment-specific settings
+# Google Gemini
+GOOGLE_GENERATIVE_AI_API_KEY=your-key
 ```
 
-## Core Configuration Options
+### Storage Configuration
 
-### Team Metadata
+```bash
+# Supabase (for cloud storage)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-key
 
-```yaml
-name: "AutoWriter Production Team" # Required
-description: "Professional research and writing system" # Optional
-output_dir: "reports" # Optional (default: "taskspace")
+# Local storage path (optional, defaults to ./data)
+VIBEX_DATA_PATH=./data
 ```
 
-### Agent Configuration
+### Application Settings
 
-Agents can be defined in three ways:
+```bash
+# Environment
+NODE_ENV=development  # or 'production'
 
-#### 1. Preset Agents (Recommended)
-
-Use built-in agent presets by name:
-
-```yaml
-agents:
-  - "researcher" # Evidence-based research specialist
-  - "writer" # Professional content creator
-  - "web_designer" # HTML/CSS expert
-  - "reviewer" # Quality assurance specialist
-  - "developer" # Software engineer
+# Logging
+LOG_LEVEL=info  # debug, info, warn, error
 ```
 
-#### 2. Custom Agent Configuration
+## TypeScript Configuration
 
-Define custom agents with specific settings:
+### XAgent.start() Options
 
-```yaml
-agents:
-  - name: "data_analyst"
-    description: "Analyzes datasets and creates visualizations"
-    prompt_file: "prompts/analyst.md" # Path to prompt file
-    tools: ["read_file", "python_repl", "create_chart"]
-    brain_config:
-      model: "gpt-4"
-      temperature: 0.3
-    memory_config:
-      enabled: true
-      max_context_tokens: 4000
+```typescript
+import { XAgent } from "vibex";
+import { createSupabaseAdapter } from "@vibex/supabase";
+
+const xAgent = await XAgent.start(goal, options);
 ```
 
-#### 3. Inline System Message
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `adapter` | `DataAdapter` | `LocalAdapter` | Storage adapter |
+| `systemPrompt` | `string` | Default XAgent prompt | Custom system prompt |
 
-For simple agents, define the prompt directly:
+### XAgent.resume() Options
 
-```yaml
-agents:
-  - name: "translator"
-    description: "Translates content between languages"
-    system_message: |
-      You are a professional translator. Your task is to accurately
-      translate content while preserving meaning and cultural context.
-    tools: ["read_file", "write_file"]
+```typescript
+const xAgent = await XAgent.resume(spaceId, options);
 ```
 
-### Handoff Configuration
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `adapter` | `DataAdapter` | `LocalAdapter` | Storage adapter (must match original) |
 
-Define when and how agents pass work to each other:
+### streamText() Options
 
-```yaml
-handoffs:
-  - from_agent: "researcher"
-    to_agent: "writer"
-    condition: "When comprehensive research is gathered and ready for writing"
-    priority: 1 # Higher priority handoffs are evaluated first
-
-  - from_agent: "writer"
-    to_agent: "reviewer"
-    condition: "When content is complete and needs quality review"
-    priority: 2
+```typescript
+const stream = await xAgent.streamText({
+  messages: Message[],
+  metadata: Metadata,
+});
 ```
 
-### Brain Configuration
+| Field | Type | Required | Description |
+| ----- | ---- | -------- | ----------- |
+| `messages` | `Message[]` | Yes | Array of conversation messages |
+| `metadata` | `Metadata` | Yes | Request metadata |
 
-Configure the LLM settings for agents or the orchestrator:
+#### Message Structure
 
-```yaml
-# Team-level default
-llm_provider:
-  provider: "openai" # Options: openai, anthropic, deepseek, ollama
-  model: "gpt-4" # Model name
-  temperature: 0.7 # 0.0-2.0, controls randomness
-  max_tokens: 8000 # Maximum response length
-  api_key: null # Optional: Override env variable
-  base_url: null # Optional: Custom endpoint
-  timeout: 30 # Request timeout in seconds
-  streaming: true # Enable streaming responses
-
-# Agent-specific override
-agents:
-  - name: "precise_analyst"
-    brain_config:
-      model: "gpt-4"
-      temperature: 0.1 # Lower temperature for more deterministic output
-      max_tokens: 4000
+```typescript
+interface Message {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
 ```
 
-### Memory Configuration
+#### Metadata Structure
 
-Control how agents remember and use context:
-
-```yaml
-memory:
-  enabled: true # Enable memory system
-  max_context_tokens: 8000 # Maximum context window
-  semantic_search_enabled: true # Enable semantic memory search
-  short_term_limit: 10000 # Short-term memory token limit
-  long_term_enabled: true # Enable long-term memory
-  consolidation_interval: 3600 # Memory consolidation interval (seconds)
-  vector_db_config: # Vector database settings
-    provider: "chroma"
-    collection_name: "agent_memory"
+```typescript
+interface Metadata {
+  mode: "agent" | "tool";
+  requestedAgent: "X" | string;  // Usually "X" for XAgent
+}
 ```
 
-### Tool Configuration
+## Storage Adapters
 
-Define custom tools for agents:
+### Local Adapter
+
+Uses SQLite for structured data and filesystem for files.
+
+```typescript
+import { createLocalAdapter } from "@vibex/local";
+
+const adapter = createLocalAdapter({
+  path: "./data",  // Base path for storage
+});
+```
+
+| Option | Type | Default | Description |
+| ------ | ---- | ------- | ----------- |
+| `path` | `string` | `"./data"` | Directory for data storage |
+
+### Supabase Adapter
+
+Uses PostgreSQL and Supabase Storage for cloud deployment.
+
+```typescript
+import { createSupabaseAdapter } from "@vibex/supabase";
+
+const adapter = createSupabaseAdapter({
+  supabaseUrl: process.env.SUPABASE_URL!,
+  supabaseKey: process.env.SUPABASE_SERVICE_KEY!,
+});
+```
+
+| Option | Type | Required | Description |
+| ------ | ---- | -------- | ----------- |
+| `supabaseUrl` | `string` | Yes | Supabase project URL |
+| `supabaseKey` | `string` | Yes | Supabase service key |
+
+## Agent Configuration
+
+VibeX uses YAML files from `@vibex/defaults` for agent configuration. These define the specialist agents that XAgent coordinates.
+
+### Default Agents
+
+| Agent | Role | Description |
+| ----- | ---- | ----------- |
+| `X` | Orchestrator | Project manager, coordinates other agents |
+| `researcher` | Research | Gathers and synthesizes information |
+| `writer` | Content | Creates documents and content |
+| `developer` | Code | Writes and reviews code |
+| `reviewer` | QA | Quality assurance and review |
+| `web_designer` | Design | Creates HTML/CSS experiences |
+
+### Agent YAML Schema
+
+Agent definitions in `@vibex/defaults/agents/`:
 
 ```yaml
+# Example: researcher.yaml
+name: researcher
+description: "Evidence-based research specialist"
+role: researcher
+
+# Prompt template reference
+prompt_template: prompts/researcher.md
+
+# Available tools
 tools:
-  - name: "data_processor"
-    type: "python_function" # Options: python_function, shell_script, mcp_tool, builtin
-    description: "Process CSV data files"
-    source: "tools/data_processor.py"
-    function: "process_data"
-    parameters: # JSON Schema for parameters
-      type: "object"
-      properties:
-        file_path:
-          type: "string"
-          description: "Path to CSV file"
-      required: ["file_path"]
+  - web_search
+  - memory
+  - file_read
 
-  - name: "api_client"
-    type: "mcp_tool"
-    server_url: "http://localhost:8080"
-    timeout: 30
+# LLM configuration
+llm_config:
+  temperature: 0.3  # Lower for factual research
+  max_tokens: 4000
 ```
 
-### Execution Configuration
+### Prompt Templates
 
-Control how tasks are executed:
+Prompts are Markdown files in `@vibex/defaults/prompts/`:
 
-```yaml
-execution:
-  mode: "autonomous" # Options: autonomous, step_through
-  max_rounds: 10 # Maximum conversation rounds
-  timeout_seconds: 300 # Task timeout
-  initial_agent: "researcher" # Starting agent
-  step_through_enabled: false # Enable step-by-step mode
-  breakpoints: # Pause execution at these points
-    - "after_research"
-    - "before_final_review"
-  success_criteria: # Define success conditions
-    - "HTML report generated"
-    - "All tests pass"
-  failure_criteria: # Define failure conditions
-    - "API rate limit exceeded"
-    - "Critical error encountered"
+```markdown
+# Researcher Agent
+
+You are an expert researcher skilled in gathering, evaluating, 
+and organizing information from multiple sources.
+
+## Your Role
+- Conduct thorough information gathering
+- Evaluate source credibility and relevance
+- Organize findings systematically
+
+## Guidelines
+- Always verify information from multiple sources
+- Document sources and methodology
+- Identify potential biases or limitations
 ```
 
-### Orchestrator Configuration
+## Space Configuration
 
-Configure the orchestrator (X) that manages agent coordination:
+### Space Properties
 
-```yaml
-orchestrator:
-  brain_config:
-    provider: "deepseek"
-    model: "deepseek-chat"
-    temperature: 0.3 # Lower for more consistent planning
-    max_tokens: 8000
-    timeout: 120
-  max_rounds: 50 # Maximum orchestration rounds
-  timeout: 3600 # Total orchestration timeout
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `spaceId` | `string` | Unique identifier (auto-generated) |
+| `name` | `string` | Human-readable name |
+| `goal` | `string` | Workspace objective |
+| `history` | `History` | Conversation history |
+| `createdAt` | `Date` | Creation timestamp |
+| `updatedAt` | `Date` | Last update timestamp |
+
+### Space Methods
+
+```typescript
+const space = xAgent.getSpace();
+
+// Save workspace state
+await space.persistState();
+
+// Access properties
+console.log(space.spaceId);
+console.log(space.name);
+console.log(space.goal);
+console.log(space.history.messages.length);
 ```
 
-### Collaboration Patterns
+## React Integration
 
-Define custom collaboration workflows:
+### Provider Setup
 
-```yaml
-collaboration_patterns:
-  - name: "peer_review"
-    type: "parallel" # Options: sequential, parallel, consensus, dynamic
-    agents: ["writer_1", "writer_2", "editor"]
-    coordination_agent: "editor" # Agent that coordinates the pattern
-    config:
-      min_consensus: 2 # Minimum agreements needed
-      timeout: 600 # Pattern timeout
+```typescript
+// app/providers.tsx
+import { VibexProvider } from "@vibex/react";
+
+export function Providers({ children }) {
+  return (
+    <VibexProvider>
+      {children}
+    </VibexProvider>
+  );
+}
 ```
 
-### Guardrail Policies
+### Available Hooks
 
-Implement safety and compliance rules:
+| Hook | Purpose |
+| ---- | ------- |
+| `useSpace(spaceId)` | Access Space state and metadata |
+| `useChat(spaceId)` | Chat interface with message history |
+| `useArtifact(spaceId, artifactId)` | Access artifact content |
 
-```yaml
-guardrail_policies:
-  - name: "content_safety"
-    type: "content_filter" # Options: input_validation, output_filtering, rate_limiting, content_safety
-    severity: "high" # Options: low, medium, high
-    action: "block" # Options: block, warn, log
-    rules:
-      - type: "regex"
-        pattern: "\\b(password|secret|key)\\b"
-        message: "Sensitive information detected"
-      - type: "length"
-        max_length: 10000
-        message: "Content too long"
+### useSpace Hook
+
+```typescript
+const { space, isLoading, error } = useSpace(spaceId);
 ```
 
-## Advanced Features
+### useChat Hook
 
-### Context Variables
+```typescript
+const {
+  messages,
+  sendMessage,
+  isLoading,
+  error,
+} = useChat(spaceId);
 
-Share dynamic context between agents:
-
-```yaml
-context_variables:
-  project_name: "Q4 Report"
-  target_audience: "C-suite executives"
-  brand_guidelines_url: "https://example.com/brand"
-
-agents:
-  - name: "writer"
-    system_message: |
-      Write for {target_audience} about {project_name}.
-      Follow guidelines at {brand_guidelines_url}.
+// Send a message
+await sendMessage("Write an introduction");
 ```
 
-### Environment-Specific Configuration
+## Production Checklist
 
-Use environment variables for sensitive data:
+### Security
 
-```yaml
-llm_provider:
-  provider: "${LLM_PROVIDER:-openai}"
-  api_key: "${OPENAI_API_KEY}"
-  model: "${LLM_MODEL:-gpt-4}"
+- [ ] API keys stored in environment variables (not code)
+- [ ] `.env` file in `.gitignore`
+- [ ] Service keys have appropriate permissions
+- [ ] Rate limiting configured
+
+### Performance
+
+- [ ] Appropriate LLM model selected for task
+- [ ] Streaming enabled for better UX
+- [ ] Storage adapter optimized for use case
+
+### Reliability
+
+- [ ] Error handling implemented
+- [ ] State persistence before exit
+- [ ] Graceful shutdown handlers
+
+### Monitoring
+
+- [ ] Logging configured appropriately
+- [ ] Error tracking in place
+- [ ] Usage metrics collected
+
+## Example Configurations
+
+### Development Setup
+
+```bash
+# .env.development
+OPENAI_API_KEY=sk-dev-key
+NODE_ENV=development
+LOG_LEVEL=debug
+VIBEX_DATA_PATH=./data
 ```
 
-### Deployment Configuration
+### Production Setup
 
-Add deployment-specific settings:
-
-```yaml
-deployment_config:
-  environment: "production"
-  logging_level: "INFO"
-  metrics_enabled: true
-  api_endpoints:
-    webhook_url: "https://api.example.com/webhook"
-  resource_limits:
-    max_memory: "2GB"
-    max_cpu: "2.0"
+```bash
+# .env.production
+OPENAI_API_KEY=sk-prod-key
+SUPABASE_URL=https://prod.supabase.co
+SUPABASE_SERVICE_KEY=prod-service-key
+NODE_ENV=production
+LOG_LEVEL=info
 ```
 
-## Complete Example
+### Next.js App Router
 
-Here's a comprehensive example showing all major features:
+```typescript
+// app/api/chat/route.ts
+import { XAgent } from "vibex";
 
-```yaml
-name: "Research and Analysis Team"
-description: "Multi-agent system for comprehensive research and reporting"
-
-agents:
-  # Using presets
-  - "researcher"
-  - "writer"
-
-  # Custom agent
-  - name: "data_analyst"
-    description: "Analyzes data and creates visualizations"
-    prompt_file: "prompts/analyst.md"
-    tools: ["python_repl", "create_chart", "read_file"]
-    brain_config:
-      model: "gpt-4"
-      temperature: 0.2
-    memory_config:
-      enabled: true
-      max_context_tokens: 4000
-
-handoffs:
-  - from_agent: "researcher"
-    to_agent: "data_analyst"
-    condition: "When quantitative analysis is needed"
-    priority: 1
-
-  - from_agent: "data_analyst"
-    to_agent: "writer"
-    condition: "When analysis is complete and report writing is needed"
-    priority: 2
-
-tools:
-  - name: "market_data_api"
-    type: "python_function"
-    source: "tools/market_api.py"
-    function: "fetch_market_data"
-    description: "Fetch real-time market data"
-
-memory:
-  enabled: true
-  semantic_search_enabled: true
-  max_context_tokens: 8000
-
-execution:
-  mode: "autonomous"
-  max_rounds: 15
-  timeout_seconds: 600
-  initial_agent: "researcher"
-
-orchestrator:
-  brain_config:
-    temperature: 0.3
-    max_tokens: 8000
-
-guardrail_policies:
-  - name: "data_privacy"
-    type: "content_filter"
-    severity: "high"
-    action: "block"
-    rules:
-      - type: "pattern"
-        pattern: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
-        message: "SSN-like pattern detected"
-
-context_variables:
-  company: "Acme Corp"
-  fiscal_year: 2024
-  report_type: "quarterly"
+export async function POST(req: Request) {
+  const { spaceId, message } = await req.json();
+  
+  const xAgent = await XAgent.resume(spaceId);
+  const stream = await xAgent.streamText({
+    messages: [{ role: "user", content: message }],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+  
+  return new Response(stream.toReadableStream());
+}
 ```
 
-## Best Practices
+## Troubleshooting
 
-1. **Start Simple**: Begin with preset agents and basic handoffs, then add complexity as needed.
+### Common Issues
 
-2. **Use Descriptive Names**: Choose clear, descriptive names for agents and tools that reflect their purpose.
+**"API key not found"**
+- Ensure the correct environment variable is set
+- Check that `dotenv/config` is imported before using the key
+- Verify the key is valid and has credits
 
-3. **Define Clear Handoff Conditions**: Write handoff conditions in natural language that clearly describe when transfers should occur.
+**"Space not found"**
+- Verify the spaceId is correct
+- Ensure the same storage adapter is used for resume
+- Check that the data wasn't deleted
 
-4. **Leverage Presets**: Use built-in agent presets when possible - they're optimized and well-tested.
+**"Network error"**
+- Check internet connectivity
+- Verify API endpoint is accessible
+- Check for rate limiting
 
-5. **Version Control**: Keep your configuration files in version control to track changes over time.
+### Debug Mode
 
-6. **Environment Variables**: Use environment variables for sensitive data like API keys.
+Enable debug logging:
 
-7. **Test Incrementally**: Test your configuration with simple tasks before deploying complex workflows.
+```bash
+LOG_LEVEL=debug
+```
 
-8. **Monitor Resource Usage**: Set appropriate timeouts and token limits to control costs and prevent runaway processes.
+Or programmatically:
 
-## Validation
-
-VibeX validates your configuration at startup. Common validation errors include:
-
-- Missing required fields (name, agents)
-- Invalid agent references in handoffs
-- Circular handoff dependencies
-- Invalid tool configurations
-- Unsupported model or provider names
-
-Run `vibex validate <config.yaml>` to check your configuration before use.
+```typescript
+process.env.LOG_LEVEL = "debug";
+```

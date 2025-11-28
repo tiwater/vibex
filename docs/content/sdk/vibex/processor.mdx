@@ -1,0 +1,84 @@
+# processor
+
+*Module: [`vibex/processor`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/processor.ts)*
+
+Result Processor for handling large tool outputs
+
+Automatically saves large tool results as artifacts to avoid token consumption
+
+## Interfaces
+
+### ProcessedResult
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/processor.ts#L9" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `original` | `any` |   (optional) |
+| `processed` | `any` |  |
+| `wasProcessed` | `boolean` |  |
+| `artifactId` | `string` |   (optional) |
+
+---
+
+## Functions
+
+### processToolResult
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/processor.ts#L23" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Process a tool result to handle large outputs
+
+```typescript
+function processToolResult(result: any, toolName: string, spaceId?: string, threshold: number = 10000): Promise<ProcessedResult>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `result` | `any` | The tool result |
+| `toolName` | `string` | Name of the tool that produced the result |
+| `spaceId` | `string` (optional) | Space ID for artifact storage |
+| `threshold` | `number` | Size threshold in bytes (default 10KB) (default: `10000`) |
+
+---
+
+### isLargeResultReference
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/processor.ts#L130" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if a result is a large result reference
+
+```typescript
+function isLargeResultReference(result: any): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `result` | `any` |  |
+
+---
+
+### loadLargeResult
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/processor.ts#L137" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Load the original result from a large result reference
+
+```typescript
+function loadLargeResult(reference: any, spaceId: string): Promise<any>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `reference` | `any` |  |
+| `spaceId` | `string` |  |
+
+---

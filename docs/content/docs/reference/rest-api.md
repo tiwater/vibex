@@ -141,5 +141,5 @@ For Python applications, use the [VibeX SDK](/sdk) instead of calling the REST A
 ## Further Reading
 
 - [SDK Reference](/api) - For programmatic access from Python
-- [Server Architecture](/docs/design/system-architecture) - Understanding the server design
+- [Server Architecture](/docs/design/architecture) - Understanding the server design
 - [Getting Started](/docs/getting-started) - Quick start guide

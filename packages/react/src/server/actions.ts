@@ -1,9 +1,9 @@
 /**
- * Vibex Server Actions
+ * VibeX Server Actions
  *
- * This file contains Next.js Server Actions that expose Vibex functionality
- * to client components. All Vibex operations must go through these actions
- * since Vibex requires server-side access to Supabase.
+ * This file contains Next.js Server Actions that expose VibeX functionality
+ * to client components. All VibeX operations must go through these actions
+ * since VibeX requires server-side access to Supabase.
  *
  * Usage in client components:
  * ```tsx
@@ -185,7 +185,7 @@ export async function getTool(toolId: string): Promise<ToolType | null> {
 }
 
 // ==================== Task Actions (Aliases for Conversation) ====================
-// Tasks are conversations in Vibex, these provide backward-compatible naming
+// Tasks are conversations in VibeX, these provide backward-compatible naming
 
 export interface TaskFilters {
   title?: string;

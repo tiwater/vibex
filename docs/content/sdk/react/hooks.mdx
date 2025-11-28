@@ -1,0 +1,212 @@
+# hooks
+
+*Module: [`@vibex/react/hooks`](https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts)*
+
+React Hooks for VibeX Data Access
+
+These hooks provide reactive access to VibeX data with automatic
+re-rendering on data changes.
+
+## Interfaces
+
+### SpaceFilters
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L28" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `name` | `string` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+
+---
+
+### ArtifactFilters
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L33" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `category` | `"input" \| "intermediate" \| "output"` |   (optional) |
+| `mimeType` | `string` |   (optional) |
+
+---
+
+### ConversationFilters
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L38" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `title` | `string` |   (optional) |
+
+---
+
+## Types
+
+### TaskFilters
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L43" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type TaskFilters = ConversationFilters
+```
+
+---
+
+## Functions
+
+### useVibexSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L47" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexSpace(spaceId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string \| null \| undefined` |  |
+
+---
+
+### useVibexSpaces
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L121" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexSpaces(filters?: SpaceFilters): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `filters` | `SpaceFilters` (optional) |  |
+
+---
+
+### useVibexArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L170" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexArtifacts(spaceId: string | null | undefined, filters?: ArtifactFilters): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string \| null \| undefined` |  |
+| `filters` | `ArtifactFilters` (optional) |  |
+
+---
+
+### useVibexArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L276" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexArtifact(artifactId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `artifactId` | `string \| null \| undefined` |  |
+
+---
+
+### useVibexTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L317" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexTasks(spaceId: string | null | undefined, filters?: TaskFilters): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string \| null \| undefined` |  |
+| `filters` | `TaskFilters` (optional) |  |
+
+---
+
+### useVibexTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L417" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexTask(taskId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string \| null \| undefined` |  |
+
+---
+
+### useVibexAgents
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L458" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexAgents(): void
+```
+
+---
+
+### useVibexAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L489" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexAgent(agentId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | `string \| null \| undefined` |  |
+
+---
+
+### useVibexTools
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L530" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexTools(): void
+```
+
+---
+
+### useVibexTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks.ts#L561" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexTool(toolId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `toolId` | `string \| null \| undefined` |  |
+
+---

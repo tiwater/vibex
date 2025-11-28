@@ -1,5 +1,5 @@
 /**
- * Space - The top-level container for Vibex work (formerly Space)
+ * Space - The top-level container for VibeX work (formerly Space)
  *
  * A Space represents a project context that contains multiple tasks.
  * Each space is managed by an XAgent that serves as its orchestrator.
@@ -12,10 +12,10 @@
 
 import { Plan } from "./plan";
 import { Task, TaskStatus } from "./task";
-import { XAgent } from "../agent/x";
+import { XAgent } from "../runtime/x";
 import { getServerResourceAdapter } from "./factory";
 import { SpaceConfig, AgentConfig } from "../config";
-import { Agent } from "../agent/agent";
+import { Agent } from "../runtime/agent";
 import { MessageQueue, ConversationHistory } from "./message";
 import type { SpaceType, PlanType } from "@vibex/core";
 import {
@@ -324,7 +324,8 @@ export class Space {
 
       if (spaceData) {
         this.name = spaceData.name;
-        this.goal = (spaceData as any).goal || spaceData.description || this.goal;
+        this.goal =
+          (spaceData as any).goal || spaceData.description || this.goal;
         if (spaceData.config) {
           this.config = {
             ...(this.config || {}),

@@ -1,0 +1,105 @@
+# context
+
+*Module: [`vibex/context`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/context.ts)*
+
+Context Management for LLM Conversations
+Handles token counting, message compression, and context window management
+
+## Interfaces
+
+### ContextBudget
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/context.ts#L16" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `totalLimit` | `number` |  |
+| `systemPrompt` | `number` |  |
+| `tools` | `number` |  |
+| `completion` | `number` |  |
+| `overhead` | `number` |  |
+| `availableForMessages` | `number` |  |
+
+---
+
+## Functions
+
+### estimateTokenCount
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/context.ts#L12" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Simple token estimation (4 chars ≈ 1 token)
+For production, use a proper tokenizer like tiktoken
+
+```typescript
+function estimateTokenCount(text: string): number
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `text` | `string` |  |
+
+---
+
+### calculateContextBudget
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/context.ts#L28" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Calculate token budget for messages
+
+```typescript
+function calculateContextBudget(totalLimit: number, systemPrompt: string, toolsText: string = "", completionTokens: number = 4000): ContextBudget
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `totalLimit` | `number` |  |
+| `systemPrompt` | `string` |  |
+| `toolsText` | `string` |  (default: `""`) |
+| `completionTokens` | `number` |  (default: `4000`) |
+
+---
+
+### compressMessages
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/context.ts#L54" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Compress messages to fit within context window
+
+```typescript
+function compressMessages(messages: ModelMessage[], budget: ContextBudget): Promise<ModelMessage[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messages` | `ModelMessage[]` |  |
+| `budget` | `ContextBudget` |  |
+
+---
+
+### validateContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/context.ts#L147" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Validate final context before sending to LLM
+
+```typescript
+function validateContext(messages: ModelMessage[], budget: ContextBudget): { valid: boolean; reason?: string }
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messages` | `ModelMessage[]` |  |
+| `budget` | `ContextBudget` |  |
+
+---

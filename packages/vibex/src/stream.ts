@@ -1,5 +1,5 @@
 /**
- * Vibex streamText - Interface Layer
+ * VibeX streamText - Interface Layer
  * Responsibilities: Parameter validation, space bootstrap, delegation to XAgent
  */
 
@@ -14,7 +14,7 @@ interface ContentPart {
 
 export interface StreamTextOptions {
   // Core AI SDK options
-  model?: any; // Ignored in Vibex (uses agent configs)
+  model?: any; // Ignored in VibeX (uses agent configs)
   messages: Array<{
     role: "system" | "user" | "assistant";
     content: string | ContentPart[];
@@ -22,7 +22,7 @@ export interface StreamTextOptions {
   }>;
   system?: string;
 
-  // Vibex agent selection
+  // VibeX agent selection
   agent: string; // Required - ID of the agent to use
 
   // Optional parameters
@@ -38,7 +38,7 @@ export interface StreamTextOptions {
     steps?: unknown[];
   }) => void;
 
-  // Vibex-specific
+  // VibeX-specific
   spaceId?: string;
   data?: Record<string, unknown>;
 }
@@ -51,14 +51,14 @@ export async function streamText(options: StreamTextOptions): Promise<any> {
   const { agent, messages = [], spaceId, ...restOptions } = options;
 
   // PHASE 1: Parameter Validation
-  console.log(`[Vibex] Interface layer: validating agent parameter`);
+  console.log(`[VibeX] Interface layer: validating agent parameter`);
 
   if (!agent) {
     throw new Error("Agent parameter is required");
   }
 
   // PHASE 2: Space Bootstrap
-  console.log("[Vibex] Interface layer: bootstrapping space");
+  console.log("[VibeX] Interface layer: bootstrapping space");
 
   const space = await startSpace({
     spaceId: spaceId || `vibex-agent-${Date.now()}`,
@@ -68,7 +68,7 @@ export async function streamText(options: StreamTextOptions): Promise<any> {
   });
 
   // PHASE 3: Delegate to XAgent (single representative)
-  console.log("[Vibex] Interface layer: delegating to XAgent");
+  console.log("[VibeX] Interface layer: delegating to XAgent");
 
   const xAgent = space.xAgent;
   if (!xAgent) {
@@ -86,6 +86,6 @@ export async function streamText(options: StreamTextOptions): Promise<any> {
     ...restOptions,
   });
 
-  console.log("[Vibex] Interface layer: returning stream result");
+  console.log("[VibeX] Interface layer: returning stream result");
   return streamResult;
 }

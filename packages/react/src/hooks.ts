@@ -1,7 +1,7 @@
 /**
- * React Hooks for Vibex Data Access
+ * React Hooks for VibeX Data Access
  *
- * These hooks provide reactive access to Vibex data with automatic
+ * These hooks provide reactive access to VibeX data with automatic
  * re-rendering on data changes.
  */
 
@@ -44,7 +44,7 @@ export type TaskFilters = ConversationFilters;
 
 // ==================== Space Hooks ====================
 
-export function useVibexSpace(spaceId: string | null | undefined) {
+export function useXSpace(spaceId: string | null | undefined) {
   const [space, setSpace] = useState<Space | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -118,7 +118,7 @@ export function useVibexSpace(spaceId: string | null | undefined) {
   };
 }
 
-export function useVibexSpaces(filters?: SpaceFilters) {
+export function useXSpaces(filters?: SpaceFilters) {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -167,7 +167,7 @@ export function useVibexSpaces(filters?: SpaceFilters) {
 
 // ==================== Artifact Hooks ====================
 
-export function useVibexArtifacts(
+export function useXArtifacts(
   spaceId: string | null | undefined,
   filters?: ArtifactFilters
 ) {
@@ -226,10 +226,7 @@ export function useVibexArtifacts(
       if (!spaceId) throw new Error("No space ID provided");
       setLoading(true);
       try {
-        const updated = await vibexActions.updateArtifact(
-          artifactId,
-          updates
-        );
+        const updated = await vibexActions.updateArtifact(artifactId, updates);
         setArtifacts((prev) =>
           prev.map((a) => (a.id === artifactId ? updated : a))
         );
@@ -276,7 +273,7 @@ export function useVibexArtifacts(
   };
 }
 
-export function useVibexArtifact(artifactId: string | null | undefined) {
+export function useXArtifact(artifactId: string | null | undefined) {
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -317,7 +314,7 @@ export function useVibexArtifact(artifactId: string | null | undefined) {
 
 // ==================== Task Hooks ====================
 
-export function useVibexTasks(
+export function useXTasks(
   spaceId: string | null | undefined,
   filters?: TaskFilters
 ) {
@@ -417,7 +414,7 @@ export function useVibexTasks(
   };
 }
 
-export function useVibexTask(taskId: string | null | undefined) {
+export function useXTask(taskId: string | null | undefined) {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -458,7 +455,7 @@ export function useVibexTask(taskId: string | null | undefined) {
 
 // ==================== Agent Hooks ====================
 
-export function useVibexAgents() {
+export function useXAgents() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -489,7 +486,7 @@ export function useVibexAgents() {
   };
 }
 
-export function useVibexAgent(agentId: string | null | undefined) {
+export function useXAgent(agentId: string | null | undefined) {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -530,7 +527,7 @@ export function useVibexAgent(agentId: string | null | undefined) {
 
 // ==================== Tool Hooks ====================
 
-export function useVibexTools() {
+export function useXTools() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -561,7 +558,7 @@ export function useVibexTools() {
   };
 }
 
-export function useVibexTool(toolId: string | null | undefined) {
+export function useXTool(toolId: string | null | undefined) {
   const [tool, setTool] = useState<Tool | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

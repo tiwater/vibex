@@ -1,0 +1,288 @@
+# types
+
+*Module: [`@vibex/react/types`](https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts)*
+
+VibeX React Types
+
+Client-side message types optimized for UI rendering.
+These abstract away the underlying AI SDK implementation.
+
+Aligned with AI SDK v6's parts-based message format.
+
+## Interfaces
+
+### UITextPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L43" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+UI-specific message part types that extend core parts
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"text"` |  |
+| `text` | `string` |  |
+
+---
+
+### UIToolCallPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L48" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"tool-call"` |  |
+| `toolCallId` | `string` |  |
+| `toolName` | `string` |  |
+| `args` | `Record<string, unknown>` |  |
+| `status` | `"pending" \| "running" \| "completed" \| "failed" \| "pending-approval"` |   (optional) |
+| `displayName` | `string` | UI-specific: Display name for the tool  (optional) |
+
+---
+
+### UIToolResultPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L58" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"tool-result"` |  |
+| `toolCallId` | `string` |  |
+| `toolName` | `string` |  |
+| `result` | `unknown` |  |
+| `isError` | `boolean` |   (optional) |
+| `formattedResult` | `string` | UI-specific: Formatted result for display  (optional) |
+
+---
+
+### UIArtifactPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L68" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"artifact"` |  |
+| `artifactId` | `string` |  |
+| `title` | `string` |   (optional) |
+| `version` | `number` |   (optional) |
+| `artifactType` | `"document" \| "code" \| "data" \| "image" \| "file"` |   (optional) |
+| `preview` | `string` |   (optional) |
+| `action` | `"created" \| "updated" \| "referenced"` |   (optional) |
+| `isExpanded` | `boolean` | UI-specific: Whether the artifact is expanded in view  (optional) |
+
+---
+
+### UIReasoningPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L80" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"reasoning"` |  |
+| `text` | `string` |  |
+| `isCollapsed` | `boolean` | UI-specific: Whether reasoning is collapsed  (optional) |
+
+---
+
+### XChatMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L103" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+A message in a VibeX chat conversation (client-side)
+
+This is the UI-optimized type used by React hooks and components.
+Supports both legacy `content` and new `parts` format.
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` | Unique identifier for the message |
+| `role` | `"user" \| "assistant" \| "system"` | The role of who sent the message |
+| `parts` | `XChatPart[]` | Message parts - structured content (v6 format)
+Use this for rendering rich content in the UI.  (optional) |
+| `content` | `string` | Text content of the message (convenience accessor)
+Extracted from parts or legacy content. |
+| `createdAt` | `Date` | When the message was created  (optional) |
+| `agentName` | `string` | Name of the agent that generated this message  (optional) |
+| `metadata` | `Record<string, unknown>` | Optional metadata attached to the message  (optional) |
+
+---
+
+### CreateXMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L135" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Options for creating a new message
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `role` | `"user" \| "assistant" \| "system"` | The role of who sent the message |
+| `content` | `string` | The text content of the message |
+| `parts` | `XChatPart[]` | Optional parts for structured content  (optional) |
+| `metadata` | `Record<string, unknown>` | Optional metadata attached to the message  (optional) |
+
+---
+
+### XChatState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L166" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Chat state and controls returned by useXChat
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messages` | `XChatMessage[]` | The current messages in the conversation |
+| `input` | `string` | The current input value |
+| `setInput` | `(input: string) => void` | Set the input value |
+| `status` | `XChatStatus` | Granular status of the chat
+Replaces legacy `isLoading` boolean |
+| `isLoading` | `boolean` | Whether a response is currently being generated |
+| `error` | `Error` | Any error that occurred  (optional) |
+| `append` | `(message: CreateXMessage) => Promise<void>` | Append a new message and trigger a response |
+| `reload` | `() => Promise<void>` | Regenerate the last assistant message |
+| `stop` | `() => void` | Stop the current generation |
+| `setMessages` | `(messages: XChatMessage[]) => void` | Set the messages directly |
+| `approveToolCall` | `(toolCallId: string, approved: boolean) => Promise<void>` | Approve a pending tool call
+Only available when status is "awaiting-approval"  (optional) |
+
+---
+
+## Types
+
+### XChatPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L90" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Union of all UI message part types
+
+```typescript
+type XChatPart = | UITextPart
+  | UIToolCallPart
+  | UIToolResultPart
+  | UIArtifactPart
+  | UIReasoningPart
+```
+
+---
+
+### XChatStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L156" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Granular chat status (aligned with AI SDK v6)
+
+```typescript
+type XChatStatus = | "idle" // No activity
+  | "submitted" // Request sent, waiting for response
+  | "streaming" // Actively receiving response
+  | "awaiting-approval" // Tool call needs human approval
+  | "error"
+```
+
+---
+
+## Functions
+
+### getMessageText
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L217" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Extract text content from a XChatMessage
+
+```typescript
+function getMessageText(message: XChatMessage): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XChatMessage` |  |
+
+---
+
+### messageNeedsApproval
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L232" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if a message has pending tool approvals
+
+```typescript
+function messageNeedsApproval(message: XChatMessage): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XChatMessage` |  |
+
+---
+
+### getPendingApprovals
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L244" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all tool calls from a message that need approval
+
+```typescript
+function getPendingApprovals(message: XChatMessage): UIToolCallPart[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XChatMessage` |  |
+
+---
+
+### createUserMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L257" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Create a simple user message
+
+```typescript
+function createUserMessage(text: string): CreateXMessage
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `text` | `string` |  |
+
+---
+
+### isStatusLoading
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/react/src/types.ts#L268" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if status indicates loading
+
+```typescript
+function isStatusLoading(status: XChatStatus): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `status` | `XChatStatus` |  |
+
+---

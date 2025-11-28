@@ -5,6 +5,7 @@ Collaborative code review with persistent feedback tracking. Issues are tracked 
 ## What This Demonstrates
 
 ### 1. Iterative Review Process
+
 Code review isn't one-shot—it's iterative:
 
 ```bash
@@ -15,6 +16,7 @@ Session 4: "Re-review the fixed code"
 ```
 
 ### 2. Issue Tracking
+
 Issues persist across sessions:
 
 ```markdown
@@ -23,32 +25,38 @@ Issues persist across sessions:
 ## Security Review - 2024-01-15
 
 ### Critical: SQL Injection in user.ts:45
+
 - Location: `getUserById` function
 - Risk: User input directly in query
 - Fix: Use parameterized queries
 
 ### High: Missing input validation
+
 ...
 ```
 
 ### 3. Review History
+
 Complete audit trail:
 
 ```markdown
 # review-log.md
 
 ## Session 1 - 2024-01-15
+
 - Added auth.ts for review
 - Added user.ts for review
 - Ran security review
 - Applied fix: SQL injection in user.ts
 
 ## Session 2 - 2024-01-16
+
 - Ran performance review
-...
+  ...
 ```
 
 ### 4. Artifact Evolution
+
 Code improves through iterations:
 
 ```
@@ -74,22 +82,22 @@ pnpm start
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `add <file>` | Add code file for review |
-| `review` | Comprehensive review |
-| `security` | Security-focused review |
+| Command       | Description                |
+| ------------- | -------------------------- |
+| `add <file>`  | Add code file for review   |
+| `review`      | Comprehensive review       |
+| `security`    | Security-focused review    |
 | `performance` | Performance-focused review |
-| `style` | Code style review |
-| `fix <issue>` | Apply a fix |
-| `issues` | List all issues |
-| `summary` | Generate review summary |
-| `quit` | Save and exit |
+| `style`       | Code style review          |
+| `fix <issue>` | Apply a fix                |
+| `issues`      | List all issues            |
+| `summary`     | Generate review summary    |
+| `quit`        | Save and exit              |
 
 ## Example Session
 
-```
-🔍 Code Review Assistant - Vibex Demo
+````
+🔍 Code Review Assistant - VibeX Demo
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📝 Starting a new code review...
@@ -136,22 +144,25 @@ const API_KEY = process.env.API_KEY;
 if (!API_KEY) {
   throw new Error("API_KEY environment variable required");
 }
-```
+````
 
 💻 You: quit
 
 💾 Saved! Space ID: space_review123
+
 ```
 
 **Next session:**
 
 ```
+
 Resume review space_review123? (y/n): y
 
 📊 Review Status:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Files under review: 1
-  - auth.ts (v2)
+
+- auth.ts (v2)
 
 Issues found: 2
 
@@ -159,6 +170,7 @@ Issues found: 2
 
 🔧 Applying fix for: rate limiting
 ...
+
 ```
 
 ## Why This Matters
@@ -168,10 +180,11 @@ Traditional code review tools:
 - ❌ No persistent context
 - ❌ Manual fix application
 
-Vibex Code Review:
+VibeX Code Review:
 - ✅ Issues tracked with code
 - ✅ Full review history
 - ✅ AI-assisted fixes
 - ✅ Iterative improvement
 
 
+```

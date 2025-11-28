@@ -1,131 +1,64 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
-import { Sparkles, MessageSquare, Terminal, FileText } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { TooltipProvider } from "@/components/ui/tooltip";
+  Sparkles,
+  Users,
+  AlertCircle,
+  ArrowRight,
+  Loader2,
+  MessageSquare,
+  ListTodo,
+  Zap,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 import {
-  type Message,
-  type Space,
-  type Task,
-  type Artifact,
-  DEMO_AGENTS,
-  DEMO_TOOLS,
-  SIMULATED_RESPONSES,
-  WELCOME_MESSAGE,
-  SpacesList,
-  TasksList,
+  usePlayground,
   ChatMessage,
   TypingIndicator,
   ChatInput,
-  AgentsList,
-  ToolsList,
-  ArtifactsList,
-  CodeSandbox,
+  type ChatMode,
 } from "@/components/playground";
 
+/**
+ * Real Playground Page
+ *
+ * This is a real demonstration of the VibeX framework.
+ * It connects to the actual backend and shows real AI responses.
+ * No fake simulation - everything you see is real.
+ */
 export default function PlaygroundPage() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState("chat");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState("x");
-  const [currentSpace, setCurrentSpace] = useState<Space | null>(null);
-  const [spaces, setSpaces] = useState<Space[]>([]);
-  const [tasks] = useState<Task[]>([
-    {
-      id: "t1",
-      title: "Research phase",
-      status: "completed",
-      assignedTo: "researcher",
-    },
-    {
-      id: "t2",
-      title: "Draft outline",
-      status: "running",
-      assignedTo: "writer",
-      progress: 65,
-    },
-    {
-      id: "t3",
-      title: "Write introduction",
-      status: "pending",
-      assignedTo: "writer",
-    },
-    {
-      id: "t4",
-      title: "Code examples",
-      status: "pending",
-      assignedTo: "developer",
-    },
-  ]);
-  const [artifacts] = useState<Artifact[]>([
-    { id: "a1", name: "research_notes.md", type: "document", size: "12 KB" },
-    { id: "a2", name: "api_schema.json", type: "data", size: "4 KB" },
-    { id: "a3", name: "main.ts", type: "code", size: "8 KB" },
-  ]);
-  const [streamingEnabled, setStreamingEnabled] = useState(true);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const {
+    messages,
+    input,
+    setInput,
+    isLoading,
+    status,
+    sendMessage,
+    error,
+    clearError,
+    chatMode,
+    setChatMode,
+  } = usePlayground();
 
   // Initialize after mount
   useEffect(() => {
     setMounted(true);
-    const now = Date.now();
-
-    setMessages([
-      {
-        id: "welcome",
-        role: "assistant",
-        content: WELCOME_MESSAGE,
-        timestamp: now,
-        agent: "X",
-      },
-    ]);
-
-    setSpaces([
-      {
-        id: "space_1",
-        name: "AI Research Paper",
-        goal: "Write a research paper on transformers",
-        createdAt: now - 86400000 * 3,
-        updatedAt: now - 3600000,
-        messageCount: 47,
-        status: "active",
-      },
-      {
-        id: "space_2",
-        name: "E-commerce API",
-        goal: "Build a RESTful API for e-commerce",
-        createdAt: now - 86400000 * 7,
-        updatedAt: now - 86400000,
-        messageCount: 124,
-        status: "active",
-      },
-      {
-        id: "space_3",
-        name: "Marketing Strategy",
-        goal: "Develop Q1 2025 marketing strategy",
-        createdAt: now - 86400000 * 14,
-        updatedAt: now - 86400000 * 5,
-        messageCount: 89,
-        status: "completed",
-      },
-    ]);
   }, []);
 
   // Auto-scroll
@@ -133,245 +66,277 @@ export default function PlaygroundPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Simulate typing
-  const simulateTyping = async (text: string, messageId: string) => {
-    const words = text.split(" ");
-    let currentText = "";
-    for (let i = 0; i < words.length; i++) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, 30 + Math.random() * 20)
-      );
-      currentText += (i > 0 ? " " : "") + words[i];
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId ? { ...m, content: currentText } : m
-        )
-      );
-    }
-  };
-
-  // Send message
-  const handleSend = async () => {
-    if (!inputValue.trim()) return;
-
-    const userMessage: Message = {
-      id: `msg_${Date.now()}`,
-      role: "user",
-      content: inputValue,
-      timestamp: Date.now(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
-    setIsTyping(true);
-
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1000 + Math.random() * 1000)
-    );
-
-    const responseKey = inputValue.toLowerCase().includes("research")
-      ? "research"
-      : inputValue.toLowerCase().includes("code")
-        ? "code"
-        : "default";
-
-    const agent = DEMO_AGENTS.find((a) => a.id === selectedAgent);
-    const assistantMessage: Message = {
-      id: `msg_${Date.now()}_assistant`,
-      role: "assistant",
-      content: streamingEnabled ? "" : SIMULATED_RESPONSES[responseKey],
-      timestamp: Date.now(),
-      agent: agent?.name || "X",
-    };
-
-    setMessages((prev) => [...prev, assistantMessage]);
-    setIsTyping(false);
-
-    if (streamingEnabled) {
-      await simulateTyping(
-        SIMULATED_RESPONSES[responseKey],
-        assistantMessage.id
-      );
-    }
-  };
-
-  // Create new space
-  const createNewSpace = () => {
-    const now = Date.now();
-    const newSpace: Space = {
-      id: `space_${now}`,
-      name: "New Space",
-      goal: "Define your goal...",
-      createdAt: now,
-      updatedAt: now,
-      messageCount: 0,
-      status: "active",
-    };
-    setSpaces((prev) => [newSpace, ...prev]);
-    setCurrentSpace(newSpace);
-    setMessages([
-      {
-        id: "welcome_new",
-        role: "assistant",
-        content: "🎉 New space created! What would you like to accomplish?",
-        timestamp: now,
-        agent: "X",
-      },
-    ]);
+  // Handle send
+  const handleSend = () => {
+    if (!input.trim() || isLoading) return;
+    sendMessage(input);
+    setInput("");
   };
 
   // Loading state
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-6 h-6 shrink-0 text-white animate-pulse" />
-          </div>
-          <p className="text-muted-foreground">Loading Playground...</p>
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-16 h-16 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-violet-500/25"
+          >
+            <Sparkles className="w-8 h-8 shrink-0 text-white" />
+          </motion.div>
+          <p className="text-muted-foreground">Connecting to VibeX...</p>
         </div>
       </div>
     );
   }
 
-  const currentAgent = DEMO_AGENTS.find((a) => a.id === selectedAgent);
-
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-        <div className="max-w-[1800px] mx-auto p-4">
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 min-h-[calc(100vh-140px)]">
-            {/* Left Sidebar */}
-            <div className="hidden lg:flex flex-col gap-4">
-              <SpacesList
-                spaces={spaces}
-                currentSpace={currentSpace}
-                onSelectSpace={setCurrentSpace}
-                onCreateSpace={createNewSpace}
-              />
-              <TasksList tasks={tasks} />
-            </div>
+      <div
+        data-playground
+        className="h-[calc(100dvh-4rem)] overflow-hidden bg-background"
+      >
+        <div className="max-w-4xl mx-auto p-3 h-full flex flex-col gap-3">
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive" className="shrink-0">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>{error}</span>
+                <button
+                  onClick={clearError}
+                  className="text-sm underline hover:no-underline"
+                >
+                  Dismiss
+                </button>
+              </AlertDescription>
+            </Alert>
+          )}
 
-            {/* Main Chat Area */}
-            <Card className="flex flex-col min-h-[500px]">
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="flex flex-col h-full"
-              >
-                <div className="border-b px-4 py-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <TabsList className="!flex flex-1 flex-wrap gap-2 bg-transparent p-0 min-h-[3rem] w-full lg:w-auto">
-                    <TabsTrigger
-                      value="chat"
-                      className="gap-2 flex-1 min-w-[140px] sm:min-w-0 sm:flex-initial"
-                    >
-                      <MessageSquare className="w-4 h-4 shrink-0" />
-                      Chat
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="code"
-                      className="gap-2 flex-1 min-w-[140px] sm:min-w-0 sm:flex-initial"
-                    >
-                      <Terminal className="w-4 h-4 shrink-0" />
-                      Code
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="artifacts"
-                      className="gap-2 flex-1 min-w-[140px] sm:min-w-0 sm:flex-initial"
-                    >
-                      <FileText className="w-4 h-4 shrink-0" />
-                      Artifacts
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                    <Select
-                      value={selectedAgent}
-                      onValueChange={setSelectedAgent}
-                    >
-                      <SelectTrigger className="w-full sm:w-[160px] h-8 text-sm">
-                        <SelectValue placeholder="Select agent" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DEMO_AGENTS.map((agent) => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            <div className="flex items-center gap-2">
-                              <agent.icon
-                                className={`w-4 h-4 shrink-0 ${agent.color}`}
-                              />
-                              <span>{agent.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Separator
-                      orientation="vertical"
-                      className="h-6 hidden sm:block"
-                    />
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-                      <Switch
-                        checked={streamingEnabled}
-                        onCheckedChange={setStreamingEnabled}
-                        id="streaming"
-                      />
-                      <label
-                        htmlFor="streaming"
-                        className="text-sm text-muted-foreground cursor-pointer"
-                      >
-                        Stream
-                      </label>
-                    </div>
+          {/* Chat Card */}
+          <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <CardHeader className="py-2.5 px-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-500/20">
+                    <Sparkles className="w-4 h-4 shrink-0 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-semibold">
+                      X Playground
+                    </CardTitle>
                   </div>
                 </div>
+                <div className="flex items-center gap-3">
+                  {/* Chat Mode Switcher */}
+                  <ToggleGroup
+                    type="single"
+                    value={chatMode}
+                    onValueChange={(value) =>
+                      value && setChatMode(value as ChatMode)
+                    }
+                    variant="outline"
+                    size="sm"
+                    className="bg-muted/50 rounded-lg p-0.5 border-0"
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <ToggleGroupItem
+                          value="ask"
+                          className="h-7 px-2.5 text-xs border-0 text-muted-foreground hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:font-semibold transition-all"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 mr-1 shrink-0" />
+                          Ask
+                        </ToggleGroupItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Direct response, no multi-agent
+                      </TooltipContent>
+                    </Tooltip>
 
-                <TabsContent
-                  value="chat"
-                  className="flex-1 flex flex-col m-0 overflow-hidden"
-                >
-                  <ScrollArea className="flex-1 px-4">
-                    <div className="py-4 space-y-4">
-                      <AnimatePresence initial={false}>
-                        {messages.map((message) => (
-                          <ChatMessage key={message.id} message={message} />
-                        ))}
-                      </AnimatePresence>
-                      {isTyping && <TypingIndicator />}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </ScrollArea>
-                  <ChatInput
-                    value={inputValue}
-                    onChange={setInputValue}
-                    onSend={handleSend}
-                    isTyping={isTyping}
-                    selectedAgent={currentAgent}
-                    streamingEnabled={streamingEnabled}
-                  />
-                </TabsContent>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <ToggleGroupItem
+                          value="plan"
+                          className="h-7 px-2.5 text-xs border-0 text-muted-foreground hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:font-semibold transition-all"
+                        >
+                          <ListTodo className="w-3.5 h-3.5 mr-1 shrink-0" />
+                          Plan
+                        </ToggleGroupItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Create plan for approval first
+                      </TooltipContent>
+                    </Tooltip>
 
-                <TabsContent value="code" className="flex-1 m-0 p-4">
-                  <CodeSandbox />
-                </TabsContent>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <ToggleGroupItem
+                          value="agent"
+                          className="h-7 px-2.5 text-xs border-0 text-muted-foreground hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:font-semibold transition-all"
+                        >
+                          <Zap className="w-3.5 h-3.5 mr-1 shrink-0" />
+                          Agent
+                        </ToggleGroupItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Auto-execute with multi-agent
+                      </TooltipContent>
+                    </Tooltip>
+                  </ToggleGroup>
 
-                <TabsContent value="artifacts" className="flex-1 m-0 p-4">
-                  <ArtifactsList artifacts={artifacts} />
-                </TabsContent>
-              </Tabs>
-            </Card>
+                  {/* Status badges */}
+                  {status === "streaming" && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs flex items-center gap-1"
+                    >
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Streaming
+                    </Badge>
+                  )}
+                  {status === "submitted" && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs flex items-center gap-1"
+                    >
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Processing
+                    </Badge>
+                  )}
+                  {status === "idle" && messages.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {messages.length} message
+                      {messages.length !== 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
 
-            {/* Right Sidebar */}
-            <div className="hidden lg:flex flex-col gap-4">
-              <AgentsList
-                agents={DEMO_AGENTS}
-                selectedAgent={selectedAgent}
-                onSelectAgent={setSelectedAgent}
+            <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
+              {/* Messages */}
+              {messages.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center max-w-md px-8">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-6"
+                    >
+                      <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-violet-500/20">
+                        <Users className="w-10 h-10 shrink-0 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground mb-2">
+                          X Playground
+                        </h3>
+                        <p className="text-muted-foreground text-sm leading-relaxed">
+                          {chatMode === "ask" &&
+                            "Ask mode: Direct responses from X without multi-agent orchestration."}
+                          {chatMode === "plan" &&
+                            "Plan mode: X creates a detailed plan for your approval before execution."}
+                          {chatMode === "agent" &&
+                            "Agent mode: X automatically orchestrates multiple agents to complete complex tasks."}
+                        </p>
+                      </div>
+
+                      {/* Example prompts based on mode */}
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                          Try{" "}
+                          {chatMode === "agent" ? "a complex task" : "asking"}
+                        </p>
+                        {chatMode === "ask" &&
+                          [
+                            "What is the X framework?",
+                            "Explain multi-agent systems",
+                            "How does task planning work?",
+                          ].map((prompt, idx) => (
+                            <motion.button
+                              key={idx}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 * idx }}
+                              onClick={() => setInput(prompt)}
+                              className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
+                            >
+                              <span className="flex items-center justify-between">
+                                {prompt}
+                                <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
+                              </span>
+                            </motion.button>
+                          ))}
+                        {chatMode === "plan" &&
+                          [
+                            "Create a plan to research AI trends and write a report",
+                            "Plan a website redesign with multiple components",
+                            "Design a data pipeline architecture",
+                          ].map((prompt, idx) => (
+                            <motion.button
+                              key={idx}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 * idx }}
+                              onClick={() => setInput(prompt)}
+                              className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
+                            >
+                              <span className="flex items-center justify-between">
+                                {prompt}
+                                <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
+                              </span>
+                            </motion.button>
+                          ))}
+                        {chatMode === "agent" &&
+                          [
+                            "Research the latest AI agent frameworks and write a summary",
+                            "Analyze competitor products and create a comparison report",
+                            "Build a project plan with research, design, and implementation",
+                          ].map((prompt, idx) => (
+                            <motion.button
+                              key={idx}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 * idx }}
+                              onClick={() => setInput(prompt)}
+                              className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
+                            >
+                              <span className="flex items-center justify-between">
+                                {prompt}
+                                <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
+                              </span>
+                            </motion.button>
+                          ))}
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              ) : (
+                <ScrollArea className="flex-1 px-4">
+                  <div className="py-4 space-y-4">
+                    <AnimatePresence initial={false}>
+                      {messages.map((message) => (
+                        <ChatMessage key={message.id} message={message} />
+                      ))}
+                    </AnimatePresence>
+
+                    {isLoading && <TypingIndicator />}
+
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+              )}
+
+              <ChatInput
+                value={input}
+                onChange={setInput}
+                onSend={handleSend}
+                isLoading={isLoading}
               />
-              <ToolsList tools={DEMO_TOOLS} />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-
       </div>
     </TooltipProvider>
   );

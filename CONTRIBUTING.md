@@ -1,6 +1,6 @@
-# Contributing to Vibex
+# Contributing to VibeX
 
-Thank you for your interest in contributing to Vibex! We welcome contributions from the community and are grateful for any help you can provide.
+Thank you for your interest in contributing to VibeX! We welcome contributions from the community and are grateful for any help you can provide.
 
 ## Table of Contents
 
@@ -197,7 +197,7 @@ When reporting bugs, please include:
 5. **Environment**:
    - Node.js version
    - Operating system
-   - Vibex version
+   - VibeX version
 6. **Screenshots/Logs**: If applicable
 
 Use the [GitHub Issues](https://github.com/tiwater/vibex/issues) page with the "bug" label.
@@ -247,4 +247,4 @@ If you have questions, feel free to:
 
 ---
 
-Thank you for contributing to Vibex! 🎉
+Thank you for contributing to VibeX! 🎉

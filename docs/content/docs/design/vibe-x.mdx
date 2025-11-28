@@ -3,7 +3,7 @@ import { Bleed, Callout, Tabs, Steps } from "nextra/components";
 # The Vibe-X Philosophy
 
 <Bleed large>
-  <div className="bg-gradient-to-r from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600 text-white py-16 px-8 text-center rounded-2xl">
+  <div className="bg-linear-to-r from-blue-500 to-purple-500 dark:from-blue-600 dark:to-purple-600 text-white py-16 px-8 text-center rounded-2xl">
     <div className="text-3xl font-bold mb-4" style={{ lineHeight: "1.4" }}>
       "State-of-the-art with the art of state"
     </div>
@@ -218,12 +218,14 @@ This dynamic, cost-aware routing makes continuous, long-term AI collaboration ec
 
 <Tabs items={['Quick Start', 'What X Manages', 'The Genius']}>
   <Tabs.Tab>
-    ```python
-    # This is all you need
-    from vibex import XAgent
+    ```typescript
+    // This is all you need
+    import { XAgent } from "vibex";
 
-    x = await XAgent.start("Build a documentation site")
-    response = await x.chat("Make it searchable")
+    const xAgent = await XAgent.start("Build a documentation site");
+    const stream = await xAgent.streamText({
+      messages: [{ role: "user", content: "Make it searchable" }],
+    });
     ```
 
   </Tabs.Tab>
@@ -253,7 +255,7 @@ This dynamic, cost-aware routing makes continuous, long-term AI collaboration ec
 ## 6. The Simplicity of X: Your AI Collaborator
 
 <Bleed large>
-  <div className="bg-gradient-to-r from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-600 text-white py-12 px-8 text-center rounded-2xl">
+  <div className="bg-linear-to-r from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-600 text-white py-12 px-8 text-center rounded-2xl">
     <div className="text-4xl font-bold mb-4" style={{ lineHeight: "1.4" }}>
       ✨ The ultimate expression of the Vibe-X philosophy is its interface: X
     </div>
@@ -267,22 +269,28 @@ This dynamic, cost-aware routing makes continuous, long-term AI collaboration ec
 <Steps>
 ### Start a collaboration
 
-```python
-x = await XAgent.start("Build a web scraper")
+```typescript
+const xAgent = await XAgent.start("Build a web scraper");
 ```
 
 ### Work together
 
-```python
-await x.chat("It should handle pagination")
-await x.chat("Add rate limiting to be respectful")
+```typescript
+await xAgent.streamText({
+  messages: [{ role: "user", content: "It should handle pagination" }],
+});
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Add rate limiting to be respectful" }],
+});
 ```
 
 ### Resume anytime
 
-```python
-x = await XAgent.resume("proj_abc123")  # Uses project ID
-await x.chat("Now make it output JSON")
+```typescript
+const xAgent = await XAgent.resume("space_abc123");
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Now make it output JSON" }],
+});
 ```
 
 </Steps>
@@ -292,7 +300,7 @@ await x.chat("Now make it output JSON")
 ## 7. Conclusion: Beyond Automation, Towards Augmentation
 
 <Bleed large>
-  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 text-white py-16 px-8 text-center rounded-2xl">
+  <div className="bg-linear-to-br from-indigo-500 to-purple-600 dark:from-indigo-600 dark:to-purple-700 text-white py-16 px-8 text-center rounded-2xl">
     <div className="text-4xl font-bold mb-8" style={{ lineHeight: "1.4" }}>
       Vibe-X is a bet against pure automation
     </div>

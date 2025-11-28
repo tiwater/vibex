@@ -1,0 +1,153 @@
+# provider
+
+*Module: [`vibex/provider`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts)*
+
+AI Provider Management
+Handles initialization and configuration of different AI providers
+
+Philosophy: Keep it simple - agents specify their provider and model explicitly.
+
+To add a new provider (e.g., Google, Mistral, Cohere):
+1. Install: `pnpm add @ai-sdk/google`
+2. Import: `import { createGoogleGenerativeAI } from "@ai-sdk/google";`
+3. Add case: `case "google": return createGoogleGenerativeAI({…})`
+4. Add environment variable handling
+
+## Interfaces
+
+### ModelConfig
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L21" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `provider` | `ModelProvider` |  |
+| `modelName` | `string` |  |
+| `apiKey` | `string` |   (optional) |
+| `baseURL` | `string` |   (optional) |
+| `spaceId` | `string` |   (optional) |
+| `userId` | `string` |   (optional) |
+| `storageRoot` | `string` |   (optional) |
+| `teamConfig` | `string` |   (optional) |
+| `defaultGoal` | `string` |   (optional) |
+
+---
+
+## Types
+
+### ModelProvider
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L19" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type ModelProvider = string
+```
+
+---
+
+## Functions
+
+### getModelProvider
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L37" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get the appropriate AI provider instance
+
+```typescript
+function getModelProvider(config: ModelConfig): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `config` | `ModelConfig` |  |
+
+---
+
+### isProviderConfigured
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L99" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if a provider is properly configured
+
+```typescript
+function isProviderConfigured(provider: string): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `provider` | `string` |  |
+
+---
+
+### getConfiguredProviders
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L124" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get list of configured providers
+
+```typescript
+function getConfiguredProviders(): string[]
+```
+
+---
+
+### parseModelString
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L141" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Parse model string to extract provider and model name
+Examples: "gpt-4o" → \{ provider: "openai", modelName: "gpt-4o" }
+
+```typescript
+function parseModelString(model: string): ModelConfig
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `model` | `string` |  |
+
+---
+
+### getModelContextLimit
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L170" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get context limit for a model
+
+```typescript
+function getModelContextLimit(modelName: string): number
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `modelName` | `string` |  |
+
+---
+
+### getCompletionTokens
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/provider.ts#L206" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get completion token reservation for a model
+
+```typescript
+function getCompletionTokens(modelName: string): number
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `modelName` | `string` |  |
+
+---

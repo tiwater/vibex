@@ -1,0 +1,96 @@
+# factory
+
+*Module: [`vibex/factory`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts)*
+
+Adapter Factory - Creates appropriate adapters based on configuration
+
+This module provides factory functions to get the correct adapter
+based on environment configuration. It dynamically loads the local
+adapter package when needed.
+
+## Types
+
+### DataMode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L11" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type DataMode = "local" | "database" | "auto"
+```
+
+---
+
+## Functions
+
+### getServerResourceAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L32" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get resource adapter for server-side use
+Uses SQLite for local mode, throws for database mode (use @vibex/supabase)
+
+```typescript
+function getServerResourceAdapter(): ResourceAdapter
+```
+
+---
+
+### getResourceAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L60" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get resource adapter (alias for getServerResourceAdapter)
+
+```typescript
+function getResourceAdapter(): ResourceAdapter
+```
+
+---
+
+### getStorageAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L67" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get storage adapter for server-side use
+
+```typescript
+function getStorageAdapter(): StorageAdapter
+```
+
+---
+
+### getKnowledgeAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L94" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get knowledge adapter for server-side use
+
+```typescript
+function getKnowledgeAdapter(): KnowledgeAdapter
+```
+
+---
+
+### resetAdapters
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L121" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Reset all adapter instances (useful for testing)
+
+```typescript
+function resetAdapters(): void
+```
+
+---
+
+### getCurrentMode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/factory.ts#L130" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get current data mode
+
+```typescript
+function getCurrentMode(): DataMode
+```
+
+---

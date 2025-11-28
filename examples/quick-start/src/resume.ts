@@ -1,7 +1,7 @@
 /**
  * Resume Example - Continue where you left off
  *
- * This is Vibex's superpower: persistent workspaces.
+ * This is VibeX's superpower: persistent workspaces.
  * Run basic.ts first, then run this with the SPACE_ID.
  */
 

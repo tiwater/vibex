@@ -1,0 +1,397 @@
+# message
+
+*Module: [`vibex/message`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts)*
+
+Message types for VibeX - Using AI SDK v5 types directly
+
+## Classes
+
+### MessageQueue
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L78" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Enhanced Message Queue with management capabilities
+
+**Methods:**
+
+#### add
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L88" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Add message to queue
+
+```typescript
+function add(content: string, metadata?: any): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `content` | `string` |  |
+| `metadata` | `any` (optional) |  |
+
+---
+
+#### next
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L105" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get next message from queue
+
+```typescript
+function next(): QueuedMessage | undefined
+```
+
+---
+
+#### complete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L119" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Mark current message as complete
+
+```typescript
+function complete(messageId: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messageId` | `string` |  |
+
+---
+
+#### error
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L131" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Mark current message as error
+
+```typescript
+function error(messageId: string, error: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messageId` | `string` |  |
+| `error` | `string` |  |
+
+---
+
+#### remove
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L144" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Remove message from queue
+
+```typescript
+function remove(messageId: string): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messageId` | `string` |  |
+
+---
+
+#### reorder
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L157" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Reorder queue
+
+```typescript
+function reorder(messageId: string, newIndex: number): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messageId` | `string` |  |
+| `newIndex` | `number` |  |
+
+---
+
+#### edit
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L169" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Edit queued message
+
+```typescript
+function edit(messageId: string, content: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messageId` | `string` |  |
+| `content` | `string` |  |
+
+---
+
+#### clear
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L181" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Clear all queued messages
+
+```typescript
+function clear(): void
+```
+
+---
+
+#### getState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L189" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get queue state
+
+```typescript
+function getState(): QueueState
+```
+
+---
+
+#### subscribe
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L200" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Subscribe to queue changes
+
+```typescript
+function subscribe(listener: QueueListener): () => void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `listener` | `QueueListener` |  |
+
+---
+
+#### isEmpty
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L208" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if queue is empty
+
+```typescript
+function isEmpty(): boolean
+```
+
+---
+
+#### isProcessing
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L215" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if processing
+
+```typescript
+function isProcessing(): boolean
+```
+
+---
+
+---
+
+### ConversationHistory
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L231" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Conversation History management
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messages` | `Message[]` |  |
+
+**Methods:**
+
+#### add
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L234" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function add(message: Message): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `Message` |  |
+
+---
+
+#### getMessages
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L245" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getMessages(): Message[]
+```
+
+---
+
+#### getLastN
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L249" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getLastN(n: number): Message[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `n` | `number` |  |
+
+---
+
+#### clear
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L253" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function clear(): void
+```
+
+---
+
+#### toModelMessages
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L257" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function toModelMessages(): ModelMessage[]
+```
+
+---
+
+---
+
+## Interfaces
+
+### XMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L12" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `role` | `"system" \| "user" \| "assistant" \| "function" \| "data" \| "tool"` |  |
+| `content` | `any` |  |
+| `id` | `string` |   (optional) |
+| `metadata` | `\{ agentName?: string; timestamp?: number; [key: string]: any; \}` |   (optional) |
+
+---
+
+### QueuedMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L51" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Queued message with metadata
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `content` | `string` |  |
+| `status` | `"queued" \| "processing" \| "completed" \| "error"` |  |
+| `timestamp` | `number` |  |
+| `edited` | `boolean` |   (optional) |
+| `error` | `string` |   (optional) |
+| `metadata` | `any` |   (optional) |
+
+---
+
+### QueueState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L64" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Queue state for UI
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `current` | `QueuedMessage` |   (optional) |
+| `queue` | `QueuedMessage[]` |  |
+| `processing` | `boolean` |  |
+
+---
+
+## Types
+
+### ModelMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L6" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Message types for VibeX - Using AI SDK v5 types directly
+
+```typescript
+type ModelMessage = {
+  role: "system" | "user" | "assistant" | "function" | "data" | "tool";
+  content: string | any[];
+}
+```
+
+---
+
+### Message
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L24" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type Message = XMessage
+```
+
+---
+
+### QueueListener
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L73" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Queue listener type
+
+```typescript
+type QueueListener = (state: QueueState) => void
+```
+
+---
+
+## Functions
+
+### getTextContent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/message.ts#L29" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get text content from a message
+
+```typescript
+function getTextContent(message: Message): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `Message` |  |
+
+---

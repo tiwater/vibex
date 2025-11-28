@@ -1,175 +1,283 @@
 # Message Parts Architecture
 
-## Current State
+## Overview
 
-Our framework has several layers that need to support message parts:
+VibeX uses a parts-based message architecture aligned with AI SDK v6. This enables rich, structured messages that can contain multiple content types while supporting real-time streaming.
 
-1. **Brain (LLM Gateway)**
-   - Streams: `text-delta`, `tool-call`, `finish`, `error`
-   - Does NOT maintain message structure with parts
+## Message Types
 
-2. **Agent (Tool Executor)**
-   - Processes Brain's stream
-   - Executes tools
-   - Returns chunks but loses part structure
+VibeX defines two message types for different contexts:
 
-3. **XAgent (Orchestrator)**
-   - Collects parts during streaming
-   - Creates Message with parts at the end
-   - Does NOT stream parts to frontend in real-time
+### Server-Side: `XMessage`
 
-4. **Frontend**
-   - Receives fragmented events
-   - Tries to reconstruct message structure
-   - Missing proper part-based updates
-
-## Vercel AI SDK Approach
+Used internally by the `vibex` package for LLM interactions and persistence:
 
 ```typescript
-// Message with parts
-{
-  id: "msg_123",
-  role: "assistant",
-  content: "Here's the weather...", // Full text for backward compat
-  parts: [
-    { type: "text", text: "Let me check the weather for you.\n" },
-    { type: "tool-call", toolCallId: "call_456", toolName: "getWeather", args: {...} },
-    { type: "tool-result", toolCallId: "call_456", result: {...} },
-    { type: "text", text: "The weather in Tokyo is 72°F and sunny." }
-  ]
-}
-```
+import type { XMessagePart } from "@vibex/core";
 
-## Required Changes
-
-### 1. Enhanced Streaming Protocol
-
-```python
-# New streaming events
-- message_start: { messageId, role }
-- part_start: { messageId, partIndex, type }
-- part_delta: { messageId, partIndex, delta }
-- part_complete: { messageId, partIndex, part }
-- message_complete: { message }
-```
-
-### 2. Message Builder Pattern
-
-```python
-class StreamingMessageBuilder:
-    """Builds a Message with parts during streaming."""
-    
-    def __init__(self, message_id: str, role: str):
-        self.message_id = message_id
-        self.role = role
-        self.parts: List[MessagePart] = []
-        self.current_text = ""
-        self.current_part_index = -1
-    
-    def add_text_delta(self, text: str):
-        """Add text to current text part."""
-        self.current_text += text
-    
-    def finalize_text_part(self):
-        """Convert accumulated text to TextPart."""
-        if self.current_text:
-            self.parts.append(TextPart(text=self.current_text))
-            self.current_text = ""
-            self.current_part_index += 1
-    
-    def add_tool_call(self, tool_call: ToolCallPart):
-        """Add a tool call part."""
-        self.finalize_text_part()  # Finish any pending text
-        self.parts.append(tool_call)
-        self.current_part_index += 1
-    
-    def add_tool_result(self, tool_result: ToolResultPart):
-        """Add a tool result part."""
-        self.parts.append(tool_result)
-        self.current_part_index += 1
-    
-    def build(self) -> Message:
-        """Build the final message."""
-        self.finalize_text_part()  # Finish any pending text
-        
-        # Combine all text for content field (backward compat)
-        content = ""
-        for part in self.parts:
-            if isinstance(part, TextPart):
-                content += part.text
-            elif isinstance(part, ToolResultPart):
-                content += f"\n\nTool result: {part.result}\n"
-        
-        return Message(
-            id=self.message_id,
-            role=self.role,
-            content=content.strip(),
-            parts=self.parts
-        )
-```
-
-### 3. Frontend State Management
-
-```typescript
-interface StreamingMessage {
+interface XMessage {
   id: string;
-  role: string;
-  parts: MessagePart[];
-  status: 'streaming' | 'complete';
-  currentPartIndex?: number;
+  role: "system" | "user" | "assistant" | "tool" | "data";
+  parts: XMessagePart[];
+  metadata?: {
+    agentName?: string;
+    timestamp?: number;
+    [key: string]: unknown;
+  };
+  content?: string; // Backward compatibility
 }
-
-// Handle streaming events
-case "part_start":
-  // Initialize new part
-  message.parts[data.partIndex] = { type: data.type, ...data.initialData };
-  break;
-
-case "part_delta":
-  // Update existing part
-  const part = message.parts[data.partIndex];
-  if (part.type === 'text') {
-    part.text += data.delta;
-  } else if (part.type === 'tool-call' && data.argsDelta) {
-    part.args = JSON.parse(part.argsText + data.argsDelta);
-  }
-  break;
-
-case "part_complete":
-  // Finalize part
-  message.parts[data.partIndex] = data.part;
-  break;
 ```
 
-## Implementation Plan
+### Client-Side: `XChatMessage`
 
-1. **Phase 1: Message Builder**
-   - Create StreamingMessageBuilder class
-   - Use in XAgent._stream_full_response
-   - Emit proper part events
+Used by `@vibex/react` for UI rendering:
 
-2. **Phase 2: Streaming Protocol**
-   - Add new SSE event types
-   - Send part_start/delta/complete events
-   - Maintain message structure
+```typescript
+import type { UIMessagePart } from "ai";
 
-3. **Phase 3: Frontend Integration**
-   - Update useXAgent to handle part events
-   - Maintain streaming message state
-   - Render parts progressively
+interface XChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system" | "tool" | "data";
+  parts: UIMessagePart[];
+  createdAt?: Date;
+  metadata?: Record<string, unknown>;
+  content?: string; // Backward compatibility
+}
+```
 
-4. **Phase 4: Testing**
-   - Test text + tool call sequences
-   - Test multi-step tool calls
-   - Test error handling
+## Part Types
+
+### Core Parts (from AI SDK)
+
+```typescript
+// Text content
+interface TextPart {
+  type: "text";
+  text: string;
+}
+
+// Tool call request
+interface ToolCallPart {
+  type: "tool-call";
+  toolCallId: string;
+  toolName: string;
+  args: Record<string, unknown>;
+}
+
+// Tool execution result
+interface ToolResultPart {
+  type: "tool-result";
+  toolCallId: string;
+  toolName: string;
+  result: unknown;
+  isError?: boolean;
+}
+
+// Agent reasoning (for transparency)
+interface ReasoningPart {
+  type: "reasoning";
+  content: string;
+}
+
+// File attachments
+interface FilePart {
+  type: "file";
+  data: string | Uint8Array;
+  mimeType: string;
+}
+
+// Multi-step operation markers
+interface StepStartPart {
+  type: "step-start";
+  stepId: string;
+  stepName?: string;
+}
+```
+
+### VibeX-Specific Parts
+
+```typescript
+// Artifact references
+interface ArtifactPart {
+  type: "artifact";
+  artifactId: string;
+  title: string;
+  version?: number;
+  preview?: string;
+}
+
+// Plan updates
+interface PlanUpdatePart {
+  type: "plan-update";
+  planId: string;
+  action: "created" | "updated" | "completed" | "failed";
+  details?: Record<string, unknown>;
+}
+```
+
+## Utility Functions
+
+### Server-Side (`@vibex/core`)
+
+```typescript
+import {
+  getTextFromParts,
+  createTextMessage,
+  hasPendingApproval,
+  getToolCalls,
+  getArtifacts,
+  normalizeMessage,
+} from "@vibex/core";
+
+// Extract text content
+const text = getTextFromParts(message.parts);
+
+// Create a simple text message
+const msg = createTextMessage("assistant", "Hello!");
+
+// Check for pending tool approvals
+if (hasPendingApproval(message)) {
+  // Handle approval flow
+}
+```
+
+### Client-Side (`@vibex/react`)
+
+```typescript
+import {
+  getMessageText,
+  messageNeedsApproval,
+  getPendingApprovals,
+  createUserMessage,
+  isStatusLoading,
+} from "@vibex/react";
+
+// Get display text from message
+const displayText = getMessageText(message);
+
+// Check if message needs approval
+if (messageNeedsApproval(message)) {
+  const pending = getPendingApprovals(message);
+  // Show approval UI
+}
+
+// Create user message for sending
+const userMsg = createUserMessage("Hello, agent!");
+```
+
+## Streaming Architecture
+
+### Progressive Rendering
+
+Messages are streamed part-by-part for responsive UI:
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant Hook
+    participant API
+    participant Agent
+
+    UI->>Hook: sendMessage()
+    Hook->>API: POST /api/chat
+
+    API->>Agent: invoke
+
+    loop Streaming
+        Agent-->>API: TextPart delta
+        API-->>Hook: Stream chunk
+        Hook-->>UI: Update message.parts
+    end
+
+    Agent-->>API: ToolCallPart
+    API-->>Hook: Stream chunk
+    Hook-->>UI: Show tool call
+
+    API->>Agent: Execute tool
+    Agent-->>API: ToolResultPart
+    API-->>Hook: Stream chunk
+    Hook-->>UI: Show tool result
+
+    API-->>Hook: Message complete
+    Hook-->>UI: Final render
+```
+
+### Chat Status States
+
+```typescript
+type XChatStatus =
+  | "idle" // No active request
+  | "submitted" // Request sent, waiting
+  | "streaming" // Receiving response
+  | "awaiting-approval" // Tool needs approval
+  | "error"; // Error occurred
+```
+
+## React Integration
+
+```typescript
+import { useXChat, type XChatMessage } from "@vibex/react";
+
+function Chat({ spaceId }: { spaceId: string }) {
+  const {
+    messages,
+    input,
+    setInput,
+    append,
+    status,
+    isLoading,
+    approveToolCall,
+  } = useXChat({ spaceId });
+
+  // Render messages with parts
+  return (
+    <div>
+      {messages.map((msg) => (
+        <Message key={msg.id} message={msg} />
+      ))}
+      {status === "awaiting-approval" && (
+        <ApprovalUI
+          message={messages[messages.length - 1]}
+          onApprove={(id) => approveToolCall(id, true)}
+          onReject={(id) => approveToolCall(id, false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function Message({ message }: { message: XChatMessage }) {
+  return (
+    <div className={message.role === "user" ? "user-msg" : "assistant-msg"}>
+      {message.parts.map((part, i) => (
+        <Part key={i} part={part} />
+      ))}
+    </div>
+  );
+}
+
+function Part({ part }: { part: UIMessagePart }) {
+  switch (part.type) {
+    case "text":
+      return <p>{part.text}</p>;
+    case "tool-call":
+      return <ToolCallCard toolCall={part} />;
+    case "tool-result":
+      return <ToolResultCard result={part} />;
+    case "artifact":
+      return <ArtifactPreview artifact={part} />;
+    default:
+      return null;
+  }
+}
+```
 
 ## Benefits
 
-1. **Natural Visualization**: Parts render as they stream
-2. **Structured Data**: Maintain proper message structure
-3. **Tool Transparency**: Show tool calls inline with text
-4. **Progressive Rendering**: Update UI smoothly
-5. **Backward Compatible**: Still works with content field
-
-
-
+1. **Progressive Rendering**: UI updates smoothly as content streams
+2. **Structured Data**: Maintains proper message/part relationships
+3. **Tool Transparency**: Shows tool calls and results inline with text
+4. **Type Safety**: Full TypeScript types for all message structures
+5. **Multi-modal Support**: Easily extends to images, files, and custom types
+6. **Backward Compatible**: The `content` field provides plain text fallback
+7. **Approval Flow**: Native support for human-in-the-loop tool execution

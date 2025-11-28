@@ -1,0 +1,260 @@
+# task
+
+*Module: [`vibex/task`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts)*
+
+Task - Individual work item within a Mission's Plan
+
+A Task is a discrete, actionable unit of work. Tasks have their own lifecycle
+and can be assigned to specific agents.
+
+Hierarchy:
+  Space (persistent container)
+    └── Mission (user's intent)
+          └── Plan (strategy)
+                └── Task[] (individual work items) ‹-- This file
+
+Note: This is different from AI SDK's "steps" which refers to multi-turn
+tool execution loops. Our Task is a higher-level work item.
+
+## Classes
+
+### Task
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L43" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `title` | `string` |  |
+| `description` | `string` |  |
+| `status` | `TaskStatus` |  |
+| `assignedTo` | `string` |  |
+| `priority` | `"low" \| "medium" \| "high"` |  |
+| `estimatedTime` | `string` |  |
+| `actualTime` | `string` |  |
+| `dependencies` | `TaskDependency[]` |  |
+| `tags` | `string[]` |  |
+| `metadata` | `Record<string, unknown>` |  |
+| `result` | `unknown` |  |
+| `error` | `string` |  |
+| `createdAt` | `Date` |  |
+| `updatedAt` | `Date` |  |
+| `startedAt` | `Date` |  |
+| `completedAt` | `Date` |  |
+
+**Methods:**
+
+#### start
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L84" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Start the task
+
+```typescript
+function start(): void
+```
+
+---
+
+#### complete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L96" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Complete the task with optional result
+
+```typescript
+function complete(result?: unknown): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `result` | `unknown` (optional) |  |
+
+---
+
+#### fail
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L113" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Mark task as failed
+
+```typescript
+function fail(error: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `error` | `string` |  |
+
+---
+
+#### block
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L123" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Block the task (waiting on something)
+
+```typescript
+function block(reason: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `reason` | `string` |  |
+
+---
+
+#### cancel
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L132" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Cancel the task
+
+```typescript
+function cancel(): void
+```
+
+---
+
+#### isActionable
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L141" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if task can be started
+
+```typescript
+function isActionable(): boolean
+```
+
+---
+
+#### isFinished
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L148" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if task is finished (completed, failed, or cancelled)
+
+```typescript
+function isFinished(): boolean
+```
+
+---
+
+#### hasBlockingDependencies
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L160" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check for blocking dependencies
+Note: In real implementation, this would check against other tasks
+
+```typescript
+function hasBlockingDependencies(): boolean
+```
+
+---
+
+#### toJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L183" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Serialize to JSON
+
+```typescript
+function toJSON(): Record<string, unknown>
+```
+
+---
+
+#### fromJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L208" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Deserialize from JSON
+
+```typescript
+function fromJSON(data: Record<string, unknown>): Task
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `data` | `Record<string, unknown>` |  |
+
+---
+
+---
+
+## Interfaces
+
+### TaskDependency
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L26" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `type` | `"required" \| "optional"` |  |
+
+---
+
+### TaskConfig
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L31" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `title` | `string` |  |
+| `description` | `string` |   (optional) |
+| `assignedTo` | `string` |   (optional) |
+| `priority` | `"low" \| "medium" \| "high"` |   (optional) |
+| `estimatedTime` | `string` |   (optional) |
+| `dependencies` | `TaskDependency[]` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+
+---
+
+## Enums
+
+### TaskStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/task.ts#L17" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Task - Individual work item within a Mission's Plan
+
+A Task is a discrete, actionable unit of work. Tasks have their own lifecycle
+and can be assigned to specific agents.
+
+Hierarchy:
+  Space (persistent container)
+    └── Mission (user's intent)
+          └── Plan (strategy)
+                └── Task[] (individual work items) ‹-- This file
+
+Note: This is different from AI SDK's "steps" which refers to multi-turn
+tool execution loops. Our Task is a higher-level work item.
+
+**Values:**
+
+- `PENDING` = `"pending"`
+- `RUNNING` = `"running"`
+- `COMPLETED` = `"completed"`
+- `FAILED` = `"failed"`
+- `BLOCKED` = `"blocked"`
+- `CANCELLED` = `"cancelled"`
+
+---

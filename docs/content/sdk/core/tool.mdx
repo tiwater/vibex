@@ -1,0 +1,70 @@
+# tool
+
+*Module: [`@vibex/core/tool`](https://github.com/tiwater/vibex/blob/main/packages/core/src/types/tool.ts)*
+
+Tool Types - Shared interfaces for tools
+
+## Interfaces
+
+### ToolDefinition
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/tool.ts#L10" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Canonical tool definition that AI SDK-compatible runtimes expect.
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `description` | `string` |  |
+| `inputSchema` | `z.ZodSchema \| unknown` |  |
+| `execute` | `(args: unknown, context?: unknown) => Promise<unknown>` |  |
+
+---
+
+### ToolMetadata
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/tool.ts#L19" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Tool metadata for discovery and UI curation.
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `description` | `string` |  |
+| `category` | `string` |  |
+| `icon` | `string` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `features` | `string[]` |   (optional) |
+| `tools` | `string[]` |  |
+| `functions` | `unknown[]` |   (optional) |
+| `functionDetails` | `Array<\{ name: string; description: string; parameters?: unknown; inputSchema?: unknown; \}>` |   (optional) |
+| `configSchema` | `unknown` |   (optional) |
+| `enabled` | `boolean` |   (optional) |
+
+---
+
+## Types
+
+### CoreTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/tool.ts#L42" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type CoreTool = ToolDefinition
+```
+
+---
+
+### ToolInfo
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/tool.ts#L47" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type ToolInfo = ToolMetadata
+```
+
+---

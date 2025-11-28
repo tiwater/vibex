@@ -2,533 +2,587 @@
 
 **⏱️ Time: 45 minutes | 🎯 Goal: Create agents with custom capabilities**
 
-Let's give your agents superpowers! In this tutorial, you'll create custom tools that extend what your agents can do beyond text generation. You'll build a weather tool that connects to real-world data.
+Let's give your agents superpowers! In this tutorial, you'll learn how to create custom tools that extend what your agents can do beyond text generation.
 
 ## What You'll Learn
 
-- Custom tool development with Python classes
+- Custom tool development in TypeScript
 - Tool integration with agents
-- External API usage and async operations
-- Advanced agent capabilities
+- External API usage
 - Error handling in tools
 
 ## Prerequisites
 
 - Completed [Tutorial 2: Multi-Agent Collaboration](/docs/tutorials/2-multi-agent)
-- Basic understanding of Python classes
-- DeepSeek API key
-- Internet connection for API calls
+- Basic understanding of TypeScript
+- An LLM API key
 
 ---
 
+## Understanding Tools
+
+Tools extend what agents can do. They allow agents to:
+
+- Fetch data from external APIs
+- Read and write files
+- Search the web
+- Interact with databases
+- Execute code
+- And much more!
+
+VibeX provides built-in tools through `@vibex/tools`, and you can create custom ones.
+
 ## Step 1: Project Setup
 
-Create a new project for your weather-enabled assistant:
+Create a new project:
 
 ```bash
-mkdir weather-assistant
-cd weather-assistant
-mkdir -p config/prompts
-mkdir taskspace
+mkdir custom-tools-demo
+cd custom-tools-demo
+pnpm init
+pnpm add vibex @vibex/tools dotenv
+pnpm add -D typescript tsx @types/node
 ```
 
-Your project structure:
+Project structure:
 
 ```
-weather-assistant/
-├── config/
-│   ├── team.yaml           # Agent configuration
-│   └── prompts/
-│       └── assistant.md    # Assistant prompt
-├── weather_tool.py         # Custom weather tool
-├── main.py                 # Main application
-└── taskspace/              # Working directory
+custom-tools-demo/
+├── src/
+│   ├── index.ts           # Main application
+│   └── tools/
+│       └── weather.ts     # Custom weather tool
+├── .env
+├── package.json
+└── tsconfig.json
 ```
 
-## Step 2: Create a Custom Weather Tool
+## Step 2: Using Built-in Tools
 
-The heart of this tutorial is building a custom tool. Create `weather_tool.py`:
+First, let's explore the built-in tools. Create `src/index.ts`:
 
-```python
-import aiohttp
-from typing import Dict, Any
-from vibex import Tool, tool
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
 
-class WeatherTool(Tool):
-    """Custom weather tool using Open-Meteo API (no API key required)."""
+async function main() {
+  console.log("🔧 Tools Demo\n");
 
-    def __init__(self):
-        super().__init__()
-        self.base_url = "https://api.open-meteo.com/v1/forecast"
-        self.geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
+  // Create a workspace
+  const xAgent = await XAgent.start("Research assistant with tools");
+  const space = xAgent.getSpace();
 
-    @tool(
-        description="Get current weather for a specific location",
-        return_description="Weather information as a formatted string"
-    )
-    async def get_weather(self, location: str) -> str:
-        """
-        Get current weather for a location.
+  console.log(`✨ Created Space: ${space.spaceId}\n`);
 
-        Args:
-            location: City name, e.g., "San Francisco" or "London, UK"
+  // XAgent has access to built-in tools
+  // Ask it to perform a task that might use tools
+  console.log("🤖 XAgent: ");
+  const stream = await xAgent.streamText({
+    messages: [
+      {
+        role: "user",
+        content: "Help me understand the current trends in AI. Summarize key developments.",
+      },
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
 
-        Returns:
-            Weather information as a formatted string
-        """
-        try:
-            # Get coordinates for the location
-            coords = await self._get_coordinates(location)
-            if not coords:
-                return f"Sorry, I couldn't find the location '{location}'. Please try a more specific location name."
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+  console.log("\n");
 
-            # Get weather data
-            weather = await self._get_weather_data(coords)
-            if not weather:
-                return f"Sorry, I couldn't get weather data for {location}. Please try again later."
+  await space.persistState();
+  console.log(`💾 Saved: ${space.spaceId}`);
+}
 
-            return self._format_weather(location, weather, coords)
-
-        except Exception as e:
-            return f"Error getting weather for {location}: {str(e)}"
-
-    async def _get_coordinates(self, location: str) -> Dict[str, Any]:
-        """Get latitude and longitude for a location."""
-        try:
-            async with aiohttp.ClientSession() as session:
-                params = {
-                    "name": location,
-                    "count": 1,
-                    "language": "en",
-                    "format": "json"
-                }
-
-                async with session.get(self.geocoding_url, params=params) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        if data.get("results") and len(data["results"]) > 0:
-                            result = data["results"][0]
-                            return {
-                                "lat": result["latitude"],
-                                "lon": result["longitude"],
-                                "name": result["name"],
-                                "country": result.get("country", "")
-                            }
-                    return None
-        except Exception as e:
-            print(f"Error getting coordinates for {location}: {e}")
-            return None
-
-    async def _get_weather_data(self, coords: Dict[str, Any]) -> Dict[str, Any]:
-        """Get weather data from coordinates."""
-        try:
-            async with aiohttp.ClientSession() as session:
-                params = {
-                    "latitude": coords["lat"],
-                    "longitude": coords["lon"],
-                    "current": "temperature_2m,weathercode,windspeed_10m,relative_humidity_2m",
-                    "timezone": "auto"
-                }
-
-                async with session.get(self.base_url, params=params) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return data
-                    return None
-        except Exception as e:
-            print(f"Error getting weather data: {e}")
-            return None
-
-    def _format_weather(self, location: str, weather: Dict[str, Any], coords: Dict[str, Any]) -> str:
-        """Format weather data into readable text."""
-        try:
-            current = weather.get("current", {})
-            temp = current.get("temperature_2m", "N/A")
-            humidity = current.get("relative_humidity_2m", "N/A")
-            wind_speed = current.get("windspeed_10m", "N/A")
-            weather_code = current.get("weathercode", 0)
-
-            # Simple weather code interpretation
-            weather_desc = self._get_weather_description(weather_code)
-
-            location_name = coords["name"]
-            if coords.get("country"):
-                location_name += f", {coords['country']}"
-
-            return f"""🌤️ Current Weather for {location_name}:
-
-🌡️ Temperature: {temp}°C
-💧 Humidity: {humidity}%
-💨 Wind Speed: {wind_speed} km/h
-☁️ Conditions: {weather_desc}
-
-Data from Open-Meteo API"""
-        except Exception as e:
-            return f"Error formatting weather data: {str(e)}"
-
-    def _get_weather_description(self, code: int) -> str:
-        """Convert weather code to description."""
-        weather_codes = {
-            0: "Clear sky",
-            1: "Mainly clear",
-            2: "Partly cloudy",
-            3: "Overcast",
-            45: "Fog",
-            48: "Depositing rime fog",
-            51: "Light drizzle",
-            53: "Moderate drizzle",
-            55: "Dense drizzle",
-            61: "Slight rain",
-            63: "Moderate rain",
-            65: "Heavy rain",
-            71: "Slight snow",
-            73: "Moderate snow",
-            75: "Heavy snow",
-            95: "Thunderstorm"
-        }
-        return weather_codes.get(code, f"Unknown conditions (code: {code})")
+main().catch(console.error);
 ```
 
-### Understanding the Tool
+## Step 3: Understanding Tool Architecture
 
-- **Inherits from Tool**: All custom tools extend the VibeX `Tool` base class
-- **Async methods**: Uses `async/await` for non-blocking API calls
-- **Error handling**: Graceful handling of network and API errors
-- **Structured data**: Converts raw API data into readable format
-- **No API key required**: Uses free Open-Meteo API
+In VibeX, tools are defined using a simple schema that LLMs can understand:
 
-## Step 3: Agent Configuration with Custom Tool
-
-Create `config/team.yaml` to integrate your custom tool:
-
-```yaml
-name: "weather_assistant"
-description: "AI assistant with weather capabilities"
-
-agents:
-  - name: "assistant"
-    description: "Helpful assistant with weather tools"
-    prompt_template: "prompts/assistant.md"
-    tools: ["weather"] # Reference our custom tool
-    llm_config:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      temperature: 0.7
-      max_tokens: 4000
-      supports_function_calls: true
-
-# Configure the custom tool
-tools:
-  - name: "weather"
-    type: "custom"
-    module: "weather_tool" # Python file name
-    class: "WeatherTool" # Class name
-
-execution:
-  mode: "autonomous"
-  initial_agent: "assistant"
-  max_rounds: 10
-  timeout_seconds: 300
-
-memory:
-  enabled: false
+```typescript
+interface Tool {
+  name: string;
+  description: string;
+  parameters: {
+    type: "object";
+    properties: Record<string, {
+      type: string;
+      description: string;
+    }>;
+    required: string[];
+  };
+  execute: (params: Record<string, unknown>) => Promise<string>;
+}
 ```
 
-### Configuration Highlights
+## Step 4: Create a Custom Tool
 
-- **Custom tool type**: `type: "custom"` tells VibeX this is a custom tool
-- **Module and class**: Points to your Python file and class
-- **Tool reference**: Agent lists "weather" in its tools array
+Let's create a custom weather tool. Create `src/tools/weather.ts`:
 
-## Step 4: Agent Prompt with Tool Instructions
+```typescript
+/**
+ * Custom Weather Tool using Open-Meteo API (free, no API key required)
+ */
 
-Create `config/prompts/assistant.md`:
+interface Coordinates {
+  lat: number;
+  lon: number;
+  name: string;
+  country: string;
+}
 
-```markdown
-# Weather Assistant
+interface WeatherData {
+  current: {
+    temperature_2m: number;
+    weathercode: number;
+    windspeed_10m: number;
+    relative_humidity_2m: number;
+  };
+}
 
-You are a helpful AI assistant with access to real-time weather information.
+// Tool definition for the LLM
+export const weatherTool = {
+  name: "get_weather",
+  description: "Get the current weather for a specific location",
+  parameters: {
+    type: "object" as const,
+    properties: {
+      location: {
+        type: "string",
+        description: "City name, e.g., 'San Francisco' or 'London, UK'",
+      },
+    },
+    required: ["location"],
+  },
+};
 
-## Your Capabilities
+// Tool implementation
+export async function getWeather(location: string): Promise<string> {
+  try {
+    // Get coordinates for the location
+    const coords = await getCoordinates(location);
+    if (!coords) {
+      return `Sorry, I couldn't find the location '${location}'. Please try a more specific location name.`;
+    }
 
-- Answer general questions about any topic
-- Get current weather for any location using your weather tool
-- Provide weather-related advice and insights
-- Help users plan activities based on weather conditions
+    // Get weather data
+    const weather = await getWeatherData(coords);
+    if (!weather) {
+      return `Sorry, I couldn't get weather data for ${location}. Please try again later.`;
+    }
 
-## Using the Weather Tool
+    return formatWeather(coords, weather);
+  } catch (error) {
+    return `Error getting weather for ${location}: ${error}`;
+  }
+}
 
-When users ask about weather:
+async function getCoordinates(location: string): Promise<Coordinates | null> {
+  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+  url.searchParams.set("name", location);
+  url.searchParams.set("count", "1");
+  url.searchParams.set("language", "en");
+  url.searchParams.set("format", "json");
 
-1. Use the `get_weather` function with the location they specify
-2. Present the information in a friendly, conversational way
-3. Offer relevant advice based on the weather conditions
+  const response = await fetch(url);
+  if (!response.ok) return null;
 
-## Examples of Weather Queries
+  const data = await response.json();
+  if (!data.results || data.results.length === 0) return null;
 
-- "What's the weather in Tokyo?" → Use get_weather("Tokyo")
-- "How's the weather looking in New York City?" → Use get_weather("New York City")
-- "Tell me about the weather in London, UK" → Use get_weather("London, UK")
+  const result = data.results[0];
+  return {
+    lat: result.latitude,
+    lon: result.longitude,
+    name: result.name,
+    country: result.country || "",
+  };
+}
 
-## Response Guidelines
+async function getWeatherData(coords: Coordinates): Promise<WeatherData | null> {
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.searchParams.set("latitude", String(coords.lat));
+  url.searchParams.set("longitude", String(coords.lon));
+  url.searchParams.set(
+    "current",
+    "temperature_2m,weathercode,windspeed_10m,relative_humidity_2m"
+  );
+  url.searchParams.set("timezone", "auto");
 
-- Be friendly and conversational
-- Explain weather conditions in practical terms
-- Offer suggestions when appropriate (e.g., "Great weather for a walk!")
-- If weather data isn't available, suggest alternatives or ask for clarification
-- Always acknowledge the data source when providing weather information
+  const response = await fetch(url);
+  if (!response.ok) return null;
 
-## Non-Weather Queries
+  return response.json();
+}
 
-For questions not related to weather, respond normally as a helpful assistant.
-You don't need to use the weather tool for every conversation.
+function formatWeather(coords: Coordinates, weather: WeatherData): string {
+  const current = weather.current;
+  const condition = getWeatherCondition(current.weathercode);
 
-## Example Interactions
+  const locationName = coords.country
+    ? `${coords.name}, ${coords.country}`
+    : coords.name;
 
-**User**: "What's the weather like in Paris?"
-**You**: I'll check the current weather in Paris for you.
-_[Use get_weather("Paris")]_
-Based on the weather data, it's currently [temperature] with [conditions]. [Add relevant advice or observations]
+  return `🌤️ Current Weather for ${locationName}:
 
-**User**: "Should I bring an umbrella to London today?"
-**You**: Let me check the current weather conditions in London to help you decide.
-_[Use get_weather("London")]_
-[Provide recommendation based on weather data]
+🌡️ Temperature: ${current.temperature_2m}°C
+💧 Humidity: ${current.relative_humidity_2m}%
+💨 Wind Speed: ${current.windspeed_10m} km/h
+☁️ Conditions: ${condition}
+
+Data from Open-Meteo API`;
+}
+
+function getWeatherCondition(code: number): string {
+  const conditions: Record<number, string> = {
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Depositing rime fog",
+    51: "Light drizzle",
+    53: "Moderate drizzle",
+    55: "Dense drizzle",
+    61: "Slight rain",
+    63: "Moderate rain",
+    65: "Heavy rain",
+    71: "Slight snow",
+    73: "Moderate snow",
+    75: "Heavy snow",
+    95: "Thunderstorm",
+  };
+  return conditions[code] || `Unknown (code: ${code})`;
+}
 ```
 
-## Step 5: Main Application with Tool Demonstration
+## Step 5: Use Your Custom Tool
 
-Create `main.py`:
+Update `src/index.ts` to use the custom tool:
 
-```python
-#!/usr/bin/env python3
-import asyncio
-import sys
-from pathlib import Path
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
+import { getWeather } from "./tools/weather.js";
 
-# Add current directory to path for custom tool import
-sys.path.insert(0, str(Path(__file__).parent))
+async function main() {
+  console.log("🌤️  Weather Assistant Demo\n");
 
-from vibex.core.task import TaskExecutor
+  const xAgent = await XAgent.start("Weather information assistant");
+  const space = xAgent.getSpace();
 
-async def main():
-    print("🌤️  Weather Assistant")
-    print("Ask me about the weather anywhere in the world!")
-    print("Type 'quit' to exit\n")
+  console.log(`✨ Created Space: ${space.spaceId}\n`);
 
-    config_path = Path(__file__).parent / "config" / "team.yaml"
-    task_executor = TaskExecutor(str(config_path))
+  // Demonstrate the custom tool
+  const cities = ["San Francisco", "Tokyo", "London"];
 
-    # Show some example questions
-    print("💡 Try asking:")
-    print("  - What's the weather in Paris?")
-    print("  - How's the weather in Tokyo today?")
-    print("  - Should I bring a jacket in London?")
-    print("  - Tell me about the weather in your city")
-    print("  - Or ask me anything else!")
-    print()
+  for (const city of cities) {
+    console.log(`\n📍 Checking weather in ${city}...`);
+    const weather = await getWeather(city);
+    console.log(weather);
+  }
 
-    while True:
-        user_input = input("You: ").strip()
-        if user_input.lower() in ['quit', 'q', 'exit']:
-            print("Goodbye! Stay dry! 🌂")
-            break
+  // Now use XAgent with context about the weather
+  console.log("\n" + "─".repeat(50));
+  console.log("\n🤖 XAgent Analysis:\n");
 
-        print("Assistant: ", end="", flush=True)
-        try:
-            async for chunk in task_executor.execute_task(user_input, stream=True):
-                if chunk.get("type") == "content":
-                    print(chunk.get("content", ""), end="", flush=True)
-            print("\n")
-        except Exception as e:
-            print(f"\n❌ Error: {e}\n")
+  const weatherSummary = await Promise.all(
+    cities.map((city) => getWeather(city))
+  );
 
-if __name__ == "__main__":
-    asyncio.run(main())
+  const stream = await xAgent.streamText({
+    messages: [
+      {
+        role: "user",
+        content: `Here's the current weather data I gathered:
+
+${weatherSummary.join("\n\n")}
+
+Based on this data, which city would be best for an outdoor picnic today? Explain your reasoning.`,
+      },
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+  console.log("\n");
+
+  await space.persistState();
+  console.log(`\n💾 Saved: ${space.spaceId}`);
+}
+
+main().catch(console.error);
 ```
 
-### Code Features
+## Step 6: Run the Demo
 
-- **Path management**: Ensures Python can find your custom tool
-- **Error handling**: Graceful handling of tool errors
-- **User guidance**: Shows example queries to help users
-- **Streaming responses**: Real-time display of agent responses
+Add scripts to `package.json`:
 
-## Step 6: Install Dependencies and Run
+```json
+{
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  }
+}
+```
+
+Run:
 
 ```bash
-# Install required dependency for HTTP requests
-pip install aiohttp
-
-# Set your API key
-export DEEPSEEK_API_KEY="your-api-key-here"
-
-# Run your weather assistant
-python main.py
+pnpm start
 ```
 
-## Step 7: Test Your Custom Tool
-
-Try these example interactions:
-
-### Weather Queries
+You'll see:
 
 ```
-You: What's the weather in San Francisco?
-Assistant: I'll check the current weather in San Francisco for you.
+🌤️  Weather Assistant Demo
 
+✨ Created Space: space_abc123xyz
+
+📍 Checking weather in San Francisco...
 🌤️ Current Weather for San Francisco, United States:
 🌡️ Temperature: 18°C
 💧 Humidity: 65%
 💨 Wind Speed: 12 km/h
 ☁️ Conditions: Partly cloudy
 
-It's a pleasant day in San Francisco! The partly cloudy conditions and mild temperature make it perfect for outdoor activities.
+📍 Checking weather in Tokyo...
+🌤️ Current Weather for Tokyo, Japan:
+🌡️ Temperature: 24°C
+...
+
+──────────────────────────────────────────────────
+
+🤖 XAgent Analysis:
+
+Based on the weather data, I'd recommend Tokyo for your outdoor picnic...
 ```
 
-### Planning Questions
+## Step 7: Create a File Operations Tool
 
+Create `src/tools/files.ts`:
+
+```typescript
+import { readFile, writeFile, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+
+export const fileTools = {
+  read: {
+    name: "read_file",
+    description: "Read the contents of a file",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        path: { type: "string", description: "Path to the file" },
+      },
+      required: ["path"],
+    },
+  },
+  write: {
+    name: "write_file",
+    description: "Write content to a file",
+    parameters: {
+      type: "object" as const,
+      properties: {
+        path: { type: "string", description: "Path to the file" },
+        content: { type: "string", description: "Content to write" },
+      },
+      required: ["path", "content"],
+    },
+  },
+};
+
+export async function readFileContent(path: string): Promise<string> {
+  try {
+    const content = await readFile(path, "utf-8");
+    return content;
+  } catch (error) {
+    return `Error reading file: ${error}`;
+  }
+}
+
+export async function writeFileContent(
+  path: string,
+  content: string
+): Promise<string> {
+  try {
+    // Ensure directory exists
+    const dir = dirname(path);
+    if (!existsSync(dir)) {
+      await mkdir(dir, { recursive: true });
+    }
+
+    await writeFile(path, content, "utf-8");
+    return `✅ Successfully wrote to ${path}`;
+  } catch (error) {
+    return `Error writing file: ${error}`;
+  }
+}
 ```
-You: Should I bring a jacket to London today?
-Assistant: Let me check the current weather conditions in London to help you decide.
 
-🌤️ Current Weather for London, United Kingdom:
-🌡️ Temperature: 8°C
-💧 Humidity: 78%
-💨 Wind Speed: 15 km/h
-☁️ Conditions: Overcast
+## Step 8: Build an Interactive Tool-Enabled Assistant
 
-Yes, I'd definitely recommend bringing a jacket! At 8°C with overcast conditions, it's quite cool in London today.
-```
+Create `src/interactive.ts`:
 
-### Non-Weather Questions
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
+import { getWeather } from "./tools/weather.js";
+import { readFileContent, writeFileContent } from "./tools/files.js";
+import * as readline from "readline";
 
-```
-You: Can you explain how APIs work?
-Assistant: Absolutely! APIs (Application Programming Interfaces) are like bridges that allow different software applications to communicate with each other...
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+function prompt(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, resolve);
+  });
+}
+
+async function main() {
+  console.log("🔧 Interactive Tool-Enabled Assistant\n");
+  console.log("Available commands:");
+  console.log("  weather <city>  - Get weather for a city");
+  console.log("  read <path>     - Read a file");
+  console.log("  write <path>    - Write to a file");
+  console.log("  ask <question>  - Ask XAgent");
+  console.log("  quit            - Exit\n");
+
+  const xAgent = await XAgent.start("Tool-enabled assistant");
+  const space = xAgent.getSpace();
+
+  console.log(`✨ Space: ${space.spaceId}\n`);
+
+  while (true) {
+    const input = await prompt("📝 > ");
+    const [command, ...args] = input.trim().split(" ");
+
+    switch (command.toLowerCase()) {
+      case "weather": {
+        const city = args.join(" ") || "New York";
+        console.log(`\nFetching weather for ${city}...`);
+        console.log(await getWeather(city));
+        break;
+      }
+
+      case "read": {
+        const path = args[0];
+        if (!path) {
+          console.log("Usage: read <path>");
+          break;
+        }
+        console.log(`\nReading ${path}...`);
+        console.log(await readFileContent(path));
+        break;
+      }
+
+      case "write": {
+        const path = args[0];
+        if (!path) {
+          console.log("Usage: write <path>");
+          break;
+        }
+        const content = await prompt("Content: ");
+        console.log(await writeFileContent(path, content));
+        break;
+      }
+
+      case "ask": {
+        const question = args.join(" ");
+        if (!question) {
+          console.log("Usage: ask <question>");
+          break;
+        }
+        console.log("\n🤖 XAgent: ");
+        const stream = await xAgent.streamText({
+          messages: [{ role: "user", content: question }],
+          metadata: { mode: "agent", requestedAgent: "X" },
+        });
+        for await (const chunk of stream.textStream) {
+          process.stdout.write(chunk);
+        }
+        console.log("\n");
+        break;
+      }
+
+      case "quit":
+      case "exit":
+        await space.persistState();
+        console.log(`\n💾 Saved: ${space.spaceId}`);
+        rl.close();
+        return;
+
+      default:
+        if (input.trim()) {
+          console.log("Unknown command. Try: weather, read, write, ask, quit");
+        }
+    }
+  }
+}
+
+main().catch(console.error);
 ```
 
 ## 🎉 Congratulations!
 
 You've successfully built an agent with custom capabilities! Here's what you accomplished:
 
-✅ **Created a custom tool** that connects to external APIs
-✅ **Integrated the tool** with your agent configuration
-✅ **Handled async operations** for non-blocking API calls
-✅ **Implemented error handling** for robust tool behavior
-✅ **Built a practical application** that provides real value
+✅ **Created custom tools** for weather and file operations  
+✅ **Integrated external APIs** (Open-Meteo)  
+✅ **Handled errors gracefully**  
+✅ **Built an interactive tool-enabled assistant**  
 
 ## 💡 Key Concepts Learned
 
-- **Custom Tool Development**: Extending agent capabilities with Python classes
-- **Tool Integration**: How agents discover and use custom tools
+- **Tool Definition**: Describing tools with name, description, and parameters
+- **Tool Implementation**: Writing TypeScript functions that do the work
 - **External APIs**: Connecting to real-world data sources
-- **Async Programming**: Handling network requests without blocking
 - **Error Handling**: Building resilient tools that handle failures gracefully
 
-## 🔍 Understanding Tool Architecture
+## 🔍 Tool Design Principles
 
-### How Tools Work
-
-1. **Agent receives request**: User asks about weather
-2. **LLM decides to use tool**: Based on the prompt and request
-3. **Tool is invoked**: VibeX calls your `get_weather` method
-4. **Tool processes request**: Makes API calls and formats data
-5. **Agent uses result**: Incorporates tool output into response
-
-### Tool Design Principles
-
-- **Single responsibility**: Each tool should do one thing well
-- **Clear interfaces**: Well-documented methods with type hints
-- **Error handling**: Graceful handling of all failure modes
-- **Async support**: Non-blocking operations for better performance
-- **Testability**: Easy to test in isolation
+1. **Single Responsibility**: Each tool should do one thing well
+2. **Clear Descriptions**: Help the LLM understand when to use the tool
+3. **Error Handling**: Always handle failures gracefully
+4. **Type Safety**: Use TypeScript for reliable tool implementations
 
 ## 🚀 What's Next?
 
-You've mastered custom tools, but now let's scale up! In [Tutorial 4: Production Systems](/docs/tutorials/4-production), you'll build a comprehensive, production-ready system with multiple agents, persistent memory, and enterprise features.
+Now you know how to extend agent capabilities with tools! In [Tutorial 4: Configuration Deep Dive](/docs/tutorials/4-configuration), you'll learn how to configure every aspect of your VibeX workspace for production.
 
-### Preview: What You'll Build Next
+### Ideas for More Tools
 
-- **Multi-agent research system** with specialized roles
-- **Persistent memory** for long-term context
-- **Advanced error handling** and monitoring
-- **Production deployment patterns** for real applications
-- **File operations** and deliverable generation
-
-## 🔧 Advanced Tool Development
-
-### Adding More Methods
-
-You can add multiple methods to a single tool:
-
-```python
-class WeatherTool(Tool):
-    @tool(description="Get current weather for a location")
-    async def get_weather(self, location: str) -> str:
-        # Current weather
-
-    @tool(description="Get multi-day weather forecast")
-    async def get_forecast(self, location: str, days: int = 5) -> str:
-        # Multi-day forecast
-
-    @tool(description="Get weather warnings and alerts")
-    async def get_weather_alerts(self, location: str) -> str:
-        # Weather warnings and alerts
-```
-
-### Tool Configuration
-
-Tools can accept configuration parameters:
-
-```yaml
-tools:
-  - name: "weather"
-    type: "custom"
-    module: "weather_tool"
-    class: "WeatherTool"
-    config:
-      api_timeout: 30
-      default_units: "metric"
-```
-
-### Error Handling Best Practices
-
-- Always use try-catch blocks
-- Provide meaningful error messages
-- Log errors for debugging
-- Have fallback responses
-- Validate input parameters
+- **Database tool**: Query PostgreSQL or MongoDB
+- **Email tool**: Send notifications via SendGrid or Resend
+- **Search tool**: Web search with SerpAPI or Brave Search
+- **Calendar tool**: Manage events with Google Calendar API
+- **Code execution**: Run Python or JavaScript code safely
 
 ## 🔧 Troubleshooting
-
-**Tool not being called?**
-
-- **CRITICAL**: Ensure all tool methods have the `@tool` decorator
-- Check the agent's tools list includes your tool name
-- Verify the prompt mentions when to use the tool
-- Ensure the tool is properly configured in team.yaml
-
-**Import errors?**
-
-- Check that sys.path includes your project directory
-- Verify module and class names match exactly
-- Ensure all dependencies are installed
 
 **API errors?**
 
 - Check your internet connection
 - Verify the API endpoint is working
-- Look at error messages for specific issues
-- Test the API directly in a browser
+- Add retry logic for reliability
 
-**Want to build more tools?**
+**Tool not producing expected results?**
 
-- Try a news API for current events
-- Build a calculator for math operations
-- Create a file operations tool
-- Add database connectivity
+- Check the tool description is clear
+- Verify parameter types match expectations
+- Add logging to debug
 
 ---
 
-Ready to build production systems? Continue to [Tutorial 4: Production Systems](/docs/tutorials/4-production)! 🏭
+Ready to configure for production? Continue to [Tutorial 4: Configuration Deep Dive](/docs/tutorials/4-configuration)! ⚙️

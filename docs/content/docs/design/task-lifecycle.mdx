@@ -1,6 +1,6 @@
 # Mission Lifecycle & Artifact Evolution
 
-Unlike task-oriented frameworks with a simple "start → execute → end" lifecycle, Vibex provides **persistent Spaces** where work evolves over time through continuous collaboration.
+Unlike task-oriented frameworks with a simple "start → execute → end" lifecycle, VibeX provides **persistent Spaces** where work evolves over time through continuous collaboration.
 
 ## Core Concepts Hierarchy
 
@@ -16,7 +16,7 @@ Space (persistent container)
 - **Plan**: The strategy for achieving a Mission, can evolve
 - **Task**: Individual work items within a Plan
 
-> **Note**: Our "Task" is different from AI SDK's "steps" (multi-turn tool execution loops). Vibex Tasks are higher-level work items.
+> **Note**: Our "Task" is different from AI SDK's "steps" (multi-turn tool execution loops). VibeX Tasks are higher-level work items.
 
 ## Understanding Spaces vs Missions
 
@@ -79,7 +79,7 @@ sequenceDiagram
 
 ## Phase 2: Active Collaboration
 
-The core of Vibex—continuous iteration on artifacts through conversation.
+The core of VibeX—continuous iteration on artifacts through conversation.
 
 ### The Conversation-Artifact Loop
 
@@ -253,7 +253,7 @@ await xAgent.chat("Now focus on the budget section");
 
 ## Plan Adaptation
 
-Unlike static workflows, Vibex Plans adapt based on conversation:
+Unlike static workflows, VibeX Plans adapt based on conversation:
 
 ```mermaid
 sequenceDiagram
@@ -285,7 +285,7 @@ A key feature of Space-oriented design is **context accumulation**:
 agent.run("Research X"); // Context: just "Research X"
 agent.run("Write about X"); // Context: just "Write about X"
 
-// Vibex: Context accumulates
+// VibeX: Context accumulates
 await xAgent.chat("Research climate change");
 // Context: research request
 
@@ -307,13 +307,13 @@ interface ContextManager {
   getRelevantContext(
     query: string,
     tokenLimit: number
-  ): Promise<VibexMessage[]>;
+  ): Promise<XMessage[]>;
 
   // Summarize old context
   summarizeOldMessages(): Promise<void>;
 
   // Retrieve by artifact
-  getContextForArtifact(artifactId: string): VibexMessage[];
+  getContextForArtifact(artifactId: string): XMessage[];
 }
 ```
 
@@ -379,7 +379,7 @@ Archived Spaces:
 - Serve as reference for future work
 - Can be cloned as templates
 
-## Summary: The Vibex Model
+## Summary: The VibeX Model
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

@@ -1,949 +1,683 @@
-# Tutorial 4: Production Systems
+# Advanced: Comprehensive Systems
 
 **⏱️ Time: 60 minutes | 🎯 Goal: Build a scalable, production-ready system**
 
-Time to build something serious! In this tutorial, you'll create a comprehensive research system with multiple specialized agents, persistent memory, and production-ready features. This is where VibeX really shines.
+Time to build something serious! In this tutorial, you'll create a comprehensive research system with multiple features, demonstrating how all VibeX concepts work together.
 
 ## What You'll Learn
 
-- Advanced multi-agent architectures
-- Memory systems for long-term context
+- Advanced multi-agent workflows
+- Persistent storage with Supabase
 - Error handling and resilience
-- File operations and deliverable generation
 - Production deployment patterns
-- Monitoring and observability
+- Interactive CLI applications
 
 ## Prerequisites
 
 - Completed all previous tutorials
-- Understanding of multi-agent systems and tools
-- DeepSeek API key
-- Python 3.8+
+- Understanding of TypeScript and async/await
+- An LLM API key
+- (Optional) Supabase account for cloud storage
 
 ---
 
-## Step 1: Project Architecture
+## Project Overview
 
-Create a sophisticated project structure for your research system:
+We'll build a **Research Assistant** that:
+
+- Maintains persistent research projects
+- Coordinates multiple research phases
+- Saves and organizes findings
+- Provides an interactive CLI interface
+- Can be resumed across sessions
+
+## Step 1: Project Setup
 
 ```bash
-mkdir research-system
-cd research-system
-mkdir -p config/{prompts,memory}
-mkdir -p taskspace/{research,reports,temp}
-mkdir -p tools
-mkdir logs
+mkdir research-assistant
+cd research-assistant
+pnpm init
+pnpm add vibex @vibex/tools dotenv
+pnpm add -D typescript tsx @types/node
 ```
 
-Your production structure:
+Create the project structure:
 
 ```
-research-system/
-├── config/
-│   ├── team.yaml           # Team configuration
-│   ├── prompts/            # Agent prompts
-│   │   ├── coordinator.md
-│   │   ├── researcher.md
-│   │   ├── analyst.md
-│   │   └── writer.md
-│   └── memory/             # Memory configuration
-├── tools/
-│   ├── __init__.py
-│   ├── research_tools.py   # Custom research tools
-│   └── file_tools.py       # File operation tools
-├── taskspace/
-│   ├── research/           # Research data
-│   ├── reports/            # Final reports
-│   └── temp/               # Temporary files
-├── logs/                   # Application logs
-├── main.py                 # Main application
-└── requirements.txt        # Dependencies
+research-assistant/
+├── src/
+│   ├── index.ts           # Main entry point
+│   ├── research.ts        # Research workflow
+│   ├── interactive.ts     # Interactive CLI
+│   └── utils/
+│       └── logger.ts      # Logging utility
+├── .env
+├── package.json
+└── tsconfig.json
 ```
 
-## Step 2: Production Team Configuration
+## Step 2: Create Utility Functions
 
-Create `config/team.yaml` with a sophisticated multi-agent setup:
+Create `src/utils/logger.ts`:
 
-```yaml
-name: "research_system"
-description: "Production research system with specialized agents"
+```typescript
+const LOG_LEVELS = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
 
-# Four specialized agents for different research phases
-agents:
-  - name: "coordinator"
-    description: "Research coordinator and project manager"
-    prompt_template: "prompts/coordinator.md"
-    tools: ["handoff", "memory", "file_ops"]
-    llm_config:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      temperature: 0.3 # Focused for coordination
-      max_tokens: 4000
+const currentLevel = LOG_LEVELS[process.env.LOG_LEVEL || "info"] || 1;
 
-  - name: "researcher"
-    description: "Information gathering specialist"
-    prompt_template: "prompts/researcher.md"
-    tools: ["handoff", "memory", "web_search", "file_ops"]
-    llm_config:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      temperature: 0.5 # Balanced for research
-      max_tokens: 4000
-
-  - name: "analyst"
-    description: "Data analysis and synthesis expert"
-    prompt_template: "prompts/analyst.md"
-    tools: ["handoff", "memory", "file_ops"]
-    llm_config:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      temperature: 0.4 # Analytical focus
-      max_tokens: 4000
-
-  - name: "writer"
-    description: "Report writing and documentation specialist"
-    prompt_template: "prompts/writer.md"
-    tools: ["handoff", "memory", "file_ops"]
-    llm_config:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      temperature: 0.7 # Creative for writing
-      max_tokens: 4000
-
-# Production-grade tool configuration
-tools:
-  - name: "handoff"
-    type: "builtin"
-
-  - name: "memory"
-    type: "builtin"
-
-  - name: "web_search"
-    type: "custom"
-    module: "tools.research_tools"
-    class: "WebSearchTool"
-
-  - name: "file_ops"
-    type: "custom"
-    module: "tools.file_tools"
-    class: "FileOperationsTool"
-
-# Production execution configuration
-execution:
-  mode: "autonomous"
-  initial_agent: "coordinator"
-  max_rounds: 20 # Allow for complex workflows
-  timeout_seconds: 1800 # 30 minutes
-
-# Enable orchestrator with production settings
-orchestrator:
-  max_rounds: 20
-  timeout: 1800
-  brain_config:
-    model: "deepseek/deepseek-chat"
-    temperature: 0.0
-    max_tokens: 200
-
-# Production memory configuration
-memory:
-  enabled: true
-  backend: "mem0"
-  config:
-    vector_store:
-      provider: "qdrant"
-      config:
-        collection_name: "research_memory"
-        embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
-    llm:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      temperature: 0.1
-
-# Taskspace configuration
-taskspace:
-  base_path: "taskspace"
-  auto_cleanup: false # Keep files for production
-  max_file_size: "10MB"
+export const logger = {
+  debug: (message: string, ...args: unknown[]) => {
+    if (currentLevel <= 0) console.log(`🔍 ${message}`, ...args);
+  },
+  info: (message: string, ...args: unknown[]) => {
+    if (currentLevel <= 1) console.log(`ℹ️  ${message}`, ...args);
+  },
+  warn: (message: string, ...args: unknown[]) => {
+    if (currentLevel <= 2) console.warn(`⚠️  ${message}`, ...args);
+  },
+  error: (message: string, ...args: unknown[]) => {
+    if (currentLevel <= 3) console.error(`❌ ${message}`, ...args);
+  },
+  success: (message: string, ...args: unknown[]) => {
+    console.log(`✅ ${message}`, ...args);
+  },
+};
 ```
 
-## Step 3: Specialized Agent Prompts
+## Step 3: Create the Research Workflow
 
-### Coordinator Agent
+Create `src/research.ts`:
 
-Create `config/prompts/coordinator.md`:
+```typescript
+import { XAgent, Space } from "vibex";
+import { logger } from "./utils/logger.js";
 
-```markdown
-# Research Coordinator
+export interface ResearchResult {
+  topic: string;
+  findings: string;
+  analysis: string;
+  report: string;
+}
 
-You are the research coordinator responsible for managing complex research projects from start to finish.
+export class ResearchWorkflow {
+  private xAgent: XAgent;
+  private space: Space;
 
-## Your Role
+  constructor(xAgent: XAgent) {
+    this.xAgent = xAgent;
+    this.space = xAgent.getSpace();
+  }
 
-- Break down research requests into manageable phases
-- Coordinate between specialist agents
-- Track project progress and deliverables
-- Ensure quality and completeness of research
-- Manage timelines and resources
+  static async create(topic: string): Promise<ResearchWorkflow> {
+    logger.info(`Creating new research project: ${topic}`);
+    const xAgent = await XAgent.start(`Research: ${topic}`);
+    return new ResearchWorkflow(xAgent);
+  }
 
-## Research Process
+  static async resume(spaceId: string): Promise<ResearchWorkflow> {
+    logger.info(`Resuming research project: ${spaceId}`);
+    const xAgent = await XAgent.resume(spaceId);
+    return new ResearchWorkflow(xAgent);
+  }
 
-1. **Planning Phase**: Analyze request, create research plan
-2. **Research Phase**: Direct researcher to gather information
-3. **Analysis Phase**: Have analyst synthesize findings
-4. **Writing Phase**: Direct writer to create final report
-5. **Review Phase**: Quality check and finalization
+  get spaceId(): string {
+    return this.space.spaceId;
+  }
 
-## Handoff Strategy
+  get topic(): string {
+    return this.space.goal;
+  }
 
-- **To Researcher**: When information gathering is needed
-- **To Analyst**: When data synthesis is required
-- **To Writer**: When report creation is needed
-- **Back to yourself**: To coordinate next steps
+  async conductResearch(): Promise<string> {
+    logger.info("Phase 1: Conducting research...");
+    
+    const stream = await this.xAgent.streamText({
+      messages: [
+        {
+          role: "user",
+          content: `Please conduct comprehensive research on: ${this.topic}
 
-## Memory Usage
+Focus on:
+1. Current state and recent developments
+2. Key statistics and data
+3. Major players and stakeholders
+4. Challenges and opportunities
+5. Future trends
 
-- Store project plans and progress updates
-- Track key findings and decisions
-- Remember stakeholder requirements
-- Maintain research methodology notes
+Provide detailed, well-organized findings.`,
+        },
+      ],
+      metadata: { mode: "agent", requestedAgent: "X" },
+    });
 
-## File Operations
+    let result = "";
+    process.stdout.write("\n📚 Research Findings:\n");
+    process.stdout.write("─".repeat(40) + "\n");
 
-- Create project folders and organize taskspace
-- Save research plans and progress reports
-- Track deliverables and versions
+    for await (const chunk of stream.textStream) {
+      process.stdout.write(chunk);
+      result += chunk;
+    }
+    console.log("\n");
 
-## Example Workflow
+    return result;
+  }
 
-1. Receive research request
-2. Create detailed research plan
-3. Set up project taskspace
-4. Hand off to researcher for data gathering
-5. Coordinate analysis and synthesis
-6. Oversee report writing
-7. Final quality review and delivery
+  async analyzeFindings(): Promise<string> {
+    logger.info("Phase 2: Analyzing findings...");
 
-Always maintain professional project management standards.
+    const stream = await this.xAgent.streamText({
+      messages: [
+        {
+          role: "user",
+          content: `Based on the research you've gathered, please provide:
+
+1. **Key Insights**: What are the most important takeaways?
+2. **Patterns & Trends**: What patterns emerge from the data?
+3. **Implications**: What does this mean for stakeholders?
+4. **Recommendations**: What actions should be considered?
+
+Provide a structured analysis.`,
+        },
+      ],
+      metadata: { mode: "agent", requestedAgent: "X" },
+    });
+
+    let result = "";
+    process.stdout.write("\n🔍 Analysis:\n");
+    process.stdout.write("─".repeat(40) + "\n");
+
+    for await (const chunk of stream.textStream) {
+      process.stdout.write(chunk);
+      result += chunk;
+    }
+    console.log("\n");
+
+    return result;
+  }
+
+  async generateReport(): Promise<string> {
+    logger.info("Phase 3: Generating report...");
+
+    const stream = await this.xAgent.streamText({
+      messages: [
+        {
+          role: "user",
+          content: `Create a comprehensive research report based on our findings and analysis.
+
+Structure:
+1. **Executive Summary** (2-3 paragraphs)
+2. **Introduction** (background and methodology)
+3. **Key Findings** (organized by theme)
+4. **Analysis** (insights and implications)
+5. **Recommendations** (actionable next steps)
+6. **Conclusion**
+
+Make it professional and ready for stakeholders.`,
+        },
+      ],
+      metadata: { mode: "agent", requestedAgent: "X" },
+    });
+
+    let result = "";
+    process.stdout.write("\n📄 Research Report:\n");
+    process.stdout.write("─".repeat(40) + "\n");
+
+    for await (const chunk of stream.textStream) {
+      process.stdout.write(chunk);
+      result += chunk;
+    }
+    console.log("\n");
+
+    return result;
+  }
+
+  async runFullWorkflow(): Promise<ResearchResult> {
+    console.log("\n" + "═".repeat(50));
+    console.log("🔬 Starting Full Research Workflow");
+    console.log("═".repeat(50));
+    console.log(`📋 Topic: ${this.topic}`);
+    console.log(`🆔 Space: ${this.spaceId}\n`);
+
+    const findings = await this.conductResearch();
+    const analysis = await this.analyzeFindings();
+    const report = await this.generateReport();
+
+    // Save progress
+    await this.save();
+
+    console.log("═".repeat(50));
+    logger.success("Research workflow completed!");
+    console.log(`💾 Space ID: ${this.spaceId}`);
+    console.log("═".repeat(50) + "\n");
+
+    return {
+      topic: this.topic,
+      findings,
+      analysis,
+      report,
+    };
+  }
+
+  async chat(message: string): Promise<string> {
+    const stream = await this.xAgent.streamText({
+      messages: [{ role: "user", content: message }],
+      metadata: { mode: "agent", requestedAgent: "X" },
+    });
+
+    let result = "";
+    for await (const chunk of stream.textStream) {
+      process.stdout.write(chunk);
+      result += chunk;
+    }
+    console.log("\n");
+
+    return result;
+  }
+
+  async save(): Promise<void> {
+    await this.space.persistState();
+    logger.success(`Saved: ${this.spaceId}`);
+  }
+
+  getStatus(): {
+    spaceId: string;
+    topic: string;
+    messageCount: number;
+  } {
+    return {
+      spaceId: this.spaceId,
+      topic: this.topic,
+      messageCount: this.space.history.messages.length,
+    };
+  }
+}
 ```
 
-### Researcher Agent
+## Step 4: Create the Interactive CLI
 
-Create `config/prompts/researcher.md`:
+Create `src/interactive.ts`:
 
-```markdown
-# Research Specialist
+```typescript
+import "dotenv/config";
+import * as readline from "readline";
+import { ResearchWorkflow } from "./research.js";
+import { logger } from "./utils/logger.js";
 
-You are an expert researcher skilled in gathering, evaluating, and organizing information from multiple sources.
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-## Your Role
+function prompt(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, resolve);
+  });
+}
 
-- Conduct thorough information gathering
-- Evaluate source credibility and relevance
-- Organize findings systematically
-- Identify research gaps and opportunities
-- Provide comprehensive data for analysis
+function printMenu() {
+  console.log("\n📋 Commands:");
+  console.log("  new <topic>    - Start a new research project");
+  console.log("  resume <id>    - Resume an existing project");
+  console.log("  research       - Run research phase");
+  console.log("  analyze        - Run analysis phase");
+  console.log("  report         - Generate final report");
+  console.log("  full           - Run complete workflow");
+  console.log("  ask <question> - Ask a follow-up question");
+  console.log("  status         - Show project status");
+  console.log("  save           - Save current progress");
+  console.log("  quit           - Exit");
+}
 
-## Research Methodology
+async function main() {
+  console.log("\n" + "═".repeat(50));
+  console.log("🔬 VibeX Research Assistant");
+  console.log("═".repeat(50));
+  console.log("A comprehensive research workflow tool");
+  
+  let workflow: ResearchWorkflow | null = null;
 
-1. **Scope Definition**: Understand research parameters
-2. **Source Identification**: Find relevant information sources
-3. **Data Collection**: Gather comprehensive information
-4. **Source Evaluation**: Assess credibility and relevance
-5. **Data Organization**: Structure findings logically
+  // Check for existing space ID
+  const existingId = process.env.SPACE_ID;
+  if (existingId) {
+    const resume = await prompt(
+      `\n📂 Found existing project: ${existingId}\nResume? (y/n): `
+    );
+    if (resume.toLowerCase() === "y") {
+      try {
+        workflow = await ResearchWorkflow.resume(existingId);
+        logger.success(`Resumed project: ${workflow.topic}`);
+      } catch (error) {
+        logger.error(`Failed to resume: ${error}`);
+      }
+    }
+  }
 
-## Tools Usage
+  printMenu();
 
-- **Web Search**: Find current information and data
-- **Memory**: Store and recall research findings
-- **File Operations**: Save research data and sources
+  while (true) {
+    const input = await prompt("\n> ");
+    const [command, ...args] = input.trim().split(" ");
 
-## Research Standards
+    try {
+      switch (command.toLowerCase()) {
+        case "new": {
+          const topic = args.join(" ");
+          if (!topic) {
+            console.log("Usage: new <research topic>");
+            break;
+          }
+          workflow = await ResearchWorkflow.create(topic);
+          logger.success(`Created new project: ${workflow.spaceId}`);
+          break;
+        }
 
-- Always verify information from multiple sources
-- Document sources and methodology
-- Identify potential biases or limitations
-- Organize findings by themes or categories
-- Highlight key insights and patterns
+        case "resume": {
+          const spaceId = args[0];
+          if (!spaceId) {
+            console.log("Usage: resume <space-id>");
+            break;
+          }
+          workflow = await ResearchWorkflow.resume(spaceId);
+          logger.success(`Resumed: ${workflow.topic}`);
+          break;
+        }
 
-## Handoff Criteria
+        case "research": {
+          if (!workflow) {
+            console.log("❌ No active project. Use 'new' or 'resume' first.");
+            break;
+          }
+          await workflow.conductResearch();
+          break;
+        }
 
-Hand back to coordinator when:
+        case "analyze": {
+          if (!workflow) {
+            console.log("❌ No active project. Use 'new' or 'resume' first.");
+            break;
+          }
+          await workflow.analyzeFindings();
+          break;
+        }
 
-- Initial research phase is complete
-- Sufficient data has been gathered
-- Research gaps have been identified
-- Ready for analysis phase
+        case "report": {
+          if (!workflow) {
+            console.log("❌ No active project. Use 'new' or 'resume' first.");
+            break;
+          }
+          await workflow.generateReport();
+          break;
+        }
 
-## Output Format
+        case "full": {
+          if (!workflow) {
+            console.log("❌ No active project. Use 'new' or 'resume' first.");
+            break;
+          }
+          await workflow.runFullWorkflow();
+          break;
+        }
 
-Structure research findings with:
+        case "ask": {
+          if (!workflow) {
+            console.log("❌ No active project. Use 'new' or 'resume' first.");
+            break;
+          }
+          const question = args.join(" ");
+          if (!question) {
+            console.log("Usage: ask <your question>");
+            break;
+          }
+          console.log("\n🤖 XAgent: ");
+          await workflow.chat(question);
+          break;
+        }
 
-- Executive summary of key findings
-- Detailed information by category/theme
-- Source documentation and credibility assessment
-- Identified gaps or areas for further research
-- Recommendations for analysis focus
+        case "status": {
+          if (!workflow) {
+            console.log("❌ No active project.");
+            break;
+          }
+          const status = workflow.getStatus();
+          console.log("\n📊 Project Status:");
+          console.log(`   Space ID: ${status.spaceId}`);
+          console.log(`   Topic: ${status.topic}`);
+          console.log(`   Messages: ${status.messageCount}`);
+          break;
+        }
 
-Always maintain academic research standards and cite sources properly.
+        case "save": {
+          if (!workflow) {
+            console.log("❌ No active project.");
+            break;
+          }
+          await workflow.save();
+          break;
+        }
+
+        case "help":
+        case "?":
+          printMenu();
+          break;
+
+        case "quit":
+        case "exit":
+          if (workflow) {
+            console.log("\n💾 Saving project...");
+            await workflow.save();
+            console.log(`\nResume later with: SPACE_ID=${workflow.spaceId}`);
+          }
+          console.log("\nGoodbye! 👋");
+          rl.close();
+          return;
+
+        default:
+          if (input.trim()) {
+            console.log("Unknown command. Type 'help' for available commands.");
+          }
+      }
+    } catch (error) {
+      logger.error(`Error: ${error}`);
+    }
+  }
+}
+
+main().catch(console.error);
 ```
 
-### Analyst Agent
+## Step 5: Create the Main Entry Point
 
-Create `config/prompts/analyst.md`:
+Create `src/index.ts`:
 
-```markdown
-# Data Analyst
+```typescript
+import "dotenv/config";
+import { ResearchWorkflow } from "./research.js";
+import { logger } from "./utils/logger.js";
 
-You are a skilled analyst who synthesizes complex information into actionable insights and recommendations.
+async function main() {
+  console.log("\n🔬 VibeX Research Assistant - Quick Demo\n");
 
-## Your Role
+  // Get topic from command line or use default
+  const topic = process.argv[2] || "Artificial Intelligence in Healthcare";
 
-- Analyze research data for patterns and trends
-- Synthesize information from multiple sources
-- Identify key insights and implications
-- Develop evidence-based recommendations
-- Create structured analysis frameworks
+  logger.info(`Starting research on: ${topic}`);
 
-## Analysis Process
+  // Create a new research workflow
+  const workflow = await ResearchWorkflow.create(topic);
 
-1. **Data Review**: Examine all research findings
-2. **Pattern Recognition**: Identify trends and relationships
-3. **Synthesis**: Combine information into coherent insights
-4. **Validation**: Cross-check findings and conclusions
-5. **Recommendation Development**: Create actionable advice
+  // Run the full workflow
+  const result = await workflow.runFullWorkflow();
 
-## Analytical Frameworks
+  // Print summary
+  console.log("\n📝 Summary:");
+  console.log(`   Topic: ${result.topic}`);
+  console.log(`   Space ID: ${workflow.spaceId}`);
+  console.log(`\nTo resume this project later:`);
+  console.log(`   SPACE_ID=${workflow.spaceId} pnpm interactive`);
+}
 
-- SWOT analysis for strategic insights
-- Trend analysis for market intelligence
-- Comparative analysis for benchmarking
-- Risk assessment for decision-making
-- Impact analysis for recommendations
-
-## Memory Usage
-
-- Store analytical frameworks and methodologies
-- Remember key insights and patterns
-- Track analysis progress and decisions
-- Maintain analytical standards and criteria
-
-## File Operations
-
-- Save analysis reports and frameworks
-- Create data visualizations and summaries
-- Organize findings by analytical dimensions
-
-## Handoff Criteria
-
-Hand to writer when:
-
-- Analysis is complete and validated
-- Key insights are clearly identified
-- Recommendations are evidence-based
-- Analysis framework is documented
-
-## Output Standards
-
-- Clear methodology and assumptions
-- Evidence-based conclusions
-- Quantified impacts where possible
-- Risk assessments and limitations
-- Actionable recommendations
-
-Always maintain analytical rigor and objectivity.
+main().catch(console.error);
 ```
 
-### Writer Agent
+## Step 6: Configure the Project
 
-Create `config/prompts/writer.md`:
+Update `package.json`:
 
-```markdown
-# Report Writer
-
-You are a professional writer who creates clear, comprehensive reports and documentation.
-
-## Your Role
-
-- Transform analysis into readable reports
-- Create executive summaries and detailed findings
-- Ensure clear communication of complex information
-- Maintain professional writing standards
-- Produce publication-ready documents
-
-## Writing Process
-
-1. **Content Planning**: Organize information structure
-2. **Executive Summary**: Create high-level overview
-3. **Detailed Sections**: Develop comprehensive content
-4. **Review and Edit**: Ensure clarity and accuracy
-5. **Formatting**: Apply professional presentation standards
-
-## Report Structure
-
-- **Executive Summary**: Key findings and recommendations
-- **Introduction**: Background and methodology
-- **Findings**: Detailed research results
-- **Analysis**: Insights and implications
-- **Recommendations**: Actionable next steps
-- **Appendices**: Supporting data and sources
-
-## Writing Standards
-
-- Clear, professional tone
-- Logical flow and structure
-- Evidence-based statements
-- Proper citations and references
-- Executive-ready presentation
-
-## File Operations
-
-- Create professional report documents
-- Save multiple versions and drafts
-- Generate executive summaries
-- Organize supporting materials
-
-## Handoff Criteria
-
-Hand back to coordinator when:
-
-- Report is complete and professionally formatted
-- All sections are comprehensive and accurate
-- Executive summary captures key points
-- Ready for final review and delivery
-
-## Quality Checklist
-
-- Clear executive summary
-- Logical document structure
-- Evidence-based content
-- Professional formatting
-- Proper citations
-- Actionable recommendations
-
-Always maintain professional writing and presentation standards.
+```json
+{
+  "name": "research-assistant",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "interactive": "tsx src/interactive.ts",
+    "dev": "tsx watch src/index.ts"
+  }
+}
 ```
 
-## Step 4: Custom Production Tools
+Create `tsconfig.json`:
 
-### Research Tools
-
-Create `tools/__init__.py`:
-
-```python
-# Empty file to make tools a package
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*"]
+}
 ```
 
-Create `tools/research_tools.py`:
-
-```python
-import aiohttp
-import asyncio
-from typing import List, Dict, Any
-from vibex.core.tool import Tool
-
-class WebSearchTool(Tool):
-    """Production web search tool with rate limiting and error handling."""
-
-    def __init__(self):
-        super().__init__()
-        self.search_results_cache = {}
-        self.rate_limit_delay = 1.0  # Seconds between requests
-        self.last_request_time = 0
-
-    async def search_web(self, query: str, max_results: int = 10) -> str:
-        """
-        Search the web for information.
-
-        Args:
-            query: Search query string
-            max_results: Maximum number of results to return
-
-        Returns:
-            Formatted search results
-        """
-        try:
-            # Check cache first
-            cache_key = f"{query}_{max_results}"
-            if cache_key in self.search_results_cache:
-                return self.search_results_cache[cache_key]
-
-            # Rate limiting
-            current_time = asyncio.get_event_loop().time()
-            if current_time - self.last_request_time < self.rate_limit_delay:
-                await asyncio.sleep(self.rate_limit_delay)
-
-            # Simulate web search (in production, use real search API)
-            results = await self._simulate_search(query, max_results)
-
-            if not results:
-                return f"No search results found for: {query}"
-
-            formatted_results = self._format_search_results(query, results)
-
-            # Cache results
-            self.search_results_cache[cache_key] = formatted_results
-            self.last_request_time = asyncio.get_event_loop().time()
-
-            return formatted_results
-
-        except Exception as e:
-            return f"Error searching for '{query}': {str(e)}"
-
-    async def _simulate_search(self, query: str, max_results: int) -> List[Dict[str, Any]]:
-        """Simulate search results for demonstration."""
-        # In production, replace with real search API
-        await asyncio.sleep(0.5)  # Simulate network delay
-
-        return [
-            {
-                "title": f"Research Article: {query}",
-                "url": f"https://example.com/research/{query.replace(' ', '-')}",
-                "snippet": f"Comprehensive research on {query} with detailed analysis and findings...",
-                "source": "Academic Journal"
-            },
-            {
-                "title": f"Industry Report: {query}",
-                "url": f"https://industry.com/reports/{query.replace(' ', '-')}",
-                "snippet": f"Latest industry insights on {query} including market trends and forecasts...",
-                "source": "Industry Publication"
-            },
-            {
-                "title": f"News Article: {query}",
-                "url": f"https://news.com/articles/{query.replace(' ', '-')}",
-                "snippet": f"Recent developments in {query} with expert opinions and analysis...",
-                "source": "News Outlet"
-            }
-        ][:max_results]
-
-    def _format_search_results(self, query: str, results: List[Dict[str, Any]]) -> str:
-        """Format search results for agent consumption."""
-        formatted = f"🔍 Search Results for: {query}\n\n"
-
-        for i, result in enumerate(results, 1):
-            formatted += f"**Result {i}:**\n"
-            formatted += f"Title: {result['title']}\n"
-            formatted += f"Source: {result['source']}\n"
-            formatted += f"URL: {result['url']}\n"
-            formatted += f"Summary: {result['snippet']}\n\n"
-
-        formatted += f"Found {len(results)} results for analysis.\n"
-        return formatted
-```
-
-### File Operations Tool
-
-Create `tools/file_tools.py`:
-
-```python
-import os
-import json
-import aiofiles
-from pathlib import Path
-from typing import Dict, Any, Optional
-from vibex.core.tool import Tool
-
-class FileOperationsTool(Tool):
-    """Production file operations with error handling and security."""
-
-    def __init__(self):
-        super().__init__()
-        self.taskspace_path = Path("taskspace")
-        self.allowed_extensions = {'.txt', '.md', '.json', '.csv', '.html'}
-        self.max_file_size = 10 * 1024 * 1024  # 10MB
-
-    async def save_file(self, filename: str, content: str, folder: str = "temp") -> str:
-        """
-        Save content to a file in the taskspace.
-
-        Args:
-            filename: Name of the file to save
-            content: Content to write to the file
-            folder: Subfolder within taskspace (temp, research, reports)
-
-        Returns:
-            Success message with file path
-        """
-        try:
-            # Validate inputs
-            if not self._is_safe_filename(filename):
-                return f"Error: Invalid filename '{filename}'. Use only alphanumeric characters, hyphens, and underscores."
-
-            if not self._is_allowed_extension(filename):
-                return f"Error: File extension not allowed. Allowed: {', '.join(self.allowed_extensions)}"
-
-            if len(content.encode('utf-8')) > self.max_file_size:
-                return f"Error: File size exceeds maximum allowed size of {self.max_file_size // (1024*1024)}MB."
-
-            # Create directory structure
-            folder_path = self.taskspace_path / folder
-            folder_path.mkdir(parents=True, exist_ok=True)
-
-            # Save file
-            file_path = folder_path / filename
-            async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
-                await f.write(content)
-
-            return f"✅ File saved successfully: {file_path}"
-
-        except Exception as e:
-            return f"❌ Error saving file '{filename}': {str(e)}"
-
-    async def read_file(self, filename: str, folder: str = "temp") -> str:
-        """
-        Read content from a file in the taskspace.
-
-        Args:
-            filename: Name of the file to read
-            folder: Subfolder within taskspace
-
-        Returns:
-            File content or error message
-        """
-        try:
-            file_path = self.taskspace_path / folder / filename
-
-            if not file_path.exists():
-                return f"❌ File not found: {file_path}"
-
-            if file_path.stat().st_size > self.max_file_size:
-                return f"❌ File too large to read: {filename}"
-
-            async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
-                content = await f.read()
-
-            return f"📄 Content of {filename}:\n\n{content}"
-
-        except Exception as e:
-            return f"❌ Error reading file '{filename}': {str(e)}"
-
-    async def list_files(self, folder: str = "temp") -> str:
-        """
-        List files in a taskspace folder.
-
-        Args:
-            folder: Subfolder to list
-
-        Returns:
-            Formatted list of files
-        """
-        try:
-            folder_path = self.taskspace_path / folder
-
-            if not folder_path.exists():
-                return f"📁 Folder '{folder}' does not exist or is empty."
-
-            files = []
-            for file_path in folder_path.iterdir():
-                if file_path.is_file():
-                    size = file_path.stat().st_size
-                    files.append({
-                        'name': file_path.name,
-                        'size': f"{size:,} bytes",
-                        'modified': file_path.stat().st_mtime
-                    })
-
-            if not files:
-                return f"📁 Folder '{folder}' is empty."
-
-            # Sort by modification time (newest first)
-            files.sort(key=lambda x: x['modified'], reverse=True)
-
-            result = f"📁 Files in '{folder}' folder:\n\n"
-            for file_info in files:
-                result += f"• {file_info['name']} ({file_info['size']})\n"
-
-            return result
-
-        except Exception as e:
-            return f"❌ Error listing files in '{folder}': {str(e)}"
-
-    def _is_safe_filename(self, filename: str) -> bool:
-        """Check if filename is safe (no path traversal, etc.)."""
-        if not filename or '..' in filename or '/' in filename or '\\' in filename:
-            return False
-        return True
-
-    def _is_allowed_extension(self, filename: str) -> bool:
-        """Check if file extension is allowed."""
-        return Path(filename).suffix.lower() in self.allowed_extensions
-```
-
-## Step 5: Production Main Application
-
-Create `main.py`:
-
-```python
-#!/usr/bin/env python3
-import asyncio
-import logging
-import sys
-from pathlib import Path
-from datetime import datetime
-
-# Add tools to path
-sys.path.insert(0, str(Path(__file__).parent))
-
-from vibex.core.task import TaskExecutor
-
-# Configure production logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/research_system.log'),
-        logging.StreamHandler()
-    ]
-)
-
-logger = logging.getLogger(__name__)
-
-class ResearchSystem:
-    """Production research system with comprehensive features."""
-
-    def __init__(self):
-        self.config_path = Path(__file__).parent / "config" / "team.yaml"
-        self.task_executor = None
-        self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    async def initialize(self):
-        """Initialize the research system."""
-        try:
-            logger.info("Initializing Research System...")
-            self.task_executor = TaskExecutor(str(self.config_path))
-            logger.info("Research System initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize Research System: {e}")
-            raise
-
-    async def conduct_research(self, research_request: str) -> str:
-        """Conduct comprehensive research on a topic."""
-        logger.info(f"Starting research session: {self.session_id}")
-        logger.info(f"Research request: {research_request}")
-
-        try:
-            # Enhanced prompt for production research
-            enhanced_prompt = f"""
-            RESEARCH REQUEST: {research_request}
-
-            SESSION ID: {self.session_id}
-            TIMESTAMP: {datetime.now().isoformat()}
-
-            INSTRUCTIONS:
-            1. Create a comprehensive research plan
-            2. Conduct thorough information gathering
-            3. Perform detailed analysis and synthesis
-            4. Generate a professional research report
-            5. Save all work products to appropriate taskspace folders
-
-            DELIVERABLES REQUIRED:
-            - Research plan document
-            - Comprehensive findings report
-            - Executive summary
-            - Recommendations document
-
-            Begin the research process now.
-            """
-
-            # Track research progress
-            progress_log = []
-            handoff_count = 0
-            current_agent = "coordinator"
-
-            print(f"🔬 Research System - Session {self.session_id}")
-            print(f"📋 Request: {research_request}")
-            print("=" * 60)
-
-            async for update in self.task_executor.execute_task(enhanced_prompt, stream=True):
-                update_type = update.get("type")
-
-                if update_type == "content":
-                    content = update.get("content", "")
-                    print(content, end="", flush=True)
-
-                elif update_type == "handoff":
-                    handoff_count += 1
-                    from_agent = update["from_agent"]
-                    to_agent = update["to_agent"]
-                    current_agent = to_agent
-
-                    progress_entry = {
-                        "timestamp": datetime.now().isoformat(),
-                        "handoff": handoff_count,
-                        "from": from_agent,
-                        "to": to_agent
-                    }
-                    progress_log.append(progress_entry)
-
-                    print(f"\n\n🔄 HANDOFF #{handoff_count}: {from_agent} → {to_agent}")
-                    print("─" * 40)
-                    logger.info(f"Agent handoff: {from_agent} → {to_agent}")
-
-                elif update_type == "tool_call":
-                    tool_name = update.get("tool_name", "unknown")
-                    print(f"\n🛠️  Using tool: {tool_name}")
-                    logger.info(f"Tool call: {tool_name}")
-
-                elif update_type == "routing_decision":
-                    if update["action"] == "complete":
-                        print(f"\n\n🎉 Research Complete!")
-                        print(f"📊 Session: {self.session_id}")
-                        print(f"🔄 Total handoffs: {handoff_count}")
-                        print(f"🎯 Final agent: {current_agent}")
-                        logger.info(f"Research session completed: {self.session_id}")
-                        break
-
-            # Save session log
-            await self._save_session_log(progress_log, research_request)
-
-            return f"Research session {self.session_id} completed successfully."
-
-        except Exception as e:
-            logger.error(f"Research session failed: {e}")
-            print(f"\n❌ Research failed: {e}")
-            return f"Research session failed: {e}"
-
-    async def _save_session_log(self, progress_log: list, research_request: str):
-        """Save session progress log."""
-        try:
-            log_data = {
-                "session_id": self.session_id,
-                "timestamp": datetime.now().isoformat(),
-                "research_request": research_request,
-                "progress_log": progress_log,
-                "summary": {
-                    "total_handoffs": len(progress_log),
-                    "agents_involved": list(set([entry["from"] for entry in progress_log] + [entry["to"] for entry in progress_log]))
-                }
-            }
-
-            log_file = Path("logs") / f"session_{self.session_id}.json"
-            log_file.parent.mkdir(exist_ok=True)
-
-            with open(log_file, 'w') as f:
-                import json
-                json.dump(log_data, f, indent=2)
-
-            logger.info(f"Session log saved: {log_file}")
-
-        except Exception as e:
-            logger.error(f"Failed to save session log: {e}")
-
-async def main():
-    """Main application entry point."""
-    print("🏭 VibeX Production Research System")
-    print("Advanced multi-agent research with memory and file operations")
-    print()
-
-    # Initialize system
-    research_system = ResearchSystem()
-    await research_system.initialize()
-
-    # Interactive mode
-    while True:
-        print("\n" + "="*60)
-        research_request = input("Enter research topic (or 'quit' to exit): ").strip()
-
-        if research_request.lower() in ['quit', 'q', 'exit']:
-            print("Goodbye! 👋")
-            break
-
-        if not research_request:
-            print("Please enter a research topic.")
-            continue
-
-        # Conduct research
-        result = await research_system.conduct_research(research_request)
-        print(f"\n✅ {result}")
-
-        # Show taskspace contents
-        taskspace_path = Path("taskspace")
-        if taskspace_path.exists():
-            print(f"\n📁 Check the taskspace folder for research deliverables:")
-            for folder in ["research", "reports", "temp"]:
-                folder_path = taskspace_path / folder
-                if folder_path.exists() and any(folder_path.iterdir()):
-                    print(f"  • {folder}/ - {len(list(folder_path.iterdir()))} files")
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-## Step 6: Production Dependencies
-
-Create `requirements.txt`:
-
-```txt
-vibex>=0.1.0
-aiofiles>=23.2.1
-aiohttp>=3.9.0
-mem0ai>=0.1.0
-qdrant-client>=1.7.0
-sentence-transformers>=2.2.2
-```
-
-## Step 7: Run the Production System
+Create `.env`:
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables
-export DEEPSEEK_API_KEY="your-api-key-here"
-
-# Run the system
-python main.py
+OPENAI_API_KEY=sk-your-key
+LOG_LEVEL=info
 ```
 
-## Step 8: Test Production Features
+## Step 7: Run the Application
 
-Try these comprehensive research requests:
+### Quick Demo
 
-### Market Research
-
-```
-Enter research topic: AI market trends and opportunities 2024
+```bash
+pnpm start "Climate Change Solutions"
 ```
 
-### Competitive Analysis
+### Interactive Mode
+
+```bash
+pnpm interactive
+```
+
+You'll see:
 
 ```
-Enter research topic: Competitive landscape analysis for electric vehicles
+══════════════════════════════════════════════════
+🔬 VibeX Research Assistant
+══════════════════════════════════════════════════
+A comprehensive research workflow tool
+
+📋 Commands:
+  new <topic>    - Start a new research project
+  resume <id>    - Resume an existing project
+  research       - Run research phase
+  ...
+
+> new Renewable Energy Trends 2024
+✅ Created new project: space_abc123xyz
+
+> full
+══════════════════════════════════════════════════
+🔬 Starting Full Research Workflow
+══════════════════════════════════════════════════
+📋 Topic: Research: Renewable Energy Trends 2024
+🆔 Space: space_abc123xyz
+
+ℹ️  Phase 1: Conducting research...
+
+📚 Research Findings:
+────────────────────────────────────────
+[XAgent provides comprehensive research]
+
+ℹ️  Phase 2: Analyzing findings...
+...
 ```
 
-### Technology Assessment
+## Step 8: Production Enhancements
 
+### Add Error Handling
+
+```typescript
+// In research.ts
+async conductResearch(): Promise<string> {
+  try {
+    // ... existing code
+  } catch (error) {
+    logger.error(`Research failed: ${error}`);
+    throw new Error(`Research phase failed: ${error}`);
+  }
+}
 ```
-Enter research topic: Blockchain technology adoption in healthcare
+
+### Add Graceful Shutdown
+
+```typescript
+// In interactive.ts
+process.on("SIGINT", async () => {
+  console.log("\n\nInterrupt received...");
+  if (workflow) {
+    console.log("💾 Saving project...");
+    await workflow.save();
+    console.log(`Space ID: ${workflow.spaceId}`);
+  }
+  process.exit(0);
+});
 ```
 
 ## 🎉 Congratulations!
 
-You've completed the comprehensive VibeX tutorial series! You now have the knowledge and skills to build production-ready multi-agent systems.
+You've built a comprehensive, production-ready research system! Here's what you accomplished:
 
-### What You've Mastered
+✅ **Multi-phase research workflow**  
+✅ **Interactive CLI interface**  
+✅ **Persistent project management**  
+✅ **Error handling and logging**  
+✅ **Graceful shutdown handling**  
 
-✅ **Single Agent Systems** - Basic agent configuration and interaction
-✅ **Multi-Agent Collaboration** - Agent handoffs and team coordination
-✅ **Custom Tools** - Extending agent capabilities with external integrations
-✅ **Production Concepts** - Scalable, maintainable agent architectures
+## 💡 Key Patterns Used
 
-### Real-World Applications
+1. **Workflow Class**: Encapsulates the multi-step research process
+2. **Static Factory Methods**: `create()` and `resume()` for initialization
+3. **Interactive CLI**: readline-based command interface
+4. **Logging**: Structured logging with levels
+5. **Error Boundaries**: Try-catch at command level
 
-With your VibeX skills, you can now build:
+## 🚀 Extensions
 
-- **Research Systems** - Automated research with multiple specialist agents
-- **Content Creation** - Writer-reviewer teams for high-quality content
-- **Customer Service** - Multi-agent support systems with specialized roles
-- **Data Analysis** - Research, analysis, and reporting pipelines
-- **Workflow Automation** - Complex business process automation
+Ideas for expanding this project:
 
-### Next Steps
+- **Export to PDF**: Generate PDF reports using puppeteer
+- **Email Integration**: Send reports via email
+- **Web Interface**: Build a Next.js frontend
+- **Database Integration**: Store results in a database
+- **Scheduled Research**: Run research on a schedule
 
-1. **Explore the Examples** - Check out the [example projects](https://github.com/dustland/vibex/tree/main/examples)
-2. **Read the API Docs** - Dive deeper with the [API Reference](/api/core-classes)
-3. **Join the Community** - Connect with other developers on [GitHub Discussions](https://github.com/dustland/vibex/discussions)
-4. **Build Something Amazing** - Apply your skills to solve real problems
+## 📚 Related Resources
+
+- [SDK Reference](/sdk) — Complete API documentation
+- [React Integration](/sdk/react) — Build web UIs
+- [Example Projects](https://github.com/tiwater/vibex/tree/main/examples) — More examples
 
 ---
 
-🚀 **Ready to build the future with VibeX?** The possibilities are endless!
+🎊 **Congratulations on completing the VibeX tutorial series!** You now have the skills to build sophisticated AI agent systems.

@@ -12,15 +12,43 @@ export type { AgentConfig, AgentContext, AgentResponse } from "./agent";
 export type { CoreTool, ToolInfo } from "./tool";
 
 // Message types (runtime)
-export type { ModelMessage, VibexMessage, Message } from "./message";
+export type {
+  // Core message types
+  ModelMessage,
+  XMessage,
+  Message,
+  MessageRole,
+  ChatStatus,
+  // Message part types
+  XMessagePart,
+  TextPart,
+  ToolCallPart,
+  ToolResultPart,
+  ReasoningPart,
+  ArtifactPart,
+  PlanUpdatePart,
+  FilePart,
+  StepStartPart,
+} from "./message";
+
+// Message utility functions
+export {
+  getTextFromParts,
+  createTextMessage,
+  hasPendingApproval,
+  getToolCalls,
+  getArtifacts,
+  contentToParts,
+  normalizeMessage,
+} from "./message";
 
 // Common types
 export type {
-  VibexError,
+  XError,
   StreamChunk,
   ModelConfig,
   StorageConfig,
-  VibexConfig,
+  XConfig,
 } from "./common";
 
 // Space types (data persistence layer)

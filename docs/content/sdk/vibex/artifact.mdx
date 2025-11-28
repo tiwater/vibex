@@ -1,0 +1,110 @@
+# artifact
+
+*Module: [`vibex/artifact`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts)*
+
+Artifact Management for VibeX
+
+Provides a simple interface for managing space artifacts
+(documents, images, and other files) within the VibeX system
+
+## Classes
+
+### ArtifactManager
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts#L22" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Methods:**
+
+#### saveArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts#L28" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Save an artifact to the space
+
+```typescript
+function saveArtifact(spaceId: string, filename: string, content: Buffer | string, metadata?: Partial<ArtifactMetadata>): Promise<ArtifactMetadata>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `filename` | `string` |  |
+| `content` | `Buffer \| string` |  |
+| `metadata` | `Partial<ArtifactMetadata>` (optional) |  |
+
+---
+
+#### getArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts#L68" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get an artifact from the space
+
+```typescript
+function getArtifact(spaceId: string, filename: string): Promise<Buffer | null>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `filename` | `string` |  |
+
+---
+
+#### listArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts#L84" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+List all artifacts in the space
+
+```typescript
+function listArtifacts(): Promise<ArtifactMetadata[]>
+```
+
+---
+
+#### deleteArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts#L92" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Delete an artifact
+
+```typescript
+function deleteArtifact(spaceId: string, filename: string): Promise<boolean>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `filename` | `string` |  |
+
+---
+
+---
+
+## Interfaces
+
+### ArtifactMetadata
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/artifact.ts#L11" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `name` | `string` |  |
+| `path` | `string` |  |
+| `mimeType` | `string` |  |
+| `size` | `number` |  |
+| `createdAt` | `string` |  |
+| `updatedAt` | `string` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `description` | `string` |   (optional) |
+
+---

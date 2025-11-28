@@ -1,7 +1,7 @@
 /**
- * VibexErrorBoundary - Error boundary for Vibex operations
+ * XErrorBoundary - Error boundary for X operations
  *
- * Catches errors from Vibex data operations and displays a fallback UI
+ * Catches errors from X data operations and displays a fallback UI
  */
 
 "use client";
@@ -19,7 +19,7 @@ interface State {
   error: Error | null;
 }
 
-export class VibexErrorBoundary extends Component<Props, State> {
+export class XErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -30,7 +30,7 @@ export class VibexErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("[VibexErrorBoundary] Caught error:", error, errorInfo);
+    console.error("[XErrorBoundary] Caught error:", error, errorInfo);
     this.props.onError?.(error, errorInfo);
   }
 

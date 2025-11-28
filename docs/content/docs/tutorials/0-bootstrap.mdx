@@ -1,307 +1,234 @@
 # Tutorial 0: Bootstrap Your First Project
 
-**Get started with VibeX in under 2 minutes using our intelligent project wizard.**
+**Get started with VibeX in under 5 minutes.**
 
-The VibeX bootstrap wizard embodies the Vibe-X philosophy by providing optimized templates for the three core workflows of knowledge work. Instead of starting with a blank slate, you get a working system tailored to your specific use case.
+This tutorial walks you through setting up a complete VibeX project from scratch.
 
 ---
 
 ## Quick Start
 
-The fastest way to get started is with the interactive wizard:
+The fastest way to get started is to clone the quick-start example:
 
 ```bash
-pip install vibex
-vibex init
+# Clone the VibeX repository
+git clone https://github.com/tiwater/vibex.git
+cd vibex/examples/quick-start
+
+# Install dependencies
+pnpm install
+
+# Set up your environment
+cp env.example .env
+# Edit .env with your API key
+
+# Run the example
+pnpm start
 ```
-
-This launches an intelligent wizard that:
-
-- 🎯 **Identifies your workflow type** (Writing, Coding, or Operating)
-- 🤖 **Selects optimal models** for cost and performance
-- 🏗️ **Generates complete project structure** with working agents
-- 📚 **Provides comprehensive documentation** and examples
 
 ---
 
-## The Three Core Templates
+## Manual Setup
 
-### 📝 Writing Template - Vibe-Writing
+If you prefer to set up a project from scratch:
 
-Perfect for **document creation, research, and content workflows**.
+### 1. Create a New Project
 
 ```bash
-vibex init my-research-project --template writing
+mkdir my-vibex-project
+cd my-vibex-project
+pnpm init
 ```
 
-**What you get:**
-
-- **Researcher Agent**: Gathers comprehensive information and credible sources
-- **Writer Agent**: Creates compelling, well-structured content
-- **Editor Agent**: Provides quality assurance and polish
-
-**Ideal for:**
-
-- Research papers and academic writing
-- Technical documentation and guides
-- Marketing content and reports
-- Blog posts and articles
-
-### 💻 Coding Template - Vibe-Coding
-
-Optimized for **software development and technical implementation**.
+### 2. Install Dependencies
 
 ```bash
-vibex init my-app-project --template coding
+# Install VibeX and dotenv for environment variables
+pnpm add vibex dotenv
+
+# Install TypeScript development dependencies
+pnpm add -D typescript tsx @types/node
 ```
 
-**What you get:**
+### 3. Configure TypeScript
 
-- **Architect Agent**: Plans system design and technical approach
-- **Developer Agent**: Implements clean, maintainable code
-- **Tester Agent**: Ensures quality through comprehensive testing
+Create `tsconfig.json`:
 
-**Ideal for:**
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist"
+  },
+  "include": ["src/**/*"]
+}
+```
 
-- Web applications and APIs
-- Libraries and frameworks
-- Bug fixes and refactoring
-- Code reviews and optimization
+### 4. Set Up Environment Variables
 
-### 🎛️ Operating Template - Vibe-Operating
-
-Designed for **automation, API integration, and real-world actions**.
+Create a `.env` file with your API key:
 
 ```bash
-vibex init my-automation-project --template operating
+# Choose your LLM provider
+
+# OpenAI
+OPENAI_API_KEY=sk-your-openai-key
+
+# Or Anthropic
+ANTHROPIC_API_KEY=your-anthropic-key
+
+# Or DeepSeek
+DEEPSEEK_API_KEY=your-deepseek-key
 ```
 
-**What you get:**
+### 5. Create Your First Script
 
-- **Analyst Agent**: Understands requirements and plans operations
-- **Operator Agent**: Executes real-world actions and API calls
-- **Monitor Agent**: Validates results and provides feedback
+Create `src/index.ts`:
 
-**Ideal for:**
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
 
-- API integrations and automation
-- Data processing pipelines
-- System administration tasks
-- Real-world operations and monitoring
+async function main() {
+  console.log("🚀 Starting VibeX...\n");
 
----
+  // Create a new workspace
+  const xAgent = await XAgent.start("My first VibeX project");
+  const space = xAgent.getSpace();
 
-## Interactive Wizard Demo
+  console.log(`✨ Created Space: ${space.spaceId}`);
+  console.log(`📋 Goal: ${space.goal}\n`);
 
-Let's walk through creating a writing project:
+  // Chat with XAgent
+  console.log("🤖 XAgent: ");
+  const stream = await xAgent.streamText({
+    messages: [
+      { role: "user", content: "Hello! What can you help me with?" }
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+
+  console.log("\n");
+
+  // Save the workspace
+  await space.persistState();
+  console.log(`💾 Workspace saved! Space ID: ${space.spaceId}`);
+}
+
+main().catch(console.error);
+```
+
+### 6. Add Scripts to package.json
+
+Update your `package.json`:
+
+```json
+{
+  "name": "my-vibex-project",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  }
+}
+```
+
+### 7. Run Your Project
 
 ```bash
-$ vibex init
+pnpm start
+```
 
-🚀 VibeX Project Bootstrap
-===================================
-Welcome to the VibeX project wizard!
-Let's create your optimized AI workflow.
+You should see:
 
-📁 Project name: my-research-assistant
+```
+🚀 Starting VibeX...
 
-🎯 Choose your workflow type:
-1. 📝 Writing - Document creation, research papers, content
-2. 💻 Coding - Software development, debugging, testing
-3. 🎛️  Operating - Automation, API calls, real-world actions
-4. 🔧 Custom - Start with basic setup
+✨ Created Space: space_abc123xyz
+📋 Goal: My first VibeX project
 
-Select (1-4): 1
+🤖 XAgent: Hello! I'm XAgent, your AI assistant...
 
-🤖 Default LLM provider (current: deepseek):
-1. DeepSeek (fast, cost-effective)
-2. OpenAI (GPT-4, reliable)
-3. Claude (Anthropic, excellent reasoning)
-4. Gemini (Google, multimodal)
-
-Select (1-4) or press Enter for deepseek:
-
-🏗️  Creating project 'my-research-assistant' with writing template...
-✅ Project 'my-research-assistant' created successfully!
+💾 Workspace saved! Space ID: space_abc123xyz
 ```
 
 ---
 
-## What Gets Generated
+## Project Structure
 
-Every bootstrap project includes:
-
-### 📁 Complete Project Structure
+Your complete project should look like this:
 
 ```
-my-research-assistant/
-├── config/
-│   ├── team.yaml          # Agent configuration
-│   └── prompts/           # Agent behavior definitions
-├── taskspace/             # Project taskspace (auto-generated)
-├── main.py               # Ready-to-run application
-├── .env.example          # Environment template
-└── README.md            # Comprehensive documentation
+my-vibex-project/
+├── src/
+│   └── index.ts        # Your main application
+├── .env                # API keys (don't commit this!)
+├── .gitignore          # Git ignore file
+├── package.json        # Project configuration
+└── tsconfig.json       # TypeScript configuration
 ```
 
-### 🤖 Pre-configured Agents
-
-Each template includes 3 specialized agents with:
-
-- **Optimized prompts** for their specific roles
-- **Appropriate tool access** for their responsibilities
-- **Clear handoff protocols** between agents
-- **Quality standards** and best practices
-
-### 🔧 Smart Defaults
-
-- **Cost-effective model selection** (DeepSeek by default)
-- **Collaborative execution mode** with intelligent routing
-- **Memory enabled** for context retention
-- **Essential tools** pre-configured (search, storage, memory)
-
-### 📚 Production-Ready Code
-
-- **Streaming interface** for real-time interaction
-- **Error handling** and graceful degradation
-- **Task tracking** with unique IDs
-- **Taskspace management** for organized output
-
----
-
-## Running Your Project
-
-After bootstrap completes:
-
-```bash
-cd my-research-assistant
-cp .env.example .env
-# Edit .env with your API keys
-python main.py
-```
-
-You'll get an interactive session:
+Create a `.gitignore` file:
 
 ```
-🚀 Starting my-research-assistant
-==================================================
-
-📋 Task ID: task_abc123
-📁 Taskspace: /path/to/taskspace/task_abc123
-
-🤖 AI agents are ready! What would you like to work on?
-
-👤 You: Research and write a comprehensive guide on renewable energy trends
-
-🤖 AI: I'll help you create a comprehensive guide on renewable energy trends.
-Let me start by researching the latest developments and data...
-
-[Researcher Agent activates, searches for information, saves findings]
-[Writer Agent takes over, creates structured content]
-[Editor Agent reviews and polishes the final document]
+node_modules/
+dist/
+.env
+*.log
 ```
 
 ---
 
-## Model Selection Guide
+## LLM Provider Options
 
-Choose the right model for your needs:
+VibeX supports multiple LLM providers. Configure your preferred provider in `.env`:
 
-| Provider     | Model            | Strengths                             | Best For                          |
-| ------------ | ---------------- | ------------------------------------- | --------------------------------- |
-| **DeepSeek** | deepseek-chat    | Fast, cost-effective, good quality    | Most workflows, high-volume usage |
-| **OpenAI**   | gpt-4o-mini      | Reliable, well-tested, good reasoning | Production systems, complex tasks |
-| **Claude**   | claude-3-haiku   | Excellent reasoning, ethical, helpful | Research, analysis, writing       |
-| **Gemini**   | gemini-1.5-flash | Multimodal, fast, Google integration  | Creative tasks, data analysis     |
-
-You can always change models later by editing `config/team.yaml`.
-
----
-
-## Customization Options
-
-### Command Line Flags
-
-```bash
-# Non-interactive mode with specific template
-vibex init my-project --template coding --model openai --no-interactive
-
-# Interactive mode (default)
-vibex init
-
-# Specify project name upfront
-vibex init my-awesome-project
-```
-
-### Template Customization
-
-After generation, you can customize:
-
-1. **Agent Prompts**: Edit files in `config/prompts/`
-2. **Tool Configuration**: Modify `tools` section in `config/team.yaml`
-3. **Model Settings**: Adjust `llm_config` for each agent
-4. **Execution Parameters**: Change `max_rounds`, `timeout_seconds`, etc.
-
----
-
-## Cost Optimization
-
-Bootstrap projects are configured for cost-effective operation:
-
-- **DeepSeek by default**: Up to 90% cost savings vs GPT-4
-- **Efficient prompting**: Agents designed for minimal token usage
-- **Smart tool selection**: Only necessary tools are loaded
-- **Collaborative mode**: Agents work together to minimize redundant work
-
-**Estimated costs** (per 1000 user interactions):
-
-- DeepSeek: ~$2-5
-- OpenAI GPT-4o-mini: ~$10-20
-- Claude Haiku: ~$8-15
-- Gemini Flash: ~$3-8
-
----
-
-## Next Steps
-
-Once you have a working project:
-
-1. **Experiment**: Try different prompts and see how agents respond
-2. **Customize**: Modify agent behavior by editing prompt files
-3. **Scale**: Add more agents or upgrade to more powerful models
-4. **Deploy**: Use `vibex start` to run as a service
-5. **Learn**: Explore [Tutorial 1: Your First Agent](/docs/tutorials/1-first-agent) for deeper concepts
+| Provider | Environment Variable | Models |
+| -------- | -------------------- | ------ |
+| **OpenAI** | `OPENAI_API_KEY` | gpt-4o, gpt-4o-mini, gpt-4-turbo |
+| **Anthropic** | `ANTHROPIC_API_KEY` | claude-3-5-sonnet, claude-3-opus |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | deepseek-chat, deepseek-coder |
+| **Google** | `GOOGLE_GENERATIVE_AI_API_KEY` | gemini-1.5-pro, gemini-1.5-flash |
 
 ---
 
 ## Troubleshooting
 
-**"Directory already exists" error?**
+**"API key not found" error?**
 
-- Choose a different project name or remove the existing directory
+- Make sure your `.env` file exists and contains the correct key
+- Ensure `dotenv/config` is imported at the top of your file
+- Check that the environment variable name matches your provider
 
-**Agents not responding?**
+**TypeScript errors?**
 
-- Check your API keys in `.env`
-- Verify internet connection
-- Try `vibex status` to check configuration
+- Run `pnpm add -D @types/node` if you're missing Node.js types
+- Make sure your `tsconfig.json` has `"moduleResolution": "bundler"`
 
-**Want to start over?**
+**"Cannot find module 'vibex'" error?**
 
-- Delete the project directory and run `vibex init` again
-- Or modify the existing configuration files
+- Run `pnpm install` to ensure dependencies are installed
+- Check that `vibex` is listed in your `package.json` dependencies
 
 ---
 
-## Philosophy: Fast Start, Full Control
+## Next Steps
 
-The bootstrap wizard embodies VibeX's core philosophy:
+Now that you have a working project:
 
-- **Fast Start**: Get productive immediately with working templates
-- **Full Control**: Every file is editable, nothing is hidden or locked
-- **Best Practices**: Templates encode proven patterns and optimizations
-- **Escape Hatches**: You can always customize or completely rewrite
+1. **Experiment**: Try different prompts and see how XAgent responds
+2. **Learn**: Continue to [Tutorial 1: Your First Agent](/docs/tutorials/1-first-agent)
+3. **Explore**: Check out the [example projects](https://github.com/tiwater/vibex/tree/main/examples)
 
-This is the "Vibe-X" approach: intelligent defaults that get you started, with complete transparency and control as you grow.
+---
 
-**Ready to build something amazing?** Run `vibex init` and let's get started! 🚀
+**Ready to dive deeper?** Continue to [Tutorial 1: Your First Agent](/docs/tutorials/1-first-agent)! 🚀

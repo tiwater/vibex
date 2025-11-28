@@ -2,89 +2,97 @@
  * WebTool - Simplified version using external services (Firecrawl/Jina)
  */
 
-import { z } from 'zod/v3';
-import { Tool, ToolFunction, ToolMetadata, ToolConfig, ConfigSchema } from './base';
+import { z } from "zod/v3";
+import {
+  Tool,
+  ToolFunction,
+  ToolMetadata,
+  ToolConfig,
+  ConfigSchema,
+} from "./base";
 
 export class WebTool extends Tool {
   private config: ToolConfig = {
     jinaApiKey: null,
     firecrawlApiKey: null,
-    defaultProvider: 'firecrawl', // firecrawl or jina
+    defaultProvider: "firecrawl", // firecrawl or jina
     timeout: 30000,
     maxContentLength: 100000,
     followRedirects: true,
-    userAgent: 'Mozilla/5.0 (compatible; VibexBot/1.0)',
+    userAgent: "Mozilla/5.0 (compatible; VibexBot/1.0)",
     enableJavaScript: false, // for providers that support it
   };
 
   getMetadata(): ToolMetadata {
     const jinaApiKey = this.getJinaApiKey();
     const firecrawlApiKey = this.getFirecrawlApiKey();
-    
+
     let availableProviders: string[] = [];
-    if (jinaApiKey) availableProviders.push('Jina');
-    if (firecrawlApiKey) availableProviders.push('Firecrawl');
-    
+    if (jinaApiKey) availableProviders.push("Jina");
+    if (firecrawlApiKey) availableProviders.push("Firecrawl");
+
     return {
-      id: 'web',
-      name: 'Web Tools',
-      description: availableProviders.length > 0 
-        ? `Extract web content, check URL availability, and crawl websites (Providers: ${availableProviders.join(', ')})`
-        : 'Web content extraction, URL checking, and website crawling (requires API configuration)',
-      category: 'web',
+      id: "web",
+      name: "Web Tools",
+      description:
+        availableProviders.length > 0
+          ? `Extract web content, check URL availability, and crawl websites (Providers: ${availableProviders.join(", ")})`
+          : "Web content extraction, URL checking, and website crawling (requires API configuration)",
+      category: "web",
     };
   }
 
   getConfigSchema(): ConfigSchema {
     return {
       jinaApiKey: {
-        name: 'Jina API Key',
-        type: 'string',
-        description: 'Jina API key for advanced content extraction',
-        envVar: 'JINA_API_KEY',
+        name: "Jina API Key",
+        type: "string",
+        description: "Jina API key for advanced content extraction",
+        envVar: "JINA_API_KEY",
         required: false,
       },
       firecrawlApiKey: {
-        name: 'Firecrawl API Key',
-        type: 'string',
-        description: 'Firecrawl API key for JavaScript rendering',
-        envVar: 'FIRECRAWL_API_KEY',
+        name: "Firecrawl API Key",
+        type: "string",
+        description: "Firecrawl API key for JavaScript rendering",
+        envVar: "FIRECRAWL_API_KEY",
         required: false,
       },
       defaultProvider: {
-        name: 'Default Provider',
-        type: 'select',
-        description: 'Default content extraction provider',
-        options: ['firecrawl', 'jina'],
-        defaultValue: 'firecrawl',
+        name: "Default Provider",
+        type: "select",
+        description: "Default content extraction provider",
+        options: ["firecrawl", "jina"],
+        defaultValue: "firecrawl",
         required: false,
       },
       timeout: {
-        name: 'Request Timeout',
-        type: 'number',
-        description: 'Request timeout in milliseconds',
+        name: "Request Timeout",
+        type: "number",
+        description: "Request timeout in milliseconds",
         defaultValue: 30000,
         min: 1000,
         max: 120000,
         required: false,
       },
       maxContentLength: {
-        name: 'Max Content Length',
-        type: 'number',
-        description: 'Maximum content length to extract (in characters)',
+        name: "Max Content Length",
+        type: "number",
+        description: "Maximum content length to extract (in characters)",
         defaultValue: 500000,
         required: false,
       },
       userAgent: {
-        name: 'User Agent',
-        type: 'string',
-        description: 'Custom user agent string for HTTP requests',
+        name: "User Agent",
+        type: "string",
+        description: "Custom user agent string for HTTP requests",
         required: false,
       },
       enableJavaScript: {
-        name: 'Enable JavaScript',
-        type: 'boolean',
-        description: 'Enable JavaScript rendering for dynamic content (requires compatible provider)',
+        name: "Enable JavaScript",
+        type: "boolean",
+        description:
+          "Enable JavaScript rendering for dynamic content (requires compatible provider)",
         defaultValue: false,
         required: false,
       },
@@ -116,34 +124,72 @@ export class WebTool extends Tool {
     return {
       jina: {
         apiKey: this.getJinaApiKey(),
-        endpoint: 'https://r.jina.ai',
+        endpoint: "https://r.jina.ai",
       },
       firecrawl: {
         apiKey: this.getFirecrawlApiKey(),
-        endpoint: 'https://api.firecrawl.dev/v0',
+        endpoint: "https://api.firecrawl.dev/v0",
       },
     };
   }
 
   @ToolFunction({
-    description: 'Extract and parse web page content into structured formats (markdown, text, HTML). Supports JavaScript-rendered pages and can capture metadata, links, and images. Uses Firecrawl or Jina services for reliable extraction.',
+    description:
+      "Extract and parse web page content into structured formats (markdown, text, HTML). Supports JavaScript-rendered pages and can capture metadata, links, and images. Uses Firecrawl or Jina services for reliable extraction.",
     input: z.object({
-    url: z.string().url().describe('The URL to extract content from'),
-    provider: z.enum(['jina', 'firecrawl']).optional().describe('Extraction provider to use (auto-selects if not specified)'),
-    format: z.enum(['markdown', 'text', 'html', 'all']).optional().default('markdown').describe('Output format for the extracted content'),
-    includeMetadata: z.boolean().optional().default(true).describe('Include page metadata (title, description, author, etc.)'),
-    includeLinks: z.boolean().optional().default(false).describe('Extract and include all links found on the page'),
-    includeImages: z.boolean().optional().default(false).describe('Extract and include all images found on the page'),
-    waitForSelector: z.string().optional().describe('CSS selector to wait for before extraction (for dynamic content)'),
-    screenshot: z.boolean().optional().default(false).describe('Capture a screenshot of the page (Firecrawl only)'),
-    maxLength: z.number().optional().describe('Maximum content length in characters (truncates if exceeded)'),
-    timeout: z.number().optional().default(30000).describe('Maximum time to wait for page load in milliseconds'),
-  })
+      url: z.string().url().describe("The URL to extract content from"),
+      provider: z
+        .enum(["jina", "firecrawl"])
+        .optional()
+        .describe("Extraction provider to use (auto-selects if not specified)"),
+      format: z
+        .enum(["markdown", "text", "html", "all"])
+        .optional()
+        .default("markdown")
+        .describe("Output format for the extracted content"),
+      includeMetadata: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Include page metadata (title, description, author, etc.)"),
+      includeLinks: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Extract and include all links found on the page"),
+      includeImages: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Extract and include all images found on the page"),
+      waitForSelector: z
+        .string()
+        .optional()
+        .describe(
+          "CSS selector to wait for before extraction (for dynamic content)"
+        ),
+      screenshot: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Capture a screenshot of the page (Firecrawl only)"),
+      maxLength: z
+        .number()
+        .optional()
+        .describe(
+          "Maximum content length in characters (truncates if exceeded)"
+        ),
+      timeout: z
+        .number()
+        .optional()
+        .default(30000)
+        .describe("Maximum time to wait for page load in milliseconds"),
+    }),
   })
   async fetch_webpage(input: {
     url: string;
-    provider?: 'jina' | 'firecrawl';
-    format?: 'markdown' | 'text' | 'html' | 'all';
+    provider?: "jina" | "firecrawl";
+    format?: "markdown" | "text" | "html" | "all";
     includeMetadata?: boolean;
     includeLinks?: boolean;
     includeImages?: boolean;
@@ -154,15 +200,17 @@ export class WebTool extends Tool {
   }) {
     // Auto-select provider if not specified
     const provider = input.provider || this.selectProvider();
-    
+
     if (!provider) {
-      throw new Error('No web extraction provider configured. Please configure Firecrawl or Jina API key.');
+      throw new Error(
+        "No web extraction provider configured. Please configure Firecrawl or Jina API key."
+      );
     }
-    
+
     switch (provider) {
-      case 'jina':
+      case "jina":
         return await this.extractWithJina(input);
-      case 'firecrawl':
+      case "firecrawl":
         return await this.extractWithFirecrawl(input);
       default:
         throw new Error(`Unknown provider: ${provider}`);
@@ -170,15 +218,38 @@ export class WebTool extends Tool {
   }
 
   @ToolFunction({
-    description: 'Crawl a website to extract content from multiple pages. Follows links up to a specified depth and returns structured content from all discovered pages. Useful for documentation sites, blogs, or comprehensive site analysis.',
+    description:
+      "Crawl a website to extract content from multiple pages. Follows links up to a specified depth and returns structured content from all discovered pages. Useful for documentation sites, blogs, or comprehensive site analysis.",
     input: z.object({
-    url: z.string().url().describe('The starting URL for the crawl'),
-    maxPages: z.number().min(1).max(100).optional().default(10).describe('Maximum number of pages to crawl (1-100)'),
-    maxDepth: z.number().min(1).max(5).optional().default(2).describe('Maximum depth to follow links from the starting page (1-5)'),
-    includePattern: z.string().optional().describe('Regex pattern - only crawl URLs matching this pattern'),
-    excludePattern: z.string().optional().describe('Regex pattern - skip URLs matching this pattern'),
-    format: z.enum(['markdown', 'text', 'html']).optional().default('markdown').describe('Output format for extracted content'),
-  })
+      url: z.string().url().describe("The starting URL for the crawl"),
+      maxPages: z
+        .number()
+        .min(1)
+        .max(100)
+        .optional()
+        .default(10)
+        .describe("Maximum number of pages to crawl (1-100)"),
+      maxDepth: z
+        .number()
+        .min(1)
+        .max(5)
+        .optional()
+        .default(2)
+        .describe("Maximum depth to follow links from the starting page (1-5)"),
+      includePattern: z
+        .string()
+        .optional()
+        .describe("Regex pattern - only crawl URLs matching this pattern"),
+      excludePattern: z
+        .string()
+        .optional()
+        .describe("Regex pattern - skip URLs matching this pattern"),
+      format: z
+        .enum(["markdown", "text", "html"])
+        .optional()
+        .default("markdown")
+        .describe("Output format for extracted content"),
+    }),
   })
   async crawl_website(input: {
     url: string;
@@ -186,32 +257,37 @@ export class WebTool extends Tool {
     maxDepth?: number;
     includePattern?: string;
     excludePattern?: string;
-    format?: 'markdown' | 'text' | 'html';
+    format?: "markdown" | "text" | "html";
   }) {
     if (!this.providers.firecrawl.apiKey) {
-      throw new Error('Web crawling requires Firecrawl API key to be configured');
+      throw new Error(
+        "Web crawling requires Firecrawl API key to be configured"
+      );
     }
 
     // Start crawl job
-    const startResponse = await fetch(`${this.providers.firecrawl.endpoint}/crawl`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.providers.firecrawl.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: input.url,
-        crawlerOptions: {
-          maxPages: input.maxPages || 10,
-          maxDepth: input.maxDepth || 2,
-          includes: input.includePattern ? [input.includePattern] : undefined,
-          excludes: input.excludePattern ? [input.excludePattern] : undefined,
+    const startResponse = await fetch(
+      `${this.providers.firecrawl.endpoint}/crawl`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.providers.firecrawl.apiKey}`,
+          "Content-Type": "application/json",
         },
-        pageOptions: {
-          onlyMainContent: true,
-        },
-      }),
-    });
+        body: JSON.stringify({
+          url: input.url,
+          crawlerOptions: {
+            maxPages: input.maxPages || 10,
+            maxDepth: input.maxDepth || 2,
+            includes: input.includePattern ? [input.includePattern] : undefined,
+            excludes: input.excludePattern ? [input.excludePattern] : undefined,
+          },
+          pageOptions: {
+            onlyMainContent: true,
+          },
+        }),
+      }
+    );
 
     if (!startResponse.ok) {
       const error = await startResponse.text();
@@ -219,60 +295,72 @@ export class WebTool extends Tool {
     }
 
     const { jobId } = await startResponse.json();
-    
+
     // Poll for results
     let attempts = 0;
     const maxAttempts = 60; // 5 minutes with 5 second intervals
-    
+
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-      
-      const statusResponse = await fetch(`${this.providers.firecrawl.endpoint}/crawl/status/${jobId}`, {
-        headers: {
-          'Authorization': `Bearer ${this.providers.firecrawl.apiKey}`,
-        },
-      });
-      
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds
+
+      const statusResponse = await fetch(
+        `${this.providers.firecrawl.endpoint}/crawl/status/${jobId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.providers.firecrawl.apiKey}`,
+          },
+        }
+      );
+
       if (!statusResponse.ok) {
-        throw new Error('Failed to check crawl status');
+        throw new Error("Failed to check crawl status");
       }
-      
+
       const status = await statusResponse.json();
-      
-      if (status.status === 'completed') {
+
+      if (status.status === "completed") {
         return {
           url: input.url,
           pages: status.data,
           totalPages: status.total,
-          provider: 'firecrawl',
+          provider: "firecrawl",
           crawledAt: new Date().toISOString(),
         };
-      } else if (status.status === 'failed') {
+      } else if (status.status === "failed") {
         throw new Error(`Crawl failed: ${status.error}`);
       }
-      
+
       attempts++;
     }
-    
-    throw new Error('Crawl timed out after 5 minutes');
+
+    throw new Error("Crawl timed out after 5 minutes");
   }
 
   @ToolFunction({
-    description: 'Check if a URL is accessible and retrieve basic information about the resource. Returns HTTP status, content type, size, and last modified date without downloading the full content.',
+    description:
+      "Check if a URL is accessible and retrieve basic information about the resource. Returns HTTP status, content type, size, and last modified date without downloading the full content.",
     input: z.object({
-    url: z.string().url().describe('The URL to check for accessibility'),
-    timeout: z.number().optional().default(5000).describe('Maximum time to wait for response in milliseconds'),
-  })
+      url: z.string().url().describe("The URL to check for accessibility"),
+      timeout: z
+        .number()
+        .optional()
+        .default(5000)
+        .describe("Maximum time to wait for response in milliseconds"),
+    }),
   })
   async check_url(input: { url: string; timeout?: number }) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), input.timeout || 5000);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      input.timeout || 5000
+    );
 
     try {
       const response = await fetch(input.url, {
-        method: 'HEAD',
+        method: "HEAD",
         headers: {
-          'User-Agent': this.config.userAgent || 'Mozilla/5.0 (compatible; VibexBot/1.0)',
+          "User-Agent":
+            this.config.userAgent || "Mozilla/5.0 (compatible; VibexBot/1.0)",
         },
         signal: controller.signal,
       });
@@ -284,47 +372,47 @@ export class WebTool extends Tool {
         accessible: response.ok,
         statusCode: response.status,
         statusText: response.statusText,
-        contentType: response.headers.get('content-type'),
-        contentLength: response.headers.get('content-length'),
-        lastModified: response.headers.get('last-modified'),
+        contentType: response.headers.get("content-type"),
+        contentLength: response.headers.get("content-length"),
+        lastModified: response.headers.get("last-modified"),
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       return {
         url: input.url,
         accessible: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   private selectProvider(): string | null {
-    if (this.providers.firecrawl.apiKey) return 'firecrawl';
-    if (this.providers.jina.apiKey) return 'jina';
+    if (this.providers.firecrawl.apiKey) return "firecrawl";
+    if (this.providers.jina.apiKey) return "jina";
     return null;
   }
 
   private async extractWithJina(input: any) {
     const provider = this.providers.jina;
-    
+
     if (!provider.apiKey) {
-      throw new Error('Jina API key not configured');
+      throw new Error("Jina API key not configured");
     }
-    
+
     // Jina uses URL-based API
     const jinaUrl = `${provider.endpoint}/${input.url}`;
-    
+
     const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${provider.apiKey}`,
+      Accept: "application/json",
+      Authorization: `Bearer ${provider.apiKey}`,
     };
-    
+
     // Add format preferences
-    if (input.format === 'markdown') {
-      headers['X-Return-Format'] = 'markdown';
-    } else if (input.format === 'text') {
-      headers['X-Return-Format'] = 'text';
+    if (input.format === "markdown") {
+      headers["X-Return-Format"] = "markdown";
+    } else if (input.format === "text") {
+      headers["X-Return-Format"] = "text";
     }
 
     const response = await fetch(jinaUrl, {
@@ -336,23 +424,23 @@ export class WebTool extends Tool {
       throw new Error(`Jina extraction failed: ${response.statusText}`);
     }
 
-    const contentType = response.headers.get('content-type');
+    const contentType = response.headers.get("content-type");
     let result: any;
-    
-    if (contentType?.includes('application/json')) {
+
+    if (contentType?.includes("application/json")) {
       result = await response.json();
     } else {
       const text = await response.text();
       result = {
         content: text,
-        format: input.format || 'markdown',
+        format: input.format || "markdown",
       };
     }
 
     // Apply max length if specified
     let content = result.content || result.text || result.markdown;
     if (input.maxLength && content && content.length > input.maxLength) {
-      content = content.substring(0, input.maxLength) + '...';
+      content = content.substring(0, input.maxLength) + "...";
     }
 
     return {
@@ -362,17 +450,19 @@ export class WebTool extends Tool {
       markdown: result.markdown,
       text: result.text,
       html: result.html,
-      metadata: result.metadata ? {
-        description: result.metadata.description,
-        author: result.metadata.author,
-        publishedDate: result.metadata.publishedDate,
-        keywords: result.metadata.keywords,
-        language: result.metadata.language,
-        image: result.metadata.ogImage || result.metadata.image,
-      } : undefined,
+      metadata: result.metadata
+        ? {
+            description: result.metadata.description,
+            author: result.metadata.author,
+            publishedDate: result.metadata.publishedDate,
+            keywords: result.metadata.keywords,
+            language: result.metadata.language,
+            image: result.metadata.ogImage || result.metadata.image,
+          }
+        : undefined,
       links: input.includeLinks ? result.links : undefined,
       images: input.includeImages ? result.images : undefined,
-      provider: 'jina',
+      provider: "jina",
       extractedAt: new Date().toISOString(),
     };
   }
@@ -380,22 +470,24 @@ export class WebTool extends Tool {
   private async extractWithFirecrawl(input: any) {
     const provider = this.providers.firecrawl;
     if (!provider.apiKey) {
-      throw new Error('Firecrawl API key not configured');
+      throw new Error("Firecrawl API key not configured");
     }
 
     const response = await fetch(`${provider.endpoint}/scrape`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${provider.apiKey}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${provider.apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         url: input.url,
         pageOptions: {
           onlyMainContent: true,
-          includeHtml: input.format === 'html' || input.format === 'all',
+          includeHtml: input.format === "html" || input.format === "all",
           screenshot: input.screenshot,
-          waitFor: input.waitForSelector ? parseInt(input.waitForSelector) : undefined,
+          waitFor: input.waitForSelector
+            ? parseInt(input.waitForSelector)
+            : undefined,
         },
         timeout: input.timeout,
       }),
@@ -408,19 +500,19 @@ export class WebTool extends Tool {
     }
 
     const data = await response.json();
-    
+
     if (!data.success) {
       throw new Error(`Firecrawl extraction failed: ${data.error}`);
     }
 
     const result = data.data;
-    
+
     // Apply max length if specified
     let content = result.markdown || result.content;
     if (input.maxLength && content && content.length > input.maxLength) {
-      content = content.substring(0, input.maxLength) + '...';
+      content = content.substring(0, input.maxLength) + "...";
     }
-    
+
     return {
       url: input.url,
       title: result.metadata?.title,
@@ -433,7 +525,9 @@ export class WebTool extends Tool {
         author: result.metadata?.author,
         publishedDate: result.metadata?.publishedTime,
         modifiedDate: result.metadata?.modifiedTime,
-        keywords: result.metadata?.keywords?.split(',').map((k: string) => k.trim()),
+        keywords: result.metadata?.keywords
+          ?.split(",")
+          .map((k: string) => k.trim()),
         language: result.metadata?.language,
         image: result.metadata?.ogImage,
         favicon: result.metadata?.favicon,
@@ -441,7 +535,7 @@ export class WebTool extends Tool {
       links: input.includeLinks ? result.links : undefined,
       images: input.includeImages ? result.images : undefined,
       screenshot: input.screenshot ? result.screenshot : undefined,
-      provider: 'firecrawl',
+      provider: "firecrawl",
       extractedAt: new Date().toISOString(),
     };
   }

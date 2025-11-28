@@ -1,7 +1,7 @@
 /**
  * SpaceManager - Unified Data Access Layer
  *
- * This is the single source of truth for all Vibex data operations.
+ * This is the single source of truth for all VibeX data operations.
  * It unifies ResourceAdapter (resources), KnowledgeAdapter (vectors),
  * and StorageAdapter (files) into one interface.
  */
@@ -70,7 +70,8 @@ export class SpaceManager {
    * Create a server-side instance
    */
   static async createServer(): Promise<SpaceManager> {
-    const { getResourceAdapter: getRA, getKnowledgeAdapter: getKA } = await import("./factory");
+    const { getResourceAdapter: getRA, getKnowledgeAdapter: getKA } =
+      await import("./factory");
     return new SpaceManager(getRA(), getKA());
   }
 
@@ -406,7 +407,10 @@ export class SpaceManager {
 
   // ==================== Task Operations ====================
 
-  async getConversations(spaceId: string, filters?: ConversationFilters): Promise<ConversationType[]> {
+  async getConversations(
+    spaceId: string,
+    filters?: ConversationFilters
+  ): Promise<ConversationType[]> {
     const cacheKey = `tasks:space:${spaceId}:${JSON.stringify(filters || {})}`;
     const cached = this.getCached<ConversationType[]>(cacheKey);
     if (cached) return cached;
@@ -444,7 +448,10 @@ export class SpaceManager {
     return task;
   }
 
-  async createTask(spaceId: string, task: Partial<ConversationType>): Promise<ConversationType> {
+  async createTask(
+    spaceId: string,
+    task: Partial<ConversationType>
+  ): Promise<ConversationType> {
     const newTask = await this.resourceAdapter.saveConversation({
       id: task.id || `task-${Date.now()}`,
       spaceId,
@@ -464,7 +471,10 @@ export class SpaceManager {
     return newTask;
   }
 
-  async updateTask(taskId: string, updates: Partial<ConversationType>): Promise<ConversationType> {
+  async updateTask(
+    taskId: string,
+    updates: Partial<ConversationType>
+  ): Promise<ConversationType> {
     const existing = await this.getConversation(taskId);
     if (!existing) {
       throw new Error(`Task ${taskId} not found`);
@@ -702,4 +712,3 @@ export function getSpaceManagerServer(): SpaceManager {
   }
   return serverInstance;
 }
-

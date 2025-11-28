@@ -1,5 +1,5 @@
 /**
- * ID Generator Utilities for Vibex
+ * ID Generator Utilities for VibeX
  *
  * Simple, unique ID generation for documents and other entities.
  */

@@ -8,6 +8,7 @@
 :root {
   --nextra-content-width: 100vw !important;
   --nextra-sidebar-width: 320px !important;
+  --nextra-navbar-height: 64px;
   --radius: 0.625rem;
   --background: 0 0% 100%;
   --foreground: 0 0% 9%;
@@ -178,6 +179,16 @@ a.inline-flex {
   .text-6xl {
     font-size: 3rem;
   }
+}
+
+/* Playground page full-height layout */
+body:has([data-playground]) {
+  overflow: hidden;
+}
+
+body:has([data-playground]) main {
+  max-width: 100% !important;
+  padding: 0 !important;
 }
 
 /* Tailwind v4 theme extension for shadcn */

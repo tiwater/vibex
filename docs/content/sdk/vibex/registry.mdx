@@ -1,0 +1,244 @@
+# registry
+
+*Module: [`vibex/registry`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts)*
+
+Agent Market - Template system for agent discovery and instantiation
+
+The Agent Market provides access to pre-configured agent templates from
+vibex/defaults/agents/ directory. Users can browse, preview, and instantiate
+these templates into their space.
+
+## Classes
+
+### AgentMarket
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L115" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+AgentMarket - Manages the agent template marketplace
+
+**Methods:**
+
+#### getCategories
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L119" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get agent categories from hub configuration
+
+```typescript
+function getCategories(): Promise<MarketCategory[]>
+```
+
+---
+
+#### getAllTemplates
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L161" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all available agent templates from .vibex/defaults/agents/ and custom agents from config
+
+```typescript
+function getAllTemplates(): Promise<AgentTemplate[]>
+```
+
+---
+
+#### getTemplatesByCategory
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L314" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get templates by category
+
+```typescript
+function getTemplatesByCategory(categoryId: string): Promise<AgentTemplate[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `categoryId` | `string` |  |
+
+---
+
+#### searchTemplates
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L324" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Search templates by keyword
+
+```typescript
+function searchTemplates(keyword: string): Promise<AgentTemplate[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `keyword` | `string` |  |
+
+---
+
+#### getTemplate
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L342" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get a specific template by ID
+
+```typescript
+function getTemplate(templateId: string): Promise<AgentTemplate | null>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `templateId` | `string` |  |
+
+---
+
+#### instantiateTemplate
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L384" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Instantiate a template into a space agent
+
+```typescript
+function instantiateTemplate(templateId: string, customization?: Record<string, any>): Promise<AgentConfig>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `templateId` | `string` | - ID of the template to instantiate |
+| `customization` | `Record<string, any>` (optional) | - Custom values for template variables |
+
+**Returns:** AgentConfig ready to be used
+
+---
+
+#### saveAgentInstance
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L434" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Save an agent instance to user's config
+This creates an instance from a template
+
+```typescript
+function saveAgentInstance(agentConfig: AgentConfig): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentConfig` | `AgentConfig` |  |
+
+---
+
+#### getTemplateStats
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L473" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get template statistics (for future use)
+
+```typescript
+function getTemplateStats(_templateId: string): Promise<{
+    downloads: number;
+    rating: number;
+    reviews: number;
+  }>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `_templateId` | `string` |  |
+
+---
+
+#### isTemplateInstalled
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L490" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if a template is installed in user's config
+
+```typescript
+function isTemplateInstalled(templateId: string): Promise<boolean>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `templateId` | `string` |  |
+
+---
+
+#### getFeaturedTemplates
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L503" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get featured templates (for homepage/dashboard)
+
+```typescript
+function getFeaturedTemplates(limit: number = 6): Promise<AgentTemplate[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `limit` | `number` |  (default: `6`) |
+
+---
+
+---
+
+## Interfaces
+
+### AgentTemplate
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L64" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Agent template metadata - extends AgentConfig with market-specific fields
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `category` | `string` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `author` | `string` |   (optional) |
+| `version` | `string` |   (optional) |
+| `icon` | `string` |   (optional) |
+| `usageExamples` | `string[]` |   (optional) |
+| `requirements` | `string[]` |   (optional) |
+| `variables` | `object` |   (optional) |
+| `downloads` | `number` |   (optional) |
+| `rating` | `number` |   (optional) |
+| `protected` | `boolean` |   (optional) |
+| `isCustom` | `boolean` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### MarketCategory
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/registry.ts#L104" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Market category definition (from hub/categories.yaml)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `description` | `string` |   (optional) |
+| `icon` | `string` |   (optional) |
+| `order` | `number` |   (optional) |
+
+---

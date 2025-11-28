@@ -1,12 +1,12 @@
 # Thesis Writer Example
 
-This example demonstrates Vibex's core capability: **persistent workspaces where documents evolve through continuous collaboration across sessions**.
+This example demonstrates VibeX's core capability: **persistent workspaces where documents evolve through continuous collaboration across sessions**.
 
 ## What This Demonstrates
 
 ### 1. Multi-Session Persistence
 
-Unlike traditional AI assistants that forget everything after each conversation, Vibex maintains complete context across sessions:
+Unlike traditional AI assistants that forget everything after each conversation, VibeX maintains complete context across sessions:
 
 ```bash
 # Day 1: Start your thesis
@@ -86,7 +86,7 @@ After feedback "Skip outline, I have one":
 ## Example Session
 
 ```
-🎓 Thesis Writer - Vibex Demo
+🎓 Thesis Writer - VibeX Demo
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📚 Starting a new thesis project...
@@ -116,7 +116,7 @@ What is your thesis topic? The impact of AI on education
 **Next day:**
 
 ```
-🎓 Thesis Writer - Vibex Demo
+🎓 Thesis Writer - VibeX Demo
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📂 Found existing space: space_abc123
@@ -143,7 +143,7 @@ Traditional AI tools:
 - ❌ Can't track document versions
 - ❌ No persistent workspace
 
-Vibex:
+VibeX:
 
 - ✅ Complete context preserved forever
 - ✅ Full version history of every document

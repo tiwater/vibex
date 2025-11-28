@@ -1,7 +1,7 @@
 /**
  * Thesis Writer Example
  *
- * Demonstrates Vibex's core capability: persistent workspaces where
+ * Demonstrates VibeX's core capability: persistent workspaces where
  * documents evolve through continuous collaboration across sessions.
  *
  * Key Features Demonstrated:
@@ -109,7 +109,7 @@ async function writeSection(space: Space, xAgent: XAgent): Promise<void> {
 }
 
 async function main() {
-  console.log("\n🎓 Thesis Writer - Vibex Demo");
+  console.log("\n🎓 Thesis Writer - VibeX Demo");
   console.log("━".repeat(50));
   console.log("This example demonstrates multi-session document evolution.");
   console.log(

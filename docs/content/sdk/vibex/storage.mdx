@@ -1,0 +1,309 @@
+# storage
+
+*Module: [`vibex/storage`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts)*
+
+BaseStorage - Abstract storage interface for all VibeX storage needs
+
+Storage paths are logical prefixes/keys, not filesystem paths.
+The adapter implementation determines how paths are interpreted:
+- LocalStorageAdapter: converts logical paths to filesystem paths
+- SupabaseStorageAdapter: uses logical paths as storage bucket keys/prefixes
+
+## Classes
+
+### BaseStorage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L12" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Methods:**
+
+#### initialize
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L49" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Initialize storage (ensure directories exist)
+
+```typescript
+function initialize(): Promise<void>
+```
+
+---
+
+#### readJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L56" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Read JSON file
+
+```typescript
+function readJSON<T = unknown>(relativePath: string): Promise<T | null>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### readYaml
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L72" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Read YAML file
+
+```typescript
+function readYaml<T = unknown>(relativePath: string): Promise<T | null>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### writeJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L89" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Write JSON file
+
+```typescript
+function writeJSON(relativePath: string, data: unknown): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+| `data` | `unknown` |  |
+
+---
+
+#### exists
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L98" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if file exists
+
+```typescript
+function exists(relativePath: string): Promise<boolean>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### readTextFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L106" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Read text file
+
+```typescript
+function readTextFile(relativePath: string): Promise<string>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### readFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L114" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Read file as buffer (binary)
+
+```typescript
+function readFile(relativePath: string): Promise<Buffer>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### writeFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L122" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Write file (text or binary)
+
+```typescript
+function writeFile(relativePath: string, data: Buffer | string): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+| `data` | `Buffer \| string` |  |
+
+---
+
+#### delete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L130" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Delete file
+
+```typescript
+function delete(relativePath: string): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### list
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L138" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+List files in directory
+
+```typescript
+function list(relativePath: string = ""): Promise<string[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  (default: `""`) |
+
+---
+
+#### mkdir
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L150" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Create directory
+
+```typescript
+function mkdir(relativePath: string): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `relativePath` | `string` |  |
+
+---
+
+#### saveArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L160" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Save an artifact (file + metadata)
+
+```typescript
+function saveArtifact(spaceId: string, artifact: ArtifactInfo, buffer: Buffer): Promise<ArtifactInfo>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `artifact` | `ArtifactInfo` |  |
+| `buffer` | `Buffer` |  |
+
+---
+
+#### getArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L171" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get an artifact (file + metadata)
+
+```typescript
+function getArtifact(spaceId: string, artifactId: string): Promise<{ info: ArtifactInfo; buffer: Buffer } | null>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `artifactId` | `string` |  |
+
+---
+
+#### getArtifactInfo
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L181" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get artifact metadata only
+
+```typescript
+function getArtifactInfo(spaceId: string, artifactId: string): Promise<ArtifactInfo | null>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `artifactId` | `string` |  |
+
+---
+
+#### listArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L191" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+List all artifacts for a space
+
+```typescript
+function listArtifacts(spaceId: string): Promise<ArtifactInfo[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+
+---
+
+#### deleteArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/storage.ts#L198" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Delete an artifact
+
+```typescript
+function deleteArtifact(spaceId: string, artifactId: string): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `artifactId` | `string` |  |
+
+---
+
+---

@@ -1,698 +1,416 @@
-# Configuration Guide
+# Tutorial 4: Configuration Deep Dive
 
-VibeX uses YAML configuration files to define agent teams and their behavior. This guide covers everything you need to know about organizing and configuring your VibeX projects effectively.
+**⏱️ Time: 30 minutes | 🎯 Goal: Master Space and Agent configuration**
 
-## Quick Start
+In this tutorial, you'll learn how to configure every aspect of your VibeX workspace for production use.
 
-Every VibeX project starts with a `team.yaml` file that defines your agent team:
+## What You'll Learn
 
-```yaml
-name: "my_team"
-max_rounds: 10
-termination_condition: "TERMINATE"
+- LLM provider configuration
+- Storage adapter options
+- Environment variable management
+- Production deployment patterns
 
-llm:
-  model: "deepseek/deepseek-chat"
-  temperature: 0.7
+## Prerequisites
 
-agents:
-  - name: "assistant"
-    role: "assistant"
-    prompt_file: "prompts/assistant.md"
-    tools: ["web_search", "memory"]
+- Completed previous tutorials
+- Understanding of VibeX concepts
+- An LLM API key
+
+---
+
+## Understanding Configuration
+
+VibeX is designed to be flexible. Key configuration areas:
+
+1. **LLM Providers** — Which AI model to use
+2. **Storage Adapters** — Where to persist data
+3. **Agent Settings** — How agents behave
+4. **Environment** — Managing secrets and settings
+
+## Step 1: LLM Provider Configuration
+
+VibeX supports multiple LLM providers through the Vercel AI SDK:
+
+### OpenAI
+
+```bash
+# .env
+OPENAI_API_KEY=sk-your-key
 ```
 
-## Project Organization Patterns
+### Anthropic
 
-### 1. Single Agent Projects
-
-For simple projects with one agent:
-
-```
-my_project/
-├── config/
-│   ├── team.yaml              # Main configuration
-│   └── prompts/
-│       └── assistant.md       # Agent prompt
-├── taskspace/                 # Agent working directory
-└── main.py                   # Application entry point
+```bash
+# .env
+ANTHROPIC_API_KEY=your-key
 ```
 
-**Configuration:**
+### DeepSeek
 
-```yaml
-name: "simple_assistant"
-max_rounds: 10
-
-agents:
-  - name: "assistant"
-    role: "assistant"
-    prompt_file: "prompts/assistant.md"
-    tools: ["web_search", "memory", "storage"]
+```bash
+# .env
+DEEPSEEK_API_KEY=your-key
 ```
 
-### 2. Multi-Agent Teams
+### Google (Gemini)
 
-For collaborative agent teams:
-
-```
-writing_team/
-├── config/
-│   ├── team.yaml              # Team configuration
-│   └── prompts/               # Agent-specific prompts
-│       ├── researcher.md      # Research specialist
-│       ├── writer.md          # Content writer
-│       └── editor.md          # Editor and reviewer
-├── taskspace/                 # Shared taskspace
-└── main.py
+```bash
+# .env
+GOOGLE_GENERATIVE_AI_API_KEY=your-key
 ```
 
-**Configuration:**
+The provider is automatically detected based on which environment variable is set.
 
-```yaml
-name: "writing_team"
-speaker_selection_method: "auto"
-max_rounds: 20
-termination_condition: "TERMINATE"
+## Step 2: Storage Configuration
 
-# Global settings for all agents
-llm:
-  model: "deepseek/deepseek-chat"
-  temperature: 0.7
+VibeX supports two storage backends:
 
-agents:
-  - name: "researcher"
-    role: "researcher"
-    prompt_file: "prompts/researcher.md"
-    tools: ["web_search", "memory"]
-    llm:
-      temperature: 0.3 # Lower for factual research
+### Local Storage (Default)
 
-  - name: "writer"
-    role: "writer"
-    prompt_file: "prompts/writer.md"
-    tools: ["storage", "memory"]
-    llm:
-      temperature: 0.8 # Higher for creativity
+Uses SQLite for structured data and the filesystem for files. Perfect for:
 
-  - name: "editor"
-    role: "editor"
-    prompt_file: "prompts/editor.md"
-    tools: ["storage"]
-    llm:
-      temperature: 0.4 # Moderate for editing
+- Local development
+- Desktop applications
+- Offline-first apps
+
+```typescript
+import { XAgent } from "vibex";
+import { createLocalAdapter } from "@vibex/local";
+
+// Create a local adapter (optional - this is the default)
+const adapter = createLocalAdapter({
+  path: "./data", // Where to store data
+});
+
+const xAgent = await XAgent.start("My project", {
+  adapter,
+});
 ```
 
-### 3. Complex Multi-Domain Projects
+### Supabase (Cloud)
 
-For large projects with multiple specialized teams:
+Uses PostgreSQL for structured data and Supabase Storage for files. Ideal for:
 
+- Cloud-hosted applications
+- Multi-user collaboration
+- Apps requiring authentication
+
+```bash
+# .env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-key
 ```
-enterprise_project/
-├── config/
-│   ├── teams/                 # Multiple team configurations
-│   │   ├── research_team.yaml
-│   │   ├── dev_team.yaml
-│   │   └── qa_team.yaml
-│   ├── prompts/               # Organized by domain
-│   │   ├── research/
-│   │   │   ├── market_researcher.md
-│   │   │   └── technical_analyst.md
-│   │   ├── development/
-│   │   │   ├── architect.md
-│   │   │   ├── developer.md
-│   │   │   └── devops.md
-│   │   └── qa/
-│   │       ├── tester.md
-│   │       └── reviewer.md
-│   └── tools/                 # Custom tools
-│       ├── database_tools.py
-│       └── api_tools.py
-├── taskspace/
-│   ├── research/              # Domain-specific taskspaces
-│   ├── development/
-│   └── qa/
-└── main.py
+
+```typescript
+import { XAgent } from "vibex";
+import { createSupabaseAdapter } from "@vibex/supabase";
+
+const adapter = createSupabaseAdapter({
+  supabaseUrl: process.env.SUPABASE_URL!,
+  supabaseKey: process.env.SUPABASE_SERVICE_KEY!,
+});
+
+const xAgent = await XAgent.start("My project", {
+  adapter,
+});
+```
+
+## Step 3: Environment Management
+
+### Development Setup
+
+Create a `.env` file:
+
+```bash
+# LLM Provider
+OPENAI_API_KEY=sk-your-key
+
+# Optional: Supabase for cloud storage
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-key
+
+# Development settings
+NODE_ENV=development
+LOG_LEVEL=debug
+```
+
+### Production Setup
+
+For production, use secure environment management:
+
+```bash
+# Production .env (or use your platform's secrets management)
+OPENAI_API_KEY=sk-production-key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-key
+NODE_ENV=production
+LOG_LEVEL=info
+```
+
+### Loading Environment Variables
+
+Always load environment variables at the start of your application:
+
+```typescript
+import "dotenv/config";
+// or
+import { config } from "dotenv";
+config();
+```
+
+## Step 4: Agent Configuration
+
+### Default Agent Configuration
+
+VibeX uses sensible defaults from `@vibex/defaults`:
+
+```typescript
+import { XAgent } from "vibex";
+
+// Uses default configuration
+const xAgent = await XAgent.start("My project");
+```
+
+### Custom Agent Configuration
+
+You can customize agent behavior through YAML files in `@vibex/defaults`:
+
+**Default agents include:**
+
+- **X** — The orchestrating agent (project manager)
+- **Researcher** — Gathers information
+- **Writer** — Creates content
+- **Developer** — Writes code
+- **Reviewer** — Quality assurance
+- **Web Designer** — HTML/CSS creation
+
+### Prompt Templates
+
+Agent prompts are stored in `@vibex/defaults/prompts/`. You can override them:
+
+```typescript
+import { XAgent } from "vibex";
+
+const xAgent = await XAgent.start("My project", {
+  // Custom system prompt for XAgent
+  systemPrompt: `You are a specialized assistant for...`,
+});
+```
+
+## Step 5: Production Configuration Example
+
+Here's a complete production setup:
+
+```typescript
+// src/config.ts
+import "dotenv/config";
+import { createSupabaseAdapter } from "@vibex/supabase";
+
+// Validate required environment variables
+const requiredEnvVars = [
+  "OPENAI_API_KEY",
+  "SUPABASE_URL",
+  "SUPABASE_SERVICE_KEY",
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+}
+
+// Create production adapter
+export const adapter = createSupabaseAdapter({
+  supabaseUrl: process.env.SUPABASE_URL!,
+  supabaseKey: process.env.SUPABASE_SERVICE_KEY!,
+});
+
+// Export configuration
+export const config = {
+  isProduction: process.env.NODE_ENV === "production",
+  logLevel: process.env.LOG_LEVEL || "info",
+};
+```
+
+```typescript
+// src/index.ts
+import { XAgent } from "vibex";
+import { adapter, config } from "./config.js";
+
+async function main() {
+  console.log(`Starting in ${config.isProduction ? "production" : "development"} mode`);
+
+  const xAgent = await XAgent.start("Production workspace", {
+    adapter,
+  });
+
+  // Your application logic...
+}
+
+main().catch(console.error);
+```
+
+## Step 6: React Integration Configuration
+
+For React applications, use `@vibex/react`:
+
+```bash
+pnpm add @vibex/react
+```
+
+```typescript
+// app/actions.ts (Next.js Server Actions)
+"use server";
+
+import { XAgent } from "vibex";
+
+export async function createSpace(goal: string) {
+  const xAgent = await XAgent.start(goal);
+  return xAgent.getSpace().spaceId;
+}
+
+export async function sendMessage(spaceId: string, message: string) {
+  const xAgent = await XAgent.resume(spaceId);
+  const stream = await xAgent.streamText({
+    messages: [{ role: "user", content: message }],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+  return stream;
+}
+```
+
+```typescript
+// app/components/Chat.tsx
+"use client";
+
+import { useSpace, useChat } from "@vibex/react";
+
+export function Chat({ spaceId }: { spaceId: string }) {
+  const { space } = useSpace(spaceId);
+  const { messages, sendMessage, isLoading } = useChat(spaceId);
+
+  return (
+    <div>
+      <h2>{space?.name}</h2>
+      {messages.map((msg, i) => (
+        <div key={i}>{msg.content}</div>
+      ))}
+      <button onClick={() => sendMessage("Hello!")}>Send</button>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### 1. Environment Variables
+
+```bash
+# Never commit secrets
+echo ".env" >> .gitignore
+
+# Use .env.example for documentation
+cp .env .env.example
+# Remove actual secrets from .env.example
+```
+
+### 2. Error Handling
+
+```typescript
+try {
+  const xAgent = await XAgent.start("My project");
+} catch (error) {
+  if (error.message.includes("API key")) {
+    console.error("Missing or invalid API key");
+  } else if (error.message.includes("network")) {
+    console.error("Network error - check your connection");
+  } else {
+    throw error;
+  }
+}
+```
+
+### 3. Logging
+
+```typescript
+// Configure logging level
+process.env.LOG_LEVEL = "debug"; // debug, info, warn, error
+
+// In production
+process.env.LOG_LEVEL = "info";
+```
+
+### 4. Resource Management
+
+```typescript
+// Always save state before exit
+process.on("SIGINT", async () => {
+  console.log("\nSaving workspace...");
+  await space.persistState();
+  process.exit(0);
+});
 ```
 
 ## Configuration Reference
 
-### Team-Level Settings
+### XAgent.start() Options
 
-```yaml
-# Basic team identity
-name: "my_team" # Team name for identification
-description: "A helpful AI team" # Optional description
+| Option | Type | Description |
+| ------ | ---- | ----------- |
+| `adapter` | `DataAdapter` | Storage adapter (local or Supabase) |
+| `systemPrompt` | `string` | Override the default system prompt |
 
-# Conversation flow control
-speaker_selection_method: "auto" # auto, round_robin, manual
-max_rounds: 20 # Maximum conversation rounds
-termination_condition: "TERMINATE" # When to stop the conversation
+### XAgent.resume() Options
 
-# Global defaults (inherited by all agents)
-llm:
-  model: "deepseek/deepseek-chat"
-  temperature: 0.7
-  max_tokens: 2000
+| Option | Type | Description |
+| ------ | ---- | ----------- |
+| `adapter` | `DataAdapter` | Storage adapter (must match original) |
 
-# Optional: Team-wide tool configuration
-tools:
-  - name: "web_search"
-    config:
-      api_key: "${SERPAPI_API_KEY}"
-      timeout: 30
-```
+### Environment Variables
 
-### Agent Configuration
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `OPENAI_API_KEY` | One LLM key required | OpenAI API key |
+| `ANTHROPIC_API_KEY` | One LLM key required | Anthropic API key |
+| `DEEPSEEK_API_KEY` | One LLM key required | DeepSeek API key |
+| `SUPABASE_URL` | For cloud storage | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | For cloud storage | Supabase service key |
+| `NODE_ENV` | No | `development` or `production` |
+| `LOG_LEVEL` | No | `debug`, `info`, `warn`, `error` |
 
-#### Basic Agent Settings
+## 🎉 Congratulations!
 
-```yaml
-agents:
-  - name: "assistant" # Unique agent identifier
-    role: "assistant" # Role description
-    prompt_file: "prompts/assistant.md" # Path to prompt file
+You now understand how to configure VibeX for any environment:
 
-    # Human interaction settings
-    human_input_mode: "NEVER" # ALWAYS, NEVER, TERMINATE
+✅ **LLM Provider Configuration**  
+✅ **Storage Adapter Options**  
+✅ **Environment Variable Management**  
+✅ **Production Deployment Patterns**  
+✅ **React Integration**  
 
-    # Memory and persistence
-    enable_memory: true # Enable long-term memory
+## 🚀 What's Next?
 
-    # Tools available to this agent
-    tools: ["web_search", "memory", "storage"]
-```
+You've completed the core VibeX tutorials! Here are some next steps:
 
-#### LLM Configuration
+- **[Advanced: Comprehensive Systems](/docs/tutorials/91-comprehensive-systems)** — Build a complete production system
+- **[SDK Reference](/sdk)** — Explore the complete API
+- **[Examples](https://github.com/tiwater/vibex/tree/main/examples)** — See real-world implementations
 
-```yaml
-agents:
-  - name: "creative_writer"
-    llm:
-      model: "openai/gpt-4" # Specific model
-      temperature: 0.9 # Creativity (0.0-1.0)
-      max_tokens: 2000 # Response length limit
-      top_p: 0.9 # Nucleus sampling
-      frequency_penalty: 0.0 # Reduce repetition
-      presence_penalty: 0.0 # Encourage topic diversity
-      stop: ["###", "---"] # Stop sequences
-```
+## 🔧 Troubleshooting
 
-#### Memory Configuration
+**Configuration not taking effect?**
 
-```yaml
-agents:
-  - name: "assistant"
-    enable_memory: true
-    memory:
-      backend: "mem0" # mem0, simple, custom
-      config:
-        api_key: "${MEM0_API_KEY}"
-        collection: "assistant_memory"
-        embedding_model: "text-embedding-3-small"
-        metadata:
-          user_id: "default"
-          session_id: "main"
-```
+- Ensure environment variables are loaded before using them
+- Check for typos in variable names
+- Verify the `.env` file is in the correct directory
 
-#### Tool Configuration
+**Storage errors?**
 
-```yaml
-agents:
-  - name: "analyst"
-    tools:
-      # Built-in tools (simple reference)
-      - "web_search"
-      - "memory"
-      - "storage"
+- For Supabase, verify your URL and key are correct
+- For local storage, ensure the directory is writable
+- Check file permissions
 
-      # Custom tools with configuration
-      - name: "database_query"
-        config:
-          host: "${DB_HOST}"
-          port: 5432
-          database: "analytics"
+---
 
-      # External tools (MCP)
-      - name: "github"
-        type: "mcp"
-        config:
-          server: "github-mcp-server"
-          args: ["--token", "${GITHUB_TOKEN}"]
-```
-
-## Environment Variables
-
-VibeX supports environment variable substitution for secure configuration:
-
-### Setting Up Environment Variables
-
-Create a `.env` file in your project root:
-
-```env
-# LLM API Keys
-OPENAI_API_KEY=sk-your-openai-key
-DEEPSEEK_API_KEY=your-deepseek-key
-ANTHROPIC_API_KEY=your-anthropic-key
-
-# Tool API Keys
-SERPAPI_API_KEY=your-serpapi-key
-MEM0_API_KEY=your-mem0-key
-GITHUB_TOKEN=your-github-token
-
-# Custom Configuration
-DATABASE_URL=postgresql://user:pass@localhost/db
-API_TIMEOUT=30
-```
-
-### Using Environment Variables in Configuration
-
-```yaml
-# LLM configuration
-llm:
-  model: "deepseek/deepseek-chat"
-  api_key: "${DEEPSEEK_API_KEY}"
-
-# Tool configuration
-tools:
-  - name: "web_search"
-    config:
-      api_key: "${SERPAPI_API_KEY}"
-      timeout: "${API_TIMEOUT:30}" # Default value after colon
-
-# Memory configuration
-agents:
-  - name: "assistant"
-    memory:
-      config:
-        api_key: "${MEM0_API_KEY}"
-        connection_string: "${DATABASE_URL}"
-```
-
-## Advanced Configuration Patterns
-
-### 1. Configuration Inheritance
-
-Use global settings that agents inherit and override:
-
-```yaml
-# Global defaults
-llm:
-  model: "deepseek/deepseek-chat"
-  temperature: 0.7
-  max_tokens: 2000
-
-agents:
-  # Inherits global settings
-  - name: "researcher"
-    role: "researcher"
-    prompt_file: "prompts/researcher.md"
-    llm:
-      temperature: 0.3 # Override for factual work
-
-  # Inherits global settings
-  - name: "writer"
-    role: "writer"
-    prompt_file: "prompts/writer.md"
-    llm:
-      temperature: 0.8 # Override for creativity
-      max_tokens: 3000 # Override for longer content
-```
-
-### 2. Multi-Model Teams
-
-Use different models for different tasks:
-
-```yaml
-agents:
-  # Fast, cost-effective for simple tasks
-  - name: "coordinator"
-    llm:
-      model: "deepseek/deepseek-chat"
-      temperature: 0.5
-
-  # Powerful model for complex reasoning
-  - name: "analyst"
-    llm:
-      model: "openai/gpt-4"
-      temperature: 0.3
-
-  # Specialized model for code
-  - name: "developer"
-    llm:
-      model: "anthropic/claude-3-sonnet"
-      temperature: 0.2
-```
-
-### 3. Environment-Specific Configuration
-
-Use different configurations for different environments:
-
-```yaml
-# config/team.yaml (development)
-name: "dev_team"
-llm:
-  model: "deepseek/deepseek-chat"  # Cost-effective for development
-  temperature: 0.7
-
-# config/production.yaml (production)
-name: "prod_team"
-llm:
-  model: "openai/gpt-4"           # Higher quality for production
-  temperature: 0.5
-max_rounds: 10                    # Stricter limits
-```
-
-### 4. Workflow Configuration
-
-Define structured workflows:
-
-```yaml
-# Sequential workflow
-workflow:
-  type: "sequential"
-  steps:
-    - agent: "researcher"
-      task: "Research the topic thoroughly"
-      timeout: 300
-    - agent: "writer"
-      task: "Write based on research findings"
-      timeout: 600
-    - agent: "reviewer"
-      task: "Review and improve the content"
-      timeout: 300
-
-# Parallel workflow
-workflow:
-  type: "parallel"
-  agents: ["researcher1", "researcher2", "researcher3"]
-  merge_agent: "synthesizer"
-  timeout: 600
-```
-
-## Real-World Examples
-
-### Example 1: Content Creation Team
-
-A team that researches, writes, and edits content:
-
-```yaml
-name: "content_creation_team"
-speaker_selection_method: "auto"
-max_rounds: 15
-termination_condition: "TERMINATE"
-
-llm:
-  model: "deepseek/deepseek-chat"
-  temperature: 0.7
-
-agents:
-  - name: "researcher"
-    role: "research_specialist"
-    prompt_file: "prompts/researcher.md"
-    tools: ["web_search", "memory"]
-    llm:
-      temperature: 0.3
-
-  - name: "writer"
-    role: "content_writer"
-    prompt_file: "prompts/writer.md"
-    tools: ["storage", "memory"]
-    llm:
-      temperature: 0.8
-      max_tokens: 3000
-
-  - name: "editor"
-    role: "content_editor"
-    prompt_file: "prompts/editor.md"
-    tools: ["storage"]
-    llm:
-      temperature: 0.4
-```
-
-### Example 2: Software Development Team
-
-A team that plans, develops, and tests software:
-
-```yaml
-name: "dev_team"
-speaker_selection_method: "auto"
-max_rounds: 25
-
-llm:
-  model: "anthropic/claude-3-sonnet"
-  temperature: 0.3
-
-agents:
-  - name: "architect"
-    role: "software_architect"
-    prompt_file: "prompts/architect.md"
-    tools: ["storage", "memory"]
-
-  - name: "developer"
-    role: "software_developer"
-    prompt_file: "prompts/developer.md"
-    tools: ["storage", "memory", "web_search"]
-
-  - name: "tester"
-    role: "qa_tester"
-    prompt_file: "prompts/tester.md"
-    tools: ["storage"]
-    llm:
-      temperature: 0.2 # More systematic for testing
-```
-
-### Example 3: Customer Support Team
-
-A team that handles customer inquiries:
-
-```yaml
-name: "support_team"
-speaker_selection_method: "auto"
-max_rounds: 20
-
-agents:
-  - name: "classifier"
-    role: "issue_classifier"
-    prompt_file: "prompts/classifier.md"
-    tools: ["memory"]
-    llm:
-      model: "deepseek/deepseek-chat"
-      temperature: 0.2
-
-  - name: "technical_support"
-    role: "technical_specialist"
-    prompt_file: "prompts/technical_support.md"
-    tools: ["web_search", "memory", "storage"]
-    llm:
-      model: "openai/gpt-4"
-      temperature: 0.4
-
-  - name: "escalation_handler"
-    role: "escalation_specialist"
-    prompt_file: "prompts/escalation.md"
-    tools: ["memory", "storage"]
-    human_input_mode: "TERMINATE"
-```
-
-## Security Best Practices
-
-### 1. Never Hardcode Secrets
-
-```yaml
-# ❌ Never do this
-llm:
-  api_key: "sk-1234567890abcdef"
-
-# ✅ Always use environment variables
-llm:
-  api_key: "${OPENAI_API_KEY}"
-```
-
-### 2. Use Secure Environment Variable Management
-
-```bash
-# Use a .env file (never commit to version control)
-echo "OPENAI_API_KEY=your-key" >> .env
-echo ".env" >> .gitignore
-
-# Or use your system's secret management
-export OPENAI_API_KEY="your-key"
-```
-
-### 3. Limit Agent Permissions
-
-```yaml
-agents:
-  # Public-facing agent with limited tools
-  - name: "public_assistant"
-    tools: ["web_search"] # No storage or memory access
-
-  # Internal agent with full access
-  - name: "internal_assistant"
-    tools: ["web_search", "memory", "storage"]
-```
-
-## Performance Optimization
-
-### 1. Choose Appropriate Models
-
-```yaml
-agents:
-  # Fast model for simple tasks
-  - name: "classifier"
-    llm:
-      model: "deepseek/deepseek-chat"
-      max_tokens: 100 # Keep responses short
-
-  # Powerful model for complex tasks
-  - name: "analyst"
-    llm:
-      model: "openai/gpt-4"
-      max_tokens: 2000
-```
-
-### 2. Optimize Token Usage
-
-```yaml
-agents:
-  - name: "assistant"
-    llm:
-      max_tokens: 1000 # Limit response length
-      temperature: 0.3 # Reduce randomness for efficiency
-      stop: ["###", "---"] # Use stop sequences
-```
-
-### 3. Configure Appropriate Timeouts
-
-```yaml
-tools:
-  - name: "web_search"
-    config:
-      timeout: 30 # Seconds
-
-  - name: "database_query"
-    config:
-      timeout: 60 # Longer for complex queries
-```
-
-## Troubleshooting Common Issues
-
-### 1. Agent Not Responding
-
-**Problem:** Agent doesn't generate responses
-
-**Solutions:**
-
-```yaml
-# Check model configuration
-agents:
-  - name: "assistant"
-    llm:
-      model: "deepseek/deepseek-chat" # Ensure model exists
-      api_key: "${DEEPSEEK_API_KEY}" # Check API key
-      max_tokens: 2000 # Ensure sufficient tokens
-```
-
-### 2. Conversation Loops
-
-**Problem:** Agents keep talking without terminating
-
-**Solutions:**
-
-```yaml
-# Add termination conditions
-max_rounds: 10 # Hard limit
-termination_condition: "TERMINATE"
-
-# Or use structured workflows
-workflow:
-  type: "sequential"
-  steps:
-    - agent: "researcher"
-      task: "Research topic"
-    - agent: "writer"
-      task: "Write summary"
-```
-
-### 3. Memory Issues
-
-**Problem:** Agents don't remember previous conversations
-
-**Solutions:**
-
-```yaml
-agents:
-  - name: "assistant"
-    enable_memory: true
-    memory:
-      backend: "mem0"
-      config:
-        api_key: "${MEM0_API_KEY}"
-        collection: "unique_collection_name" # Ensure unique collection
-```
-
-### 4. Tool Failures
-
-**Problem:** Tools aren't working properly
-
-**Solutions:**
-
-```yaml
-# Check tool configuration
-tools:
-  - name: "web_search"
-    config:
-      api_key: "${SERPAPI_API_KEY}" # Verify API key
-      timeout: 30 # Increase timeout if needed
-
-# Enable debug logging
-agents:
-  - name: "assistant"
-    tools: ["web_search"]
-    debug: true # Enable debug output
-```
-
-## Configuration Validation
-
-### 1. Built-in Validation
-
-VibeX validates configurations at startup:
-
-```python
-from vibex.config import validate_config
-
-# Validate configuration
-config = validate_config("config/team.yaml")
-if not config.is_valid:
-    print(f"Configuration errors: {config.errors}")
-    exit(1)
-```
-
-### 2. Schema Validation
-
-Use YAML schema validation:
-
-```yaml
-# Add schema validation to your team.yaml
-$schema: "https://raw.githubusercontent.com/your-org/vibex/main/schemas/team.yaml"
-
-name: "my_team"
-# ... rest of configuration
-```
-
-## Next Steps
-
-Now that you understand how to configure VibeX:
-
-1. **Start Simple**: Begin with a single agent configuration
-2. **Iterate**: Add more agents and tools as needed
-3. **Organize**: Structure your project following the patterns above
-4. **Secure**: Use environment variables for all secrets
-5. **Test**: Validate your configuration before deployment
-
-For more advanced topics, see:
-
-- [Custom Tools Tutorial](./3-custom-tools) - Creating custom tools
-- [API Reference](/api/core/config) - Complete configuration options
-- [Examples](https://github.com/your-org/vibex/tree/main/examples) - Real-world examples
+Ready for advanced topics? Continue to [Comprehensive Systems](/docs/tutorials/91-comprehensive-systems)! 🏭

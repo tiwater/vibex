@@ -1,0 +1,58 @@
+# prompts
+
+*Module: [`vibex/prompts`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/prompts.ts)*
+
+System prompts for the AI agent
+
+## Functions
+
+### getPrompt
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/prompts.ts#L92" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Generic template replacement function
+
+```typescript
+function getPrompt(template: string, variables: Record<string, string> = {}): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `template` | `string` | - The template string with \{\{VARIABLE\}\} placeholders |
+| `variables` | `Record<string, string>` | - Object with variable names and their replacement values (default: `{}`) |
+
+---
+
+### getAgentSystemPrompt
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/prompts.ts#L113" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get the agent system prompt with variable substitution
+
+```typescript
+function getAgentSystemPrompt(variables: Record<string, string> = {}): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `variables` | `Record<string, string>` |  (default: `{}`) |
+
+---
+
+## Constants
+
+### AGENT_SYSTEM_PROMPT_TEMPLATE
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/prompts.ts#L5" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+System prompts for the AI agent
+
+```typescript
+const AGENT_SYSTEM_PROMPT_TEMPLATE: "\nYou are an AI Assistant that works with a backend planner to execute systematic professional working workflows.\n\n## Core Workflow (MANDATORY)\n\n**Simple Loop Pattern:**\n1. IMMEDIATELY call plan_next_action() to get guidance\n2. Execute the tool recommended by planner\n3. Call plan_next_action() again with the...
+```
+
+---

@@ -1,6 +1,6 @@
 # Research Assistant Example
 
-This example demonstrates Vibex's **knowledge accumulation** capabilities. Unlike one-shot research tools, this assistant builds a persistent knowledge base that grows across sessions.
+This example demonstrates VibeX's **knowledge accumulation** capabilities. Unlike one-shot research tools, this assistant builds a persistent knowledge base that grows across sessions.
 
 ## What This Demonstrates
 
@@ -93,7 +93,7 @@ research-workspace/
 ## Example Session
 
 ```
-🔬 Research Assistant - Vibex Demo
+🔬 Research Assistant - VibeX Demo
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📚 Starting a new research project...
@@ -136,7 +136,7 @@ Traditional research tools:
 - ❌ Can't accumulate knowledge
 - ❌ No source tracking
 
-Vibex Research Assistant:
+VibeX Research Assistant:
 
 - ✅ Knowledge persists forever
 - ✅ Sources are tracked and cited

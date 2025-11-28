@@ -1,5 +1,5 @@
 /**
- * Configuration types for Vibex agents and spaces
+ * Configuration types for VibeX agents and spaces
  */
 
 // Re-export AgentConfig from @vibex/core

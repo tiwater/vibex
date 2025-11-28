@@ -1,0 +1,45 @@
+# config
+
+*Module: [`vibex/config`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/config.ts)*
+
+Configuration types for VibeX agents and spaces
+
+## Interfaces
+
+### SpaceConfig
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/config.ts#L11" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Space configuration options
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `name` | `string` |   (optional) |
+| `autoSave` | `boolean` |   (optional) |
+| `checkpointInterval` | `number` |   (optional) |
+
+---
+
+### SpaceModel
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/config.ts#L21" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Space model for persistence
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `description` | `string` |   (optional) |
+| `goal` | `string` |   (optional) |
+| `userId` | `string` |   (optional) |
+| `config` | `SpaceConfig` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+
+---

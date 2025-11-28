@@ -1,0 +1,53 @@
+# stream
+
+*Module: [`vibex/stream`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/stream.ts)*
+
+VibeX streamText - Interface Layer
+Responsibilities: Parameter validation, space bootstrap, delegation to XAgent
+
+## Interfaces
+
+### StreamTextOptions
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/stream.ts#L15" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `model` | `any` |   (optional) |
+| `messages` | `Array<\{ role: "system" \| "user" \| "assistant"; content: string \| ContentPart[]; [key: string]: any; \}>` |  |
+| `system` | `string` |   (optional) |
+| `agent` | `string` |  |
+| `temperature` | `number` |   (optional) |
+| `maxOutputTokens` | `number` |   (optional) |
+| `topP` | `number` |   (optional) |
+| `frequencyPenalty` | `number` |   (optional) |
+| `presencePenalty` | `number` |   (optional) |
+| `seed` | `number` |   (optional) |
+| `onFinish` | `(result: \{ usage?: LanguageModelUsage; finishReason?: string; steps?: unknown[]; \}) => void` |   (optional) |
+| `spaceId` | `string` |   (optional) |
+| `data` | `Record<string, unknown>` |   (optional) |
+
+---
+
+## Functions
+
+### streamText
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/stream.ts#L50" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Global streamText - Interface Layer Only
+Validates parameters, bootstraps space, delegates to XAgent
+
+```typescript
+function streamText(options: StreamTextOptions): Promise<any>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `StreamTextOptions` |  |
+
+---

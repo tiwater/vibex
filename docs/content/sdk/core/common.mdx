@@ -1,0 +1,115 @@
+# common
+
+_Module: [`@vibex/core/common`](https://github.com/tiwater/vibex/blob/main/packages/core/src/types/common.ts)_
+
+Common Types - Shared utility types
+
+## Interfaces
+
+### XError
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/common.ts#L8"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Common Types - Shared utility types
+
+**Properties:**
+
+| Name      | Type      | Description |
+| --------- | --------- | ----------- |
+| `code`    | `string`  |             |
+| `details` | `unknown` | (optional)  |
+
+---
+
+### StreamChunk
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/common.ts#L16"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Stream chunk for streaming responses
+
+**Properties:**
+
+| Name      | Type                                                          | Description |
+| --------- | ------------------------------------------------------------- | ----------- |
+| `type`    | `"text" \| "tool_call" \| "tool_result" \| "error" \| "done"` |             |
+| `content` | `string`                                                      | (optional)  |
+| `tool`    | `\{ name: string; args: unknown; result?: unknown; \}`        | (optional)  |
+| `error`   | `XError`                                                  | (optional)  |
+
+---
+
+### ModelConfig
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/common.ts#L30"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Model configuration
+
+**Properties:**
+
+| Name              | Type                                                               | Description |
+| ----------------- | ------------------------------------------------------------------ | ----------- |
+| `provider`        | `"openai" \| "anthropic" \| "deepseek" \| "openrouter" \| "local"` |             |
+| `model`           | `string`                                                           |             |
+| `temperature`     | `number`                                                           | (optional)  |
+| `maxOutputTokens` | `number`                                                           | (optional)  |
+
+---
+
+### StorageConfig
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/common.ts#L40"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Storage configuration
+
+**Properties:**
+
+| Name          | Type                    | Description |
+| ------------- | ----------------------- | ----------- |
+| `type`        | `"local" \| "supabase"` |             |
+| `basePath`    | `string`                | (optional)  |
+| `supabaseUrl` | `string`                | (optional)  |
+| `supabaseKey` | `string`                | (optional)  |
+
+---
+
+### XConfig
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/common.ts#L50"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+Main VibeX configuration
+
+**Properties:**
+
+| Name        | Type            | Description |
+| ----------- | --------------- | ----------- |
+| `storage`   | `StorageConfig` |             |
+| `model`     | `ModelConfig`   |             |
+| `streaming` | `boolean`       | (optional)  |
+| `debug`     | `boolean`       | (optional)  |
+
+---

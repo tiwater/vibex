@@ -25,7 +25,7 @@ function prompt(question: string): Promise<string> {
 }
 
 async function main() {
-  console.log("\n🔍 Code Review Assistant - Vibex Demo");
+  console.log("\n🔍 Code Review Assistant - VibeX Demo");
   console.log("━".repeat(50));
   console.log("Collaborative code review with persistent feedback.\n");
 

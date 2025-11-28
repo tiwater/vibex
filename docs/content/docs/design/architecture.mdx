@@ -1,14 +1,14 @@
-# Vibex System Architecture
+# VibeX System Architecture
 
 ## Overview
 
-Vibex is a **Space-oriented Collaborative Workspace Platform** designed for persistent, evolving work with AI agents. Unlike task-oriented frameworks that execute and terminate, Vibex provides persistent workspaces where artifacts evolve through continuous user-agent collaboration.
+VibeX is a **Space-oriented Collaborative Workspace Platform** designed for persistent, evolving work with AI agents. Unlike task-oriented frameworks that execute and terminate, VibeX provides persistent workspaces where artifacts evolve through continuous user-agent collaboration.
 
 ## Core Philosophy: Space-Oriented Design
 
 ### The Fundamental Difference
 
-| Aspect               | Task-Oriented (Others)           | Space-Oriented (Vibex)                     |
+| Aspect               | Task-Oriented (Others)           | Space-Oriented (VibeX)                     |
 | -------------------- | -------------------------------- | ------------------------------------------ |
 | **Mental Model**     | "Run a task, get a result, done" | "Enter a space, evolve artifacts, iterate" |
 | **Lifecycle**        | One-shot execution               | Persistent, continuous collaboration       |
@@ -18,7 +18,7 @@ Vibex is a **Space-oriented Collaborative Workspace Platform** designed for pers
 
 ### Why Space-Oriented?
 
-Real-world work is iterative. You don't write a document once—you draft, review, refine, and polish. Vibex is designed for this reality:
+Real-world work is iterative. You don't write a document once—you draft, review, refine, and polish. VibeX is designed for this reality:
 
 - **Persistent Spaces**: Your work survives across sessions
 - **Evolving Artifacts**: Documents, code, and data improve over time
@@ -38,130 +38,284 @@ Real-world work is iterative. You don't write a document once—you draft, revie
 
 ```mermaid
 graph TD
-    Client["Client App / UI"] <--> Server["@vibex/server"]
-    Server <--> Core["vibex"]
-    Server <--> Data["@vibex/space"]
-
-    subgraph CoreSub["vibex - Space-Oriented Runtime"]
-        Space["Space (Persistent Container)"]
+    Client["Client App / UI"] --> VibexCore["vibex (Core Runtime)"]
+    
+    subgraph CoreRuntime["vibex - Space-Oriented Runtime"]
         XAgent["XAgent (Project Manager)"]
-        Artifacts["Artifacts (Living Documents)"]
-        History["Conversation History"]
+        SpaceManager["SpaceManager"]
+        Space["Space (Persistent Container)"]
+        Agents["Specialist Agents"]
         Workflow["Workflow Engine"]
-        Agent["Specialist Agents"]
-
-        Space --> XAgent
-        Space --> Artifacts
-        Space --> History
+        
+        XAgent --> SpaceManager
+        SpaceManager --> Space
+        XAgent --> Agents
         XAgent --> Workflow
-        XAgent --> Agent
-        Agent --> Tools["@vibex/tools"]
+        Space --> Artifacts["Artifacts"]
+        Space --> History["Conversation History"]
     end
-
-    subgraph DataSub["@vibex/space - Unified Data Layer"]
-        Manager["VibexDataManager"]
-        ResourceAdapter["ResourceAdapter<br/>Spaces/Artifacts/Agents"]
-        KnowledgeAdapter["KnowledgeAdapter<br/>RAG/Vector Store"]
-        StorageAdapter["StorageAdapter<br/>File Storage"]
-
-        Manager --> ResourceAdapter
-        Manager --> KnowledgeAdapter
-        Manager --> StorageAdapter
-
-        LocalData["Local: SQLite + FS"]
-        SupabaseData["Cloud: Supabase"]
-
-        ResourceAdapter --> LocalData
-        ResourceAdapter --> SupabaseData
+    
+    subgraph DataLayer["Data Layer"]
+        LocalAdapter["@vibex/local<br/>SQLite + Filesystem"]
+        SupabaseAdapter["@vibex/supabase<br/>PostgreSQL + Storage"]
     end
-
-    Core -->|persists to| Data
-    Core -->|uses| Tools
-    Core -->|configures via| Defaults["@vibex/defaults"]
+    
+    subgraph Support["Supporting Packages"]
+        Core["@vibex/core<br/>Types & Interfaces"]
+        Tools["@vibex/tools<br/>Tool Library"]
+        Defaults["@vibex/defaults<br/>Agent Configs"]
+        React["@vibex/react<br/>React Hooks"]
+    end
+    
+    SpaceManager --> LocalAdapter
+    SpaceManager --> SupabaseAdapter
+    VibexCore --> Core
+    VibexCore --> Tools
+    VibexCore --> Defaults
+    Client --> React
+    React --> VibexCore
 ```
 
-## Package Responsibilities
+## Package Structure
 
-### `vibex` - The Space-Oriented Runtime
+### `vibex` — Core Runtime Engine
 
-**Role**: Pure runtime engine that manages Spaces, XAgents, and artifact evolution.
+The main package that manages Spaces, XAgents, and artifact evolution.
 
-**Key Components**:
+**Key Components:**
 
-- **Space**: Persistent container for all work (artifacts, history, config)
 - **XAgent**: Project manager that coordinates work within a Space
-- **Artifacts**: Living documents with version history
+- **Space**: Persistent container for all work (artifacts, history, config)
+- **Agent**: Base class for specialist agents
 - **Workflow Engine**: DAG-based execution for complex multi-step operations
-- **Specialist Agents**: Writer, Researcher, Developer, etc.
 
-**What it contains**:
+**Public API:**
 
-- ✅ Space container management
-- ✅ Mission lifecycle (user goals)
-- ✅ Plan/Task management
-- ✅ XAgent orchestration
-- ✅ Artifact versioning logic
-- ✅ Conversation history management
-- ✅ Execution engine (internal workflows)
-- ✅ Agent base classes
+```typescript
+import { XAgent, Space } from "vibex";
 
-**What it does NOT contain**:
+// Start a new workspace
+const xAgent = await XAgent.start("Write my thesis");
+const space = xAgent.getSpace();
 
-- ❌ Storage implementations (in `@vibex/space`)
-- ❌ Vector store implementations (in `@vibex/space`)
-- ❌ Database adapters (in `@vibex/space`)
+// Stream a response
+const stream = await xAgent.streamText({
+  messages: [{ role: "user", content: "Write the introduction" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
 
-### `@vibex/space` - Unified Data Persistence Layer
+for await (const chunk of stream.textStream) {
+  process.stdout.write(chunk);
+}
 
-**Role**: Manages ALL data used by the runtime. Single source of truth for persistence.
+// Save the workspace
+await space.persistState();
 
-**Adapters**:
+// Resume later
+const xAgent2 = await XAgent.resume(space.spaceId);
+```
 
-- **ResourceAdapter**: Spaces, Missions, Plans, Tasks, Agents, Artifacts metadata
-- **KnowledgeAdapter**: Document chunks, embeddings, vector search
-- **StorageAdapter**: Artifact file content, blob management
+### `@vibex/core` — Shared Types & Interfaces
 
-**Implementations**:
+Defines all TypeScript types and interfaces used across packages:
 
-- **Local**: SQLite (structured data) + Filesystem (files) + JSON (vectors)
-- **Supabase**: PostgreSQL (structured data) + Supabase Storage (files) + pgvector (vectors)
+- `XMessage`, `XMessagePart` — Conversation message types with parts
+- `AgentConfig`, `AgentContext` — Agent configuration
+- `CoreTool`, `ToolInfo` — Tool definitions
+- `ResourceAdapter`, `StorageAdapter`, `KnowledgeAdapter` — Adapter interfaces
 
-### `@vibex/supabase` - Cloud Backend
+### `@vibex/local` — Local Storage Adapter
 
-**Role**: Concrete Supabase implementations of `@vibex/space` adapters.
+SQLite + filesystem implementation for local development:
 
-### `@vibex/tools` - Tool Library
+```typescript
+// Used internally by vibex when no cloud adapter is configured
+// Stores data in ./data by default
+```
 
-**Role**: Standard library of tools that agents can use.
+**Storage Strategy:**
+- **SQLite**: Structured data (spaces, messages, metadata)
+- **Filesystem**: Artifact file content
 
-- Web browsing (Playwright)
-- File I/O
-- Search operations
-- Database tools
+### `@vibex/supabase` — Cloud Storage Adapter
 
-### `@vibex/react` - React Integration
+PostgreSQL + Supabase Storage for production deployments:
 
-**Role**: React-facing API for building frontends.
+```typescript
+import { createSupabaseAdapter } from "@vibex/supabase";
 
-- React hooks (`useSpace`, `useChat`, etc.)
-- Real-time artifact updates
-- Server actions wrapper
+const adapter = createSupabaseAdapter({
+  supabaseUrl: process.env.SUPABASE_URL!,
+  supabaseKey: process.env.SUPABASE_SERVICE_KEY!,
+});
+```
 
-### `@vibex/server` - Server Integration
+### `@vibex/tools` — Tool Library
 
-**Role**: Server-only helpers for Next.js/Node.js.
+Standard tools that agents can use:
 
-- Next.js route handlers
-- Server actions
-- Background job workers
+- **File Operations**: Read, write, list files
+- **Web Search**: Search the internet for information
+- **Web Browsing**: Playwright-based browser automation
 
-### `@vibex/defaults` - Configuration & Templates
+### `@vibex/defaults` — Configuration & Templates
 
-**Role**: Default configurations and templates.
+Default agent configurations and prompt templates:
 
-- Default agent configurations
-- Prompt templates
-- System defaults
+- **Agent Configs**: researcher, writer, developer, etc.
+- **Prompt Templates**: System prompts for each agent type
+- **Space Templates**: Pre-configured workspace setups
+
+### `@vibex/react` — React Integration
+
+React hooks for building UIs:
+
+```typescript
+import { useXChat } from "@vibex/react";
+
+function Chat({ spaceId }: { spaceId: string }) {
+  const { messages, append, isLoading, status } = useXChat({ spaceId });
+  // ...
+}
+```
+
+## Core Concepts
+
+### Space
+
+A **Space** is the persistent container for all work:
+
+```typescript
+interface Space {
+  spaceId: string;        // Unique identifier
+  name: string;           // Human-readable name
+  goal: string;           // Workspace objective
+  
+  // Persistent State
+  history: History;       // Conversation messages
+  artifacts: Artifact[];  // Documents, code, data
+  plan?: Plan;            // Current work plan
+  
+  // Runtime
+  xAgent: XAgent;         // Project manager
+  agents: Map<string, Agent>;  // Available specialists
+  
+  // Methods
+  persistState(): Promise<void>;
+  loadState(): Promise<void>;
+}
+```
+
+### XAgent
+
+**XAgent** is the user's primary interface to a Space:
+
+- **Knows the Space**: Has access to all artifacts, history, and context
+- **Remembers Everything**: Conversation history persists across sessions
+- **Coordinates Work**: Delegates to specialist agents when needed
+- **Adapts Plans**: Modifies approach based on user feedback
+
+```typescript
+class XAgent {
+  // Factory methods
+  static async start(goal: string, options?: XOptions): Promise<XAgent>;
+  static async resume(spaceId: string, options?: XOptions): Promise<XAgent>;
+  
+  // Core methods
+  getSpace(): Space;
+  async streamText(options: StreamOptions): Promise<StreamResult>;
+  async generateText(options: GenerateOptions): Promise<AgentResponse>;
+  
+  // Planning
+  async createPlan(goal?: string): Promise<Plan>;
+  async adaptPlan(feedback: string): Promise<Plan>;
+  
+  // Workflow execution
+  async executeWorkflow(goal: string): Promise<string>;
+}
+```
+
+### Artifacts
+
+Artifacts are living documents that evolve over time:
+
+- **Versioned**: Every change is tracked
+- **Contextual**: Linked to conversations that created them
+- **Persistent**: Survive across sessions
+
+### Specialist Agents
+
+Single-purpose experts that XAgent coordinates:
+
+| Agent | Purpose |
+| ----- | ------- |
+| **Researcher** | Gathers and synthesizes information |
+| **Writer** | Creates content and documentation |
+| **Developer** | Writes and reviews code |
+| **Reviewer** | Provides quality assurance |
+| **Web Designer** | Creates HTML/CSS experiences |
+
+## Data Flow
+
+### Starting a New Workspace
+
+```
+User: XAgent.start("Write my thesis")
+  ↓
+XAgent: Create new Space
+  ↓
+Space: Initialize with goal, empty history
+  ↓
+XAgent: Return to user
+  ↓
+User: xAgent.streamText({ messages, metadata })
+  ↓
+XAgent: Process request, generate response
+  ↓
+Space: Update history
+  ↓
+User: space.persistState()
+  ↓
+Adapter: Save to SQLite/Supabase
+```
+
+### Resuming a Workspace
+
+```
+User: XAgent.resume(spaceId)
+  ↓
+Adapter: Load space data from storage
+  ↓
+Space: Reconstruct state (history, artifacts, plan)
+  ↓
+XAgent: Initialize with loaded Space
+  ↓
+User: Continue conversation with full context
+```
+
+### The Iterative Cycle
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant XAgent
+    participant Space
+    participant Storage
+
+    Note over User,Storage: Session 1: Initial Work
+    User->>XAgent: streamText("Write introduction")
+    XAgent->>Space: Update history
+    XAgent-->>User: Stream response
+    User->>Space: persistState()
+    Space->>Storage: Save state
+
+    Note over User,Storage: Session 2: Next Day
+    User->>XAgent: resume(spaceId)
+    Storage->>Space: Load state
+    Space->>XAgent: Full context restored
+    User->>XAgent: streamText("Make it more concise")
+    XAgent-->>User: Stream response (with context)
+```
 
 ## Key Workflows
 
@@ -169,94 +323,62 @@ graph TD
 
 ```typescript
 // Day 1: Start a document
-const space = await XAgent.start("Write my thesis");
-await space.uploadArtifact("thesis.md", initialContent);
-await xAgent.chat("Write the introduction"); // Creates v1
+const xAgent = await XAgent.start("Write my thesis");
+const space = xAgent.getSpace();
+
+const stream = await xAgent.streamText({
+  messages: [{ role: "user", content: "Write the introduction" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+// Process stream...
+await space.persistState();
 
 // Day 2: Continue refining
-const space = await XAgent.resume(spaceId);
-await xAgent.chat("Make the abstract more concise"); // Creates v2
-
-// Day 3: Final polish
-await xAgent.chat("Review everything and fix any issues"); // Creates v3
+const xAgent2 = await XAgent.resume(space.spaceId);
+await xAgent2.streamText({
+  messages: [{ role: "user", content: "Make the abstract more concise" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
 ```
 
 ### 2. Multi-Session Research
 
 ```typescript
 // Session 1: Gather sources
-await xAgent.chat("Research climate change impacts");
-// Artifacts: sources.md, notes.md
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Research climate change impacts" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
 
-// Session 2: Analyze
-await xAgent.chat("Synthesize into key findings");
-// Artifacts: findings.md (uses context from Session 1)
-
-// Session 3: Write
-await xAgent.chat("Write a report based on our findings");
-// Artifacts: report.md (uses all accumulated context)
-```
-
-### 3. Collaborative Code Review
-
-```typescript
-const space = await XAgent.start("Review my PR");
-await space.uploadArtifact("changes.diff", diffContent);
-
-await xAgent.chat("Review for security issues");
-// XAgent analyzes and provides feedback
-
-await xAgent.chat("Now check for performance issues");
-// Context includes previous security findings
-
-await xAgent.chat("Generate a summary");
-// Summary includes all findings from the session
-```
-
-## Data Flow
-
-### Space Persistence
-
-```
-vibex (Runtime)
-    ↓ saves/loads
-@vibex/space (Data Layer)
-    ↓ uses adapters
-Local (SQLite/FS) or Supabase (PostgreSQL/Storage)
-```
-
-### Artifact Versioning
-
-```
-User: "Make it more concise"
-    ↓
-XAgent: Read artifact v2
-    ↓
-XAgent: Generate new content
-    ↓
-Space: Create artifact v3
-    ↓
-Storage: Persist v3, keep v1, v2
+// Session 2: Analyze (days later)
+const xAgent = await XAgent.resume(spaceId);
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Synthesize into key findings" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+// XAgent has full context from Session 1
 ```
 
 ## Comparison to Task-Oriented Frameworks
 
-| Feature                   | Vibex                    | Task-Oriented (e.g., Eko) |
-| ------------------------- | ------------------------ | ------------------------- |
-| **Persistent Workspaces** | ✅ Core feature          | ❌ Not designed for this  |
-| **Artifact Evolution**    | ✅ Version history       | ❌ Output-only            |
-| **Session Continuity**    | ✅ Built-in              | ⚠️ Manual state save      |
-| **Context Accumulation**  | ✅ Space-scoped          | ⚠️ Memory with limits     |
-| **One-shot Tasks**        | ⚠️ Possible but overkill | ✅ Optimized for this     |
-| **Simple Automation**     | ⚠️ Over-engineered       | ✅ Perfect fit            |
+| Feature                   | VibeX                    | Task-Oriented Frameworks |
+| ------------------------- | ------------------------ | ------------------------ |
+| **Persistent Workspaces** | ✅ Core feature          | ❌ Not designed for this |
+| **Artifact Evolution**    | ✅ Version history       | ❌ Output-only           |
+| **Session Continuity**    | ✅ Built-in              | ⚠️ Manual state save     |
+| **Context Accumulation**  | ✅ Space-scoped          | ⚠️ Memory with limits    |
+| **One-shot Tasks**        | ⚠️ Possible but overkill | ✅ Optimized for this    |
+
+## Security & Isolation
+
+- **Space Isolation**: Each Space is a security boundary
+- **Tool Sandboxing**: External operations are controlled
+- **Audit Trail**: Complete history of all actions
+- **User Scoping**: Spaces are scoped to users
 
 ## Future Roadmap
 
-- **Memory System**: Semantic memory with RAG integration
 - **Real-time Collaboration**: Multi-user Spaces
 - **Artifact Diff/Merge**: Handle concurrent edits
 - **Space Templates**: Pre-configured workspaces for common tasks
-- **Edge Runtime**: Optimizing for V8 edge environments
-
-
-
+- **Memory System**: Semantic memory with RAG integration

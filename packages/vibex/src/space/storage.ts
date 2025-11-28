@@ -1,5 +1,5 @@
 /**
- * BaseStorage - Abstract storage interface for all Vibex storage needs
+ * BaseStorage - Abstract storage interface for all VibeX storage needs
  *
  * Storage paths are logical prefixes/keys, not filesystem paths.
  * The adapter implementation determines how paths are interpreted:
@@ -199,4 +199,3 @@ export class BaseStorage {
     return this.adapter.deleteArtifact(spaceId, artifactId);
   }
 }
-

@@ -1,0 +1,58 @@
+# tool
+
+*Module: [`vibex/tool`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/tool.ts)*
+
+Tool System for VibeX
+
+Coordinates between custom tools and MCP tools.
+Knows nothing about specific tool implementations.
+
+## Interfaces
+
+### CoreTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/tool.ts#L11" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `description` | `string` |  |
+| `inputSchema` | `z.ZodSchema \| any` |  |
+| `execute` | `(args: any, context?: any) => Promise<any>` |  |
+
+---
+
+## Functions
+
+### buildToolMap
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/tool.ts#L24" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Build a tool map for streamText from an array of tool IDs
+Delegates to appropriate providers without knowing their internals
+
+```typescript
+function buildToolMap(toolIds: string[], context?: { spaceId?: string }): Promise<Record<string, CoreTool>>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `toolIds` | `string[]` |  |
+| `context` | `\{ spaceId?: string \}` (optional) |  |
+
+---
+
+### clearToolCache
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/tool.ts#L171" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Clear MCP cache (useful for testing)
+
+```typescript
+function clearToolCache(): void
+```
+
+---

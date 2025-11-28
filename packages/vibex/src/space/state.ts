@@ -1,16 +1,22 @@
 /**
- * Vibex Unified State Store
+ * VibeX Unified State Store
  *
- * Single source of truth for all Vibex state using Zustand.
+ * Single source of truth for all VibeX state using Zustand.
  * Provides reactive state management with automatic synchronization.
  */
 
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import type { SpaceType, ArtifactType, ConversationType, AgentType, ToolType } from "@vibex/core";
+import type {
+  SpaceType,
+  ArtifactType,
+  ConversationType,
+  AgentType,
+  ToolType,
+} from "@vibex/core";
 import { getSpaceManager } from "./manager";
 
-interface VibexState {
+interface XState {
   // Spaces
   spaces: Map<string, SpaceType>;
   currentSpaceId: string | null;
@@ -58,9 +64,16 @@ interface VibexState {
   ) => void;
   removeArtifact: (spaceId: string, artifactId: string) => void;
 
-  setConversations: (spaceId: string, conversations: ConversationType[]) => void;
+  setConversations: (
+    spaceId: string,
+    conversations: ConversationType[]
+  ) => void;
   addConversation: (spaceId: string, conversation: ConversationType) => void;
-  updateConversation: (spaceId: string, conversationId: string, updates: Partial<ConversationType>) => void;
+  updateConversation: (
+    spaceId: string,
+    conversationId: string,
+    updates: Partial<ConversationType>
+  ) => void;
   removeConversation: (spaceId: string, conversationId: string) => void;
 
   setAgents: (agents: AgentType[]) => void;
@@ -77,7 +90,7 @@ interface VibexState {
   syncTools: () => Promise<void>;
 }
 
-export const useVibexStore = create<VibexState>()(
+export const useXStore = create<XState>()(
   subscribeWithSelector((set, get) => ({
     // Initial state
     spaces: new Map(),
@@ -433,14 +446,16 @@ export const useVibexStore = create<VibexState>()(
 );
 
 // Selector hooks for optimized re-renders
-export const useVibexSpaces = () =>
-  useVibexStore((state) => Array.from(state.spaces.values()));
-export const useVibexCurrentSpace = () => {
-  const currentSpaceId = useVibexStore((state) => state.currentSpaceId);
-  const spaces = useVibexStore((state) => state.spaces);
+export const useXSpaces = () =>
+  useXStore((state) => Array.from(state.spaces.values()));
+export const useXCurrentSpace = () => {
+  const currentSpaceId = useXStore((state) => state.currentSpaceId);
+  const spaces = useXStore((state) => state.spaces);
   return currentSpaceId ? spaces.get(currentSpaceId) || null : null;
 };
-export const useVibexArtifacts = (spaceId: string | null | undefined) =>
-  useVibexStore((state) => (spaceId ? state.artifacts.get(spaceId) || [] : []));
-export const useVibexConversations = (spaceId: string | null | undefined) =>
-  useVibexStore((state) => (spaceId ? state.conversations.get(spaceId) || [] : []));
+export const useXArtifacts = (spaceId: string | null | undefined) =>
+  useXStore((state) => (spaceId ? state.artifacts.get(spaceId) || [] : []));
+export const useXConversations = (spaceId: string | null | undefined) =>
+  useXStore((state) =>
+    spaceId ? state.conversations.get(spaceId) || [] : []
+  );

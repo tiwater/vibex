@@ -1,0 +1,79 @@
+# cache
+
+*Module: [`vibex/cache`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/cache.ts)*
+
+XAgent Cache - Simple cache for XAgent instances
+
+Keeps XAgent instances alive for the entire application lifecycle
+to avoid recreating agents and maintain space context.
+
+## Classes
+
+### XAgentCache
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/cache.ts#L10" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Methods:**
+
+#### get
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/cache.ts#L16" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get or create an XAgent instance for a space
+
+```typescript
+function get(spaceId: string, options: XOptions): Promise<XAgent>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `options` | `XOptions` |  |
+
+---
+
+#### remove
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/cache.ts#L47" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Remove an XAgent instance from cache (optional cleanup)
+
+```typescript
+function remove(spaceId: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+
+---
+
+#### clear
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/cache.ts#L56" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Clear all cached instances (for testing or reset)
+
+```typescript
+function clear(): void
+```
+
+---
+
+#### getStats
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/cache.ts#L64" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get cache statistics
+
+```typescript
+function getStats(): { size: number; spaceIds: string[] }
+```
+
+---
+
+---

@@ -63,6 +63,7 @@ import {
   Sparkles,
   Copy,
   Check,
+  Play,
 } from "lucide-react";
 import Image from "next/image";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -85,114 +86,113 @@ const BootstrapTabs = () => {
       title: "Writing",
       icon: PenTool,
       description: "Research → Draft → Edit workflow",
-      command: "pip install vibex\nvibex init my-research --template writing",
+      command:
+        "npm install vibex\nnpx vibex init my-research --template writing",
       agents: ["Researcher", "Writer", "Reviewer", "Web Designer"],
-      exampleCode: `import asyncio
-from vibex import start_task
+      exampleCode: `import { startTask } from 'vibex';
 
-async def main():
-    # Start VibeX with your research team
-    x = await start_task(
-        "Write a comprehensive report on AI trends in 2025",
-        "config/team.yaml"
-    )
-    
-    # Enable parallel execution for 3-5x faster workflows
-    x.set_parallel_execution(enabled=True, max_concurrent=4)
+async function main() {
+  // Start VibeX with your research team
+  const x = await startTask(
+    "Write a comprehensive report on AI trends in 2025",
+    "config/team.yaml"
+  );
+  
+  // Enable parallel execution for 3-5x faster workflows
+  x.setParallelExecution({ enabled: true, maxConcurrent: 4 });
 
-    print(f"Task ID: {x.task_id}")
-    print(f"Workspace: {x.workspace.get_workspace_path()}")
+  console.log(\`Task ID: \${x.taskId}\`);
+  console.log(\`Workspace: \${x.workspace.getWorkspacePath()}\`);
 
-    # Execute tasks with parallel processing
-    while not x.is_complete:
-        response = await x.step()  # Runs multiple tasks in parallel
-        print(f"X: {response}")
+  // Execute tasks with parallel processing
+  while (!x.isComplete) {
+    const response = await x.step(); // Runs multiple tasks in parallel
+    console.log(\`X: \${response}\`);
+  }
 
-    # Chat with your AI team for refinements
-    response = await x.chat("Focus more on business applications")
-    print(f"X: {response.text}")
+  // Chat with your AI team for refinements
+  const response = await x.chat("Focus more on business applications");
+  console.log(\`X: \${response.text}\`);
 
-    # Continue chatting for iterations
-    await x.chat("Add more visual charts and graphs")
-    await x.chat("Create an executive summary")
+  // Continue chatting for iterations
+  await x.chat("Add more visual charts and graphs");
+  await x.chat("Create an executive summary");
+}
 
-if __name__ == "__main__":
-    asyncio.run(main())`,
+main();`,
     },
     {
       id: "coding",
       title: "Coding",
       icon: Code,
       description: "Plan → Build → Test workflow",
-      command: "pip install vibex\nvibex init my-app --template coding",
+      command: "npm install vibex\nnpx vibex init my-app --template coding",
       agents: ["Planner", "Developer", "Reviewer"],
-      exampleCode: `import asyncio
-from vibex import start_task
+      exampleCode: `import { startTask } from 'vibex';
 
-async def main():
-    # Start VibeX with your development team
-    x = await start_task(
-        "Build a REST API for a todo application",
-        "config/team.yaml"
-    )
-    
-    # Enable parallel execution for faster development
-    x.set_parallel_execution(enabled=True, max_concurrent=3)
+async function main() {
+  // Start VibeX with your development team
+  const x = await startTask(
+    "Build a REST API for a todo application",
+    "config/team.yaml"
+  );
+  
+  // Enable parallel execution for faster development
+  x.setParallelExecution({ enabled: true, maxConcurrent: 3 });
 
-    print(f"Task ID: {x.task_id}")
-    print(f"Workspace: {x.workspace.get_workspace_path()}")
+  console.log(\`Task ID: \${x.taskId}\`);
 
-    # Execute tasks in parallel (e.g., API design + DB schema + tests)
-    while not x.is_complete:
-        response = await x.step()
-        print(f"X: {response}")
+  // Execute tasks in parallel (e.g., API design + DB schema + tests)
+  while (!x.isComplete) {
+    const response = await x.step();
+    console.log(\`X: \${response}\`);
+  }
 
-    # Chat with your development team for changes
-    response = await x.chat("Use FastAPI and SQLite instead")
-    print(f"X: {response.text}")
+  // Chat with your development team for changes
+  const response = await x.chat("Use FastAPI and SQLite instead");
+  console.log(\`X: \${response.text}\`);
 
-    # Continue development with chat
-    await x.chat("Add user authentication")
-    await x.chat("Write comprehensive tests")
+  // Continue development with chat
+  await x.chat("Add user authentication");
+  await x.chat("Write comprehensive tests");
+}
 
-if __name__ == "__main__":
-    asyncio.run(main())`,
+main();`,
     },
     {
       id: "ops",
       title: "Ops",
       icon: Cog,
       description: "Analyze → Execute → Monitor workflow",
-      command: "pip install vibex\nvibex init my-automation --template ops",
+      command: "npm install vibex\nnpx vibex init my-automation --template ops",
       agents: ["Analyst", "Operator", "Monitor"],
-      exampleCode: `import asyncio
-from vibex import start_task
+      exampleCode: `import { startTask } from 'vibex';
 
-async def main():
-    # Start VibeX with your operations team
-    x = await start_task(
-        "Automate daily server health monitoring",
-        "config/team.yaml"
-    )
+async function main() {
+  // Start VibeX with your operations team
+  const x = await startTask(
+    "Automate daily server health monitoring",
+    "config/team.yaml"
+  );
 
-    print(f"Task ID: {x.task_id}")
-    print(f"Workspace: {x.workspace.get_workspace_path()}")
+  console.log(\`Task ID: \${x.taskId}\`);
 
-    # Execute the initial task
-    while not x.is_complete:
-        response = await x.step()
-        print(f"X: {response}")
+  // Execute the initial task
+  while (!x.isComplete) {
+    const response = await x.step();
+    console.log(\`X: \${response}\`);
+  }
 
-    # Chat with your ops team for adjustments
-    response = await x.chat("Check disk usage and memory too")
-    print(f"X: {response.text}")
+  // Chat with your ops team for adjustments
+  const response = await x.chat("Check disk usage and memory too");
+  console.log(\`X: \${response.text}\`);
 
-    # Add monitoring with chat
-    await x.chat("Set up alerts for high CPU usage")
-    await x.chat("Generate a daily status report")
+  // Add monitoring with chat
+  await x.chat("Set up alerts for high CPU usage");
+  await x.chat("Generate a daily status report");
+}
 
-if __name__ == "__main__":
-    asyncio.run(main())`,
+main();`,
     },
   ];
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
           transition={{ duration: 0.2 }}
         >
           {/* CLI Command Block - Enhanced with better styling */}
-          <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 rounded-xl p-6 mb-6 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
+          <div className="relative bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-900/50 rounded-xl p-6 mb-6 border border-slate-200/50 dark:border-slate-700/50 overflow-hidden">
             {/* Terminal decoration */}
             <div className="absolute top-3 left-4 flex gap-1.5">
               <div className="w-3 h-3 rounded-full bg-red-400/50"></div>
@@ -282,7 +282,7 @@ if __name__ == "__main__":
                   <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                 </div>
                 <span className="text-sm font-medium text-slate-300">
-                  main.py
+                  index.ts
                 </span>
               </div>
             </div>
@@ -290,7 +290,7 @@ if __name__ == "__main__":
             {/* Enhanced Code Content */}
             <div className="p-4 bg-slate-900">
               <SyntaxHighlighter
-                language="python"
+                language="typescript"
                 style={oneDark}
                 customStyle={{
                   margin: 0,
@@ -307,7 +307,7 @@ if __name__ == "__main__":
                   paddingRight: "1rem",
                   fontSize: "0.75rem",
                 }}
-                className="!border-none"
+                className="border-none!"
                 codeTagProps={{
                   style: {
                     background: "transparent",
@@ -421,240 +421,201 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
-        {/* Subtle background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900"></div>
+      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        {/* Rich Gradient Background */}
+        <div className="absolute inset-0 bg-white dark:bg-slate-900">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100/40 via-transparent to-transparent dark:from-blue-900/20"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-100/40 via-transparent to-transparent dark:from-purple-900/20"></div>
 
-        {/* X-Pattern Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Animated X patterns */}
-          <svg
-            className="absolute inset-0 w-full h-full"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <pattern
-                id="x-pattern"
-                x="0"
-                y="0"
-                width="120"
-                height="120"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M30 30L50 50M50 30L30 50"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  className="text-slate-200 dark:text-slate-700"
-                  opacity="0.5"
-                />
-                <path
-                  d="M90 30L110 50M110 30L90 50"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  className="text-slate-200 dark:text-slate-700"
-                  opacity="0.5"
-                />
-                <path
-                  d="M30 90L50 110M50 90L30 110"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  className="text-slate-200 dark:text-slate-700"
-                  opacity="0.5"
-                />
-                <path
-                  d="M90 90L110 110M110 90L90 110"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  className="text-slate-200 dark:text-slate-700"
-                  opacity="0.5"
-                />
-                {/* Center larger X */}
-                <path
-                  d="M50 50L70 70M70 50L50 70"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="text-blue-300 dark:text-blue-800"
-                  opacity="0.3"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#x-pattern)" />
-          </svg>
-
-          {/* Gradient overlay to fade the pattern */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/90 dark:from-slate-900/80 dark:via-slate-900/60 dark:to-slate-900/90"></div>
-        </div>
-
-        {/* Floating X elements */}
-        <motion.div
-          animate={{
-            rotate: [0, 90, 180, 270, 360],
-            scale: [1, 1.1, 1, 0.9, 1],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute top-20 left-[10%] w-24 h-24 opacity-10"
-        >
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <path
-              d="M20 20L80 80M80 20L20 80"
-              stroke="currentColor"
-              strokeWidth="3"
-              className="text-blue-500 dark:text-blue-400"
-            />
-          </svg>
-        </motion.div>
-
-        <motion.div
-          animate={{
-            rotate: [360, 270, 180, 90, 0],
-            scale: [0.8, 1, 1.2, 1, 0.8],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute top-40 right-[15%] w-32 h-32 opacity-10"
-        >
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <path
-              d="M20 20L80 80M80 20L20 80"
-              stroke="currentColor"
-              strokeWidth="4"
-              className="text-purple-500 dark:text-purple-400"
-            />
-          </svg>
-        </motion.div>
-
-        {/* Glowing orbs with X shapes inside */}
-        <motion.div
-          animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-          }}
-          className="absolute bottom-20 left-[20%] w-40 h-40"
-        >
-          <div className="relative w-full h-full">
-            <div className="absolute inset-0 bg-blue-200 dark:bg-blue-900/30 rounded-full blur-3xl opacity-40"></div>
+          {/* Animated Grid - Rotated 45 degrees for X vision */}
+          {/* Animated Grid - Rotated 45 degrees for X vision */}
+          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
             <svg
-              viewBox="0 0 100 100"
-              className="absolute inset-4 w-32 h-32 opacity-20"
+              className="absolute inset-0 w-full h-full"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path
-                d="M25 25L75 75M75 25L25 75"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-blue-600 dark:text-blue-300"
-              />
+              <defs>
+                <pattern
+                  id="hero-x-pattern"
+                  x="0"
+                  y="0"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d="M0 0L40 40M40 0L0 40"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    className="text-slate-900 dark:text-white"
+                  />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#hero-x-pattern)" />
             </svg>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div
+            animate={{
+              y: [-20, 20, -20],
+              rotate: [0, 5, -5, 0],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute top-20 right-[10%] w-72 h-72 bg-blue-400/10 rounded-full blur-3xl"
+          ></motion.div>
+
+          <motion.div
+            animate={{
+              y: [20, -20, 20],
+              rotate: [0, -5, 5, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute bottom-20 left-[10%] w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"
+          ></motion.div>
+        </div>
 
         <motion.div
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="relative max-w-7xl mx-auto px-4 text-center"
+          className="relative max-w-7xl mx-auto px-4 text-center z-10"
         >
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
+            {/* Badge */}
+            <motion.div
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-sm font-medium mb-8"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>VibeX v0.8.2 is now available</span>
+            </motion.div>
+
             {/* Main heading */}
             <motion.h1
               variants={itemVariants}
-              className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white mb-6"
+              className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-8 leading-tight"
             >
-              Vibe-Working with Agentic Teams
+              Evolve with Dedicated <br />
+              <span className="bg-clip-text text-transparent bg-linear-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 animate-gradient bg-300%">
+                Agentic Teams
+              </span>
             </motion.h1>
 
             <motion.p
               variants={itemVariants}
-              className="text-xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed"
             >
-              Build collaborative, production-ready AI agent teams in minutes.
-              Experience the future of work with VibeX.
+              Orchestrate multi-agent AI workflows with intelligent parallel
+              execution and human-in-the-loop control.
             </motion.p>
 
             {/* CTA buttons */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <Link
                 href="/docs/getting-started"
-                className="inline-flex items-center bg-blue-600 hover:bg-blue-700 !text-white font-bold px-8 py-4 rounded-lg transition-transform duration-200 hover:scale-105 shadow-lg no-underline"
+                className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-blue-600 rounded-xl hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 hover:shadow-lg hover:shadow-blue-500/30 no-underline overflow-hidden"
               >
-                Quick Start
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <div className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
+                <span>Quick Start</span>
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
+
               <StyledLink
                 href="/docs/design/vibe-x"
                 lightColor="#374151"
                 darkColor="#d1d5db"
-                className="inline-flex items-center border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium px-6 py-3 rounded-lg transition-transform duration-200 hover:scale-105"
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium transition-all duration-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
               >
-                Learn Vibe-X
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <Play className="w-5 h-5 mr-2 text-slate-500 dark:text-slate-400" />
+                Watch Demo
               </StyledLink>
+            </motion.div>
+
+            {/* Tech Stack / Trusted By (Optional placeholder) */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-16 pt-8 border-t border-slate-200/60 dark:border-slate-800/60"
+            >
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-500 mb-6">
+                POWERED BY MODERN AI STACK
+              </p>
+              <div className="flex flex-wrap justify-center gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                {/* Simple text placeholders for logos to avoid image dependencies */}
+                <span className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                  OpenAI
+                </span>
+                <span className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                  Anthropic
+                </span>
+                <span className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                  Vercel AI SDK
+                </span>
+                <span className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                  LangChain
+                </span>
+                <span className="text-lg font-bold text-slate-700 dark:text-slate-300">
+                  Supabase
+                </span>
+              </div>
             </motion.div>
           </div>
         </motion.div>
-
-        {/* Curve decoration - part of hero section so grid extends through it */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden z-10">
-          <svg
-            className="relative block w-full h-12"
-            viewBox="0 0 1200 120"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V120H0V0Z"
-              fill="currentColor"
-              className="text-white dark:text-slate-900"
-            />
-          </svg>
-        </div>
       </section>
 
       {/* Vibe-X Philosophy */}
-      <section className="relative py-20 bg-white dark:bg-slate-900 overflow-hidden">
-        {/* Subtle X pattern for section background */}
-        <div className="absolute inset-0 opacity-5">
-          <svg
-            className="absolute inset-0 w-full h-full"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <pattern
-                id="vibe-x-pattern"
-                x="0"
-                y="0"
-                width="60"
-                height="60"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M15 15L25 25M25 15L15 25"
-                  stroke="currentColor"
-                  strokeWidth="0.5"
-                  className="text-slate-400 dark:text-slate-600"
-                />
-                <path
-                  d="M35 35L45 45M45 35L35 45"
-                  stroke="currentColor"
-                  strokeWidth="0.5"
-                  className="text-slate-400 dark:text-slate-600"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#vibe-x-pattern)" />
-          </svg>
+      <section className="relative py-32 bg-slate-50 dark:bg-slate-900 overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-px bg-linear-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent"></div>
+
+          {/* Subtle grid pattern */}
+          {/* Subtle grid pattern - X Vision */}
+          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
+            <svg
+              className="absolute inset-0 w-full h-full"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <defs>
+                <pattern
+                  id="philosophy-x-pattern"
+                  x="0"
+                  y="0"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d="M0 0L40 40M40 0L0 40"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    className="text-slate-900 dark:text-white"
+                  />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#philosophy-x-pattern)" />
+            </svg>
+          </div>
+
+          {/* Glowing orbs */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4">
@@ -663,99 +624,200 @@ export default function HomePage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
             variants={containerVariants}
-            className="grid md:grid-cols-3 gap-8"
+            className="mb-20 text-center"
           >
-            <motion.div
+            <motion.h2
               variants={itemVariants}
-              className="relative bg-slate-50 dark:bg-slate-800/50 p-8 rounded-lg text-center overflow-hidden group hover:shadow-lg transition-shadow duration-300"
+              className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-linear-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white mb-6"
             >
-              {/* X decoration in corner */}
-              <div className="absolute -top-2 -right-2 w-12 h-12 opacity-10 group-hover:opacity-20 transition-opacity">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <path
-                    d="M20 20L80 80M80 20L20 80"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-blue-600 dark:text-blue-400"
-                  />
-                </svg>
-              </div>
-
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-6 relative">
-                <Brain className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                Transparent Processes
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400">
-                Real-time visibility into AI decision-making with interruptible
-                workflows. See what agents think and maintain full control.
-              </p>
-            </motion.div>
-
-            <motion.div
+              The Vibe-X Philosophy
+            </motion.h2>
+            <motion.p
               variants={itemVariants}
-              className="relative bg-slate-50 dark:bg-slate-800/50 p-8 rounded-lg text-center overflow-hidden group hover:shadow-lg transition-shadow duration-300"
+              className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto"
             >
-              {/* X decoration in corner */}
-              <div className="absolute -top-2 -right-2 w-12 h-12 opacity-10 group-hover:opacity-20 transition-opacity">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <path
-                    d="M20 20L80 80M80 20L20 80"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-purple-600 dark:text-purple-400"
-                  />
-                </svg>
-              </div>
-
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mx-auto mb-6">
-                <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                Human in the Loop
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400">
-                Strategic human oversight with AI execution. Define boundaries,
-                approve critical decisions, maintain ethical standards.
-              </p>
-            </motion.div>
-
-            <motion.div
-              variants={itemVariants}
-              className="relative bg-slate-50 dark:bg-slate-800/50 p-8 rounded-lg text-center overflow-hidden group hover:shadow-lg transition-shadow duration-300"
-            >
-              {/* X decoration in corner */}
-              <div className="absolute -top-2 -right-2 w-12 h-12 opacity-10 group-hover:opacity-20 transition-opacity">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <path
-                    d="M20 20L80 80M80 20L20 80"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-green-600 dark:text-green-400"
-                  />
-                </svg>
-              </div>
-
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-6">
-                <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                Cost-Aware Intelligence
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400">
-                Intelligent model routing that balances capability with cost.
-                Use DeepSeek for routine tasks, Claude for complex reasoning.
-              </p>
-            </motion.div>
+              We believe in a future where AI agents and humans work together in
+              perfect harmony, combining computational power with human
+              intuition.
+            </motion.p>
           </motion.div>
+
+          <div className="grid md:grid-cols-12 gap-6">
+            {/* Card 1: Transparent Processes - Large Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="md:col-span-8 relative group overflow-hidden rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl"
+            >
+              <div className="absolute inset-0 bg-linear-to-br from-blue-50/50 to-transparent dark:from-blue-900/10 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+              <div className="relative p-10 h-full flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1 text-left">
+                  <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/50 rounded-2xl flex items-center justify-center mb-6 text-blue-600 dark:text-blue-400">
+                    <Brain className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                    Transparent Intelligence
+                  </h3>
+                  <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
+                    No more black boxes. Watch your agents think, plan, and
+                    execute in real-time. Inspect their reasoning steps,
+                    intervene when necessary, and guide them toward success.
+                  </p>
+                </div>
+
+                {/* Visual representation */}
+                <div className="w-full md:w-1/2 aspect-video bg-slate-100 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4 relative overflow-hidden">
+                  <div className="absolute top-4 left-4 right-4 space-y-3">
+                    <div className="h-2 w-3/4 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
+                    <div className="h-2 w-1/2 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse delay-75"></div>
+                    <div className="h-2 w-5/6 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse delay-150"></div>
+                  </div>
+
+                  {/* Floating code snippet */}
+                  <div className="absolute bottom-4 right-4 bg-slate-900 dark:bg-black rounded-lg p-3 shadow-lg border border-slate-700 transform rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                    <div className="flex gap-1.5 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-1.5 w-20 bg-slate-700 rounded-full"></div>
+                      <div className="h-1.5 w-16 bg-slate-700 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 2: Human in the Loop - Tall Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="md:col-span-4 relative group overflow-hidden rounded-3xl bg-slate-900 dark:bg-black border border-slate-800 dark:border-slate-800 shadow-xl text-white"
+            >
+              <div className="absolute inset-0 bg-linear-to-b from-purple-500/20 to-transparent opacity-50"></div>
+
+              <div className="relative p-8 h-full flex flex-col">
+                <div className="w-14 h-14 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-6 text-purple-400 border border-purple-500/30">
+                  <Users className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Human Synergy</h3>
+                <p className="text-slate-300 leading-relaxed mb-8">
+                  AI shouldn't replace humans—it should amplify them. Define
+                  boundaries, approve critical decisions, and maintain full
+                  control.
+                </p>
+
+                <div className="mt-auto relative h-32">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-purple-500/30 blur-3xl rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+                    <div className="bg-slate-800/80 backdrop-blur-md rounded-full px-6 py-2 border border-slate-700 flex items-center gap-3 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium">
+                        Awaiting Approval
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 3: Cost-Aware - Medium Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="md:col-span-5 relative group overflow-hidden rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl"
+            >
+              <div className="absolute inset-0 bg-linear-to-br from-green-50/50 to-transparent dark:from-green-900/10 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+              <div className="relative p-8">
+                <div className="w-14 h-14 bg-green-100 dark:bg-green-900/50 rounded-2xl flex items-center justify-center mb-6 text-green-600 dark:text-green-400">
+                  <DollarSign className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                  Smart Economics
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Intelligent routing automatically selects the most
+                  cost-effective model for each task. Save up to 60% on token
+                  costs without sacrificing quality.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Card 4: Production Ready - Medium Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="md:col-span-7 relative group overflow-hidden rounded-3xl bg-linear-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-slate-100 dark:bg-slate-700/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+              <div className="relative p-8 flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1">
+                  <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/50 rounded-2xl flex items-center justify-center mb-6 text-orange-600 dark:text-orange-400">
+                    <Rocket className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                    Production First
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Built for the real world. Type-safe, observable, and
+                    scalable from day one.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <div className="px-4 py-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-sm font-mono text-slate-600 dark:text-slate-400">
+                    99.9% Uptime
+                  </div>
+                  <div className="px-4 py-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-sm font-mono text-slate-600 dark:text-slate-400">
+                    &lt;50ms Latency
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Bootstrap Section */}
       <section className="relative py-24 bg-slate-50 dark:bg-slate-800/30 overflow-hidden">
         {/* Subtle background pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:80px_80px] opacity-30"></div>
+        {/* Subtle background pattern - X Vision */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
+          <svg
+            className="absolute inset-0 w-full h-full"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <pattern
+                id="bootstrap-x-pattern"
+                x="0"
+                y="0"
+                width="40"
+                height="40"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M0 0L40 40M40 0L0 40"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  className="text-slate-900 dark:text-white"
+                />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#bootstrap-x-pattern)" />
+          </svg>
+        </div>
 
         {/* Floating decoration */}
         <motion.div
@@ -805,33 +867,41 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="py-20 bg-white dark:bg-slate-900">
+      <section className="py-32 bg-white dark:bg-slate-900 relative">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
               Enterprise-Grade Features
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
+            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
               Production-ready capabilities for sophisticated multi-agent
-              architectures.
+              architectures. Built to scale with your needs.
             </p>
           </div>
 
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.2 }}
             variants={containerVariants}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {features.map((feature, index) => {
               const gradients = [
-                "from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20",
-                "from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20",
-                "from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20",
-                "from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20",
-                "from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20",
-                "from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20",
+                "from-blue-500/10 to-indigo-500/10",
+                "from-purple-500/10 to-pink-500/10",
+                "from-emerald-500/10 to-teal-500/10",
+                "from-orange-500/10 to-red-500/10",
+                "from-violet-500/10 to-purple-500/10",
+                "from-cyan-500/10 to-blue-500/10",
+              ];
+              const borderColors = [
+                "group-hover:border-blue-500/50",
+                "group-hover:border-purple-500/50",
+                "group-hover:border-emerald-500/50",
+                "group-hover:border-orange-500/50",
+                "group-hover:border-violet-500/50",
+                "group-hover:border-cyan-500/50",
               ];
               const iconColors = [
                 "text-blue-600 dark:text-blue-400",
@@ -845,68 +915,50 @@ export default function HomePage() {
               return (
                 <motion.div
                   key={feature.title}
-                  whileHover={{
-                    y: -5,
-                    transition: { type: "spring", stiffness: 300 },
-                  }}
-                  className="group relative"
+                  variants={itemVariants}
+                  whileHover={{ y: -8 }}
+                  className="group relative h-full"
                 >
                   <div
-                    className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} rounded-xl blur-sm group-hover:blur-md transition-all duration-300 opacity-60 group-hover:opacity-80`}
+                    className={`absolute inset-0 bg-linear-to-br ${gradients[index]} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                   ></div>
-                  <div className="relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-6 rounded-xl border border-slate-200/50 dark:border-slate-700/50 h-full flex flex-col overflow-hidden">
-                    {/* Subtle gradient overlay */}
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-br ${gradients[index]} opacity-10`}
-                    ></div>
 
-                    {/* Content */}
+                  <div
+                    className={`relative h-full bg-white dark:bg-slate-800/50 backdrop-blur-sm p-8 rounded-2xl border border-slate-200 dark:border-slate-700 ${borderColors[index]} transition-colors duration-300 flex flex-col overflow-hidden`}
+                  >
                     <StyledLink
                       href={feature.href}
-                      lightColor="#2563eb"
-                      darkColor="#60a5fa"
-                      className="relative text-sm font-medium no-underline"
+                      lightColor="#1e293b"
+                      darkColor="#f8fafc"
+                      className="relative h-full flex flex-col no-underline"
                     >
-                      <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-start justify-between mb-6">
                         <div
-                          className={`w-10 h-10 bg-gradient-to-br ${gradients[index]} rounded-lg flex items-center justify-center shadow-sm`}
+                          className={`w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300`}
                         >
                           <feature.icon
-                            className={`w-5 h-5 ${iconColors[index]}`}
+                            className={`w-6 h-6 ${iconColors[index]}`}
                           />
                         </div>
                         {index === 0 && (
-                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full">
-                            New
+                          <span className="px-3 py-1 text-xs font-bold tracking-wide bg-blue-600 text-white rounded-full shadow-lg shadow-blue-500/30">
+                            NEW
                           </span>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {feature.title}
                       </h3>
-                      <p className="text-slate-600 dark:text-slate-400 text-sm flex-grow leading-relaxed">
+
+                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6 grow">
                         {feature.description}
                       </p>
-                      <div className="mt-4 flex items-center gap-2">
-                        <span
-                          className={`text-sm font-medium inline-flex items-center ${iconColors[index]} group-hover:gap-3 transition-all`}
-                        >
-                          Learn More{" "}
-                          <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                        </span>
+
+                      <div className="flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        Learn more <ArrowRight className="w-4 h-4 ml-2" />
                       </div>
                     </StyledLink>
-
-                    {/* Corner accent */}
-                    <div className="absolute -top-1 -right-1 w-20 h-20 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <svg viewBox="0 0 100 100" className="w-full h-full">
-                        <path
-                          d="M50 10L90 50L50 90L10 50Z"
-                          fill="currentColor"
-                          className={iconColors[index]}
-                        />
-                      </svg>
-                    </div>
                   </div>
                 </motion.div>
               );
@@ -942,10 +994,10 @@ export default function HomePage() {
                 "border-orange-200 dark:border-orange-800",
               ];
               const iconBg = [
-                "bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30",
-                "bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30",
-                "bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30",
-                "bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30",
+                "bg-linear-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30",
+                "bg-linear-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30",
+                "bg-linear-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30",
+                "bg-linear-to-br from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30",
               ];
               const iconColors = [
                 "text-blue-600 dark:text-blue-400",
@@ -1014,7 +1066,7 @@ export default function HomePage() {
 
                   {/* Bottom accent line */}
                   <div
-                    className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${iconBg[index]} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}
+                    className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${iconBg[index]} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`}
                   ></div>
                 </motion.div>
               );
@@ -1025,9 +1077,9 @@ export default function HomePage() {
 
       {/* Final CTA */}
       <section className="relative py-20 bg-white dark:bg-slate-900">
-        <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-slate-50 dark:from-slate-800/50 to-transparent"></div>
+        <div className="absolute inset-x-0 top-0 h-48 bg-linear-to-b from-slate-50 dark:from-slate-800/50 to-transparent"></div>
         <div className="relative max-w-4xl mx-auto px-4">
-          <div className="relative bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl shadow-xl overflow-hidden p-12 text-center">
+          <div className="relative bg-linear-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl shadow-xl overflow-hidden p-12 text-center">
             {/* Large X pattern background */}
             <div className="absolute inset-0 opacity-10">
               <svg
@@ -1156,7 +1208,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 pt-20 pb-12 overflow-hidden">
+      <footer className="relative bg-linear-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 pt-20 pb-12 overflow-hidden">
         {/* Subtle X pattern background */}
         <div className="absolute inset-0 opacity-[0.02]">
           <svg
@@ -1342,11 +1394,11 @@ export default function HomePage() {
               </h3>
               <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 mb-4">
                 <code className="text-sm font-mono text-slate-700 dark:text-slate-300">
-                  pip install vibex
+                  npm install vibex
                 </code>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
-                Get started in seconds with our Python package.
+                Get started in seconds with our TypeScript package.
               </p>
               <Link
                 href="/docs/getting-started"
@@ -1371,7 +1423,7 @@ export default function HomePage() {
                   rel="noopener noreferrer"
                   className="font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  Dustland
+                  Tiwater
                 </a>
               </div>
               <div className="flex items-center gap-6 text-sm">

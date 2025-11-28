@@ -1,7 +1,7 @@
 /**
- * VibexProvider - React Context Provider (Deprecated)
+ * XProvider - React Context Provider (Deprecated)
  *
- * NOTE: This provider is no longer needed since Vibex is now server-only.
+ * NOTE: This provider is no longer needed since X is now server-only.
  * All hooks use server actions directly. This is kept for backward compatibility
  * but can be removed in the future.
  */
@@ -10,11 +10,11 @@
 
 import { ReactNode } from "react";
 
-export interface VibexProviderProps {
+export interface XProviderProps {
   children: ReactNode;
 }
 
-export function VibexProvider({ children }: VibexProviderProps) {
+export function XProvider({ children }: XProviderProps) {
   // No-op provider - hooks now use server actions directly
   return <>{children}</>;
 }

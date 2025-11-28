@@ -1,0 +1,167 @@
+# engine
+
+*Module: [`vibex/engine`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts)*
+
+Execution Engine (Internal)
+
+Runtime for executing complex agentic workflows.
+This is an internal component - users work with Mission → Plan → Task.
+
+The engine handles:
+- Execution graph traversal
+- Parallel execution
+- Conditional branching
+- Human-in-the-loop pausing
+
+## Classes
+
+### WorkflowEngine
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L25" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Methods:**
+
+#### registerWorkflow
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L36" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Register an execution graph (workflow definition)
+
+```typescript
+function registerWorkflow(graph: ExecutionGraph | Workflow): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `graph` | `ExecutionGraph \| Workflow` |  |
+
+---
+
+#### startWorkflow
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L60" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Start workflow execution
+
+```typescript
+function startWorkflow(graphId: string, input: Record<string, unknown> = {}): Promise<string>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `graphId` | `string` |  |
+| `input` | `Record<string, unknown>` |  (default: `{}`) |
+
+---
+
+#### resumeWorkflow
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L173" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Resume a paused execution (e.g. after human input)
+
+```typescript
+function resumeWorkflow(contextId: string, input: Record<string, unknown>): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `contextId` | `string` |  |
+| `input` | `Record<string, unknown>` |  |
+
+---
+
+#### getStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L198" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get current execution status
+
+```typescript
+function getStatus(contextId: string): ExecutionStatus | undefined
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `contextId` | `string` |  |
+
+---
+
+#### getContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L205" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get execution context
+
+```typescript
+function getContext(contextId: string): ExecutionContext | undefined
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `contextId` | `string` |  |
+
+---
+
+#### cancelExecution
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L212" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Cancel an execution
+
+```typescript
+function cancelExecution(contextId: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `contextId` | `string` |  |
+
+---
+
+#### registerGraph
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L291" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function registerGraph(graph: ExecutionGraph): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `graph` | `ExecutionGraph` |  |
+
+---
+
+#### startGraph
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/engine.ts#L296" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function startGraph(graphId: string, input: Record<string, unknown> = {}): Promise<string>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `graphId` | `string` |  |
+| `input` | `Record<string, unknown>` |  (default: `{}`) |
+
+---
+
+---

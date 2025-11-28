@@ -1,0 +1,75 @@
+# chat
+
+_Module: [`@vibex/react/chat`](https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks/chat.ts)_
+
+## Interfaces
+
+### UseXChatOptions
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks/chat.ts#L12"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+**Properties:**
+
+| Name              | Type                              | Description                                               |
+| ----------------- | --------------------------------- | --------------------------------------------------------- |
+| `spaceId`         | `string`                          | The space ID to associate messages with                   |
+| `agentId`         | `string`                          | Optional agent ID to route messages to (optional)         |
+| `metadata`        | `Record<string, unknown>`         | Optional metadata to include with each request (optional) |
+| `api`             | `string`                          | API endpoint (defaults to /api/chat) (optional)           |
+| `initialMessages` | `XChatMessage[]`                  | Initial messages to populate the chat (optional)          |
+| `onError`         | `(error: Error) => void`          | Callback when an error occurs (optional)                  |
+| `onFinish`        | `(message: XChatMessage) => void` | Callback when generation finishes (optional)              |
+| `onStatusChange`  | `(status: XChatStatus) => void`   | Callback when status changes (optional)                   |
+
+---
+
+## Functions
+
+### useXChat
+
+<a
+  href="https://github.com/tiwater/vibex/blob/main/packages/react/src/hooks/chat.ts#L188"
+  className="text-xs text-muted-foreground hover:text-primary"
+>
+  View source
+</a>
+
+React hook for chat interactions with VibeX agents
+
+```tsx
+const { messages, input, setInput, append, status, isLoading } = useXChat({
+  spaceId: "my-space",
+  agentId: "researcher",
+});
+
+// Check granular status
+if (status === "awaiting-approval") {
+  // Show approval UI
+}
+```
+
+```typescript
+function useXChat({
+  spaceId,
+  agentId,
+  metadata,
+  api = "/api/chat",
+  initialMessages,
+  onError,
+  onFinish,
+  onStatusChange,
+}: UseXChatOptions): XChatState;
+```
+
+**Parameters:**
+
+| Name      | Type              | Description |
+| --------- | ----------------- | ----------- |
+| `options` | `UseXChatOptions` |             |
+
+---

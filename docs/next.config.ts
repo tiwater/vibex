@@ -11,7 +11,8 @@ const withNextra = nextra({
 
 export default withNextra({
   reactStrictMode: true,
-  output: "export",
+  // Note: Removed "export" output to enable API routes for the playground
+  // For static docs hosting, you can add back: output: "export"
   trailingSlash: true,
   images: {
     unoptimized: true,
@@ -20,7 +21,7 @@ export default withNextra({
     // Ignore ESLint errors during builds for now
     ignoreDuringBuilds: true,
   },
-  webpack(config) {
+  webpack(config, { isServer }) {
     // rule.exclude doesn't work starting from Next.js 15
     const { test: _test, ...imageLoaderOptions } = config.module.rules.find(
       (rule) => rule.test?.test?.(".svg")
@@ -35,8 +36,19 @@ export default withNextra({
         imageLoaderOptions,
       ],
     });
+
+    // Externalize vibex and playwright for server-side only
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        playwright: "commonjs playwright",
+        "playwright-core": "commonjs playwright-core",
+      });
+    }
+
     return config;
   },
+  serverExternalPackages: ["vibex", "playwright", "playwright-core"],
   experimental: {
     optimizePackageImports: ["nextra-theme-docs"],
   },

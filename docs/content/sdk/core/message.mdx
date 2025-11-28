@@ -1,0 +1,381 @@
+# message
+
+*Module: [`@vibex/core/message`](https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts)*
+
+Message Types - AI SDK v6 Compatible
+
+VibeX adopts a parts-based message format aligned with AI SDK v6.
+This provides structured content types for text, tools, reasoning, and artifacts.
+
+## Interfaces
+
+### TextPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L15" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Message Types - AI SDK v6 Compatible
+
+VibeX adopts a parts-based message format aligned with AI SDK v6.
+This provides structured content types for text, tools, reasoning, and artifacts.
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"text"` |  |
+| `text` | `string` |  |
+
+---
+
+### ToolCallPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L23" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Tool call part - when an agent invokes a tool
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"tool-call"` |  |
+| `toolCallId` | `string` |  |
+| `toolName` | `string` |  |
+| `args` | `Record<string, unknown>` |  |
+| `status` | `"pending" \| "running" \| "completed" \| "failed" \| "pending-approval"` |   (optional) |
+
+---
+
+### ToolResultPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L34" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Tool result part - the output from a tool
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"tool-result"` |  |
+| `toolCallId` | `string` |  |
+| `toolName` | `string` |  |
+| `result` | `unknown` |  |
+| `isError` | `boolean` |   (optional) |
+
+---
+
+### ReasoningPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L45" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Reasoning part - for chain-of-thought or thinking
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"reasoning"` |  |
+| `text` | `string` |  |
+
+---
+
+### ArtifactPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L53" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Artifact reference part - VibeX-specific for document/file references
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"artifact"` |  |
+| `artifactId` | `string` |  |
+| `title` | `string` |   (optional) |
+| `version` | `number` |   (optional) |
+| `artifactType` | `"document" \| "code" \| "data" \| "image" \| "file"` |   (optional) |
+| `preview` | `string` |   (optional) |
+| `action` | `"created" \| "updated" \| "referenced"` |   (optional) |
+
+---
+
+### PlanUpdatePart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L66" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Plan update part - VibeX-specific for plan/task changes
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"plan-update"` |  |
+| `planId` | `string` |  |
+| `action` | `"created" \| "updated" \| "completed" \| "failed"` |  |
+| `summary` | `string` |   (optional) |
+| `tasksAffected` | `string[]` |   (optional) |
+
+---
+
+### FilePart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L77" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+File part - for file attachments
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"file"` |  |
+| `fileId` | `string` |  |
+| `filename` | `string` |  |
+| `mimeType` | `string` |  |
+| `url` | `string` |   (optional) |
+| `size` | `number` |   (optional) |
+
+---
+
+### StepStartPart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L89" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Step start part - marks the beginning of a multi-step process
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"step-start"` |  |
+| `stepId` | `string` |  |
+| `stepName` | `string` |  |
+| `agentName` | `string` |   (optional) |
+
+---
+
+### ModelMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L121" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Model message - minimal format for LLM APIs (AI SDK CoreMessage compatible)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `role` | `MessageRole` |  |
+| `content` | `string \| XMessagePart[]` |  |
+
+---
+
+### XMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L132" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+VibeX message - full server-side message with metadata and parts
+
+This is the canonical message format used throughout VibeX.
+It supports both legacy `content` and new `parts` format.
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` | Unique message identifier  (optional) |
+| `role` | `MessageRole` | Role of the message sender |
+| `parts` | `XMessagePart[]` | Message parts - structured content (v6 format)
+Preferred over `content` for new code.  (optional) |
+| `content` | `string \| unknown[]` | Legacy content field  (optional) |
+| `metadata` | `object` | Message metadata  (optional) |
+
+---
+
+## Types
+
+### XMessagePart
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L99" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Union of all message part types
+
+```typescript
+type XMessagePart = | TextPart
+  | ToolCallPart
+  | ToolResultPart
+  | ReasoningPart
+  | ArtifactPart
+  | PlanUpdatePart
+  | FilePart
+  | StepStartPart
+```
+
+---
+
+### MessageRole
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L116" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Message role types
+
+```typescript
+type MessageRole = "system" | "user" | "assistant" | "tool"
+```
+
+---
+
+### Message
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L169" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Alias for XMessage
+
+```typescript
+type Message = XMessage
+```
+
+---
+
+### ChatStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L178" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Granular message/chat status
+
+```typescript
+type ChatStatus = | "idle" // No activity
+  | "submitted" // Request sent, waiting for response
+  | "streaming" // Actively receiving response
+  | "awaiting-approval" // Tool call needs human approval
+  | "error"
+```
+
+---
+
+## Functions
+
+### getTextFromParts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L192" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Extract text content from message parts
+
+```typescript
+function getTextFromParts(parts: XMessagePart[]): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `parts` | `XMessagePart[]` |  |
+
+---
+
+### createTextMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L202" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Create a simple text message
+
+```typescript
+function createTextMessage(role: MessageRole, text: string, metadata?: XMessage["metadata"]): XMessage
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `role` | `MessageRole` |  |
+| `text` | `string` |  |
+| `metadata` | `XMessage["metadata"]` (optional) |  |
+
+---
+
+### hasPendingApproval
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L217" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if message has pending tool approvals
+
+```typescript
+function hasPendingApproval(message: XMessage): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XMessage` |  |
+
+---
+
+### getToolCalls
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L227" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all tool calls from a message
+
+```typescript
+function getToolCalls(message: XMessage): ToolCallPart[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XMessage` |  |
+
+---
+
+### getArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L237" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all artifacts from a message
+
+```typescript
+function getArtifacts(message: XMessage): ArtifactPart[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XMessage` |  |
+
+---
+
+### contentToParts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L247" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Convert legacy content to parts format
+
+```typescript
+function contentToParts(content: string | unknown[] | undefined): XMessagePart[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `content` | `string \| unknown[] \| undefined` |  |
+
+---
+
+### normalizeMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/message.ts#L274" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Normalize a message to always have parts
+
+```typescript
+function normalizeMessage(message: XMessage): XMessage
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `XMessage` |  |
+
+---

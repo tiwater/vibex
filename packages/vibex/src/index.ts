@@ -1,5 +1,5 @@
 /**
- * Vibex - Space-Oriented Collaborative Workspace Platform
+ * X - Space-Oriented Collaborative Workspace Platform
  *
  * Public API
  */
@@ -17,15 +17,15 @@ export type {
 
   // Message types (runtime)
   ModelMessage,
-  VibexMessage,
+  XMessage,
   Message,
 
   // Common types
-  VibexError,
+  XError,
   StreamChunk,
   ModelConfig,
   StorageConfig,
-  VibexConfig,
+  XConfig,
 
   // Data types (persistence layer)
   AgentType,
@@ -58,15 +58,16 @@ export * from "./space/artifact";
 export * from "./space/state";
 export * from "./space/collaboration";
 
-// Runtime - Agent subsystem
-export * from "./agent/agent";
-export * from "./agent/registry";
-export * from "./agent/x";
-export * from "./agent/processor";
-export * from "./agent/browser";
-export * from "./agent/provider";
-export * from "./agent/tool";
-export * from "./agent/prompts";
+// Runtime - Agent and orchestration subsystem
+export * from "./runtime/agent";
+export * from "./runtime/registry";
+export * from "./runtime/x";
+export * from "./runtime/processor";
+export * from "./runtime/browser";
+export * from "./runtime/llm";
+export * from "./runtime/tool";
+export * from "./runtime/prompts";
+export * from "./runtime/factory";
 
 // Core Engine
 export * from "./stream";

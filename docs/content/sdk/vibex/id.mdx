@@ -1,0 +1,65 @@
+# id
+
+*Module: [`vibex/id`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/id.ts)*
+
+ID Generator Utilities for VibeX
+
+Simple, unique ID generation for documents and other entities.
+
+## Functions
+
+### generateShortId
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/id.ts#L20" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Generate a short, unique ID that's URL-safe
+Uses a custom alphabet to ensure compatibility
+
+```typescript
+function generateShortId(length: number = 8): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `length` | `number` | Length of the ID (default: 8) (default: `8`) |
+
+**Returns:** A short, unique ID string
+
+---
+
+### generateSpaceId
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/id.ts#L38" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Generate a space ID
+
+```typescript
+function generateSpaceId(): string
+```
+
+**Returns:** A space ID like 'aB3x_9Kp' (always clean random ID)
+
+---
+
+### validateId
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/utils/id.ts#L50" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Validate a document ID
+Checks that the ID starts with a letter and contains only letters, numbers, and underscores
+
+```typescript
+function validateId(id: string): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` | ID string to validate |
+
+**Returns:** Boolean indicating if the ID is valid
+
+---

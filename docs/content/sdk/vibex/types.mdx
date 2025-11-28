@@ -1,0 +1,260 @@
+# types
+
+*Module: [`vibex/types`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts)*
+
+Execution Types (Internal)
+
+These types support the internal execution engine. They are NOT part of
+the user-facing API. Users work with Mission → Plan → Task.
+
+The execution engine uses these types to:
+- Track execution state
+- Support complex execution patterns (parallel, conditional)
+- Enable pause/resume of long-running operations
+
+Note: "steps" in AI SDK refers to multi-turn tool execution loops.
+Our "ExecutionNode" is different - it's an internal graph node.
+
+## Interfaces
+
+### ExecutionContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L30" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Execution context - runtime state for an execution
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `missionId` | `string` |  |
+| `taskId` | `string` |   (optional) |
+| `variables` | `Record<string, unknown>` |  |
+| `history` | `unknown[]` |  |
+| `currentNodeId` | `string` |   (optional) |
+| `status` | `ExecutionStatus` |  |
+| `input` | `unknown` |  |
+| `output` | `unknown` |   (optional) |
+| `error` | `unknown` |   (optional) |
+
+---
+
+### ExecutionNode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L58" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Base execution node (internal)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `type` | `ExecutionNodeType` |  |
+| `name` | `string` |  |
+| `description` | `string` |   (optional) |
+| `next` | `string \| string[]` |   (optional) |
+| `config` | `unknown` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+
+---
+
+### AgentExecutionNode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L71" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Agent execution node
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"agent"` |  |
+| `config` | `object` |  |
+
+---
+
+### ToolExecutionNode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L85" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Tool execution node
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"tool"` |  |
+| `config` | `\{ toolName: string; arguments: Record<string, unknown>; \}` |  |
+
+---
+
+### ConditionNode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L96" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Condition node for branching
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"condition"` |  |
+| `config` | `\{ expression: string; yes: string; no: string; \}` |  |
+
+---
+
+### HumanInputNode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L108" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Human input node (pause for user)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"human_input"` |  |
+| `config` | `object` |  |
+
+---
+
+### ParallelNode
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L120" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Parallel execution node
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `type` | `"parallel"` |  |
+| `config` | `\{ branches: string[]; mode: "wait_all" \| "race"; \}` |  |
+
+---
+
+### ExecutionGraph
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L131" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Execution graph (internal representation)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `description` | `string` |   (optional) |
+| `nodes` | `ExecutionNode[]` |  |
+| `variables` | `Record<string, unknown>` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+
+---
+
+### ExecutionNodeResult
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L143" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Result of executing a single node
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `nodeId` | `string` |  |
+| `status` | `"completed" \| "failed" \| "skipped"` |  |
+| `output` | `unknown` |   (optional) |
+| `error` | `unknown` |   (optional) |
+| `startTime` | `Date` |  |
+| `endTime` | `Date` |  |
+| `logs` | `string[]` |   (optional) |
+
+---
+
+## Types
+
+### ExecutionStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L19" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type ExecutionStatus = | "pending"
+  | "running"
+  | "paused"
+  | "completed"
+  | "failed"
+  | "cancelled"
+```
+
+---
+
+### ExecutionNodeType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L46" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Node types in the execution graph
+
+```typescript
+type ExecutionNodeType = | "start"
+  | "end"
+  | "agent"
+  | "tool"
+  | "condition"
+  | "human_input"
+  | "parallel"
+```
+
+---
+
+### WorkflowStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L156" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type WorkflowStatus = ExecutionStatus
+```
+
+---
+
+### WorkflowContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L158" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type WorkflowContext = ExecutionContext
+```
+
+---
+
+### WorkflowStep
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L160" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type WorkflowStep = ExecutionNode
+```
+
+---
+
+### Workflow
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L162" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type Workflow = ExecutionGraph
+```
+
+---
+
+### ExecutionStepResult
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/workflow/types.ts#L164" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type ExecutionStepResult = ExecutionNodeResult
+```
+
+---

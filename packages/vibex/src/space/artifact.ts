@@ -1,8 +1,8 @@
 /**
- * Artifact Management for Vibex
+ * Artifact Management for VibeX
  *
  * Provides a simple interface for managing space artifacts
- * (documents, images, and other files) within the Vibex system
+ * (documents, images, and other files) within the VibeX system
  */
 
 import { BaseStorage } from "./storage";

@@ -1,6 +1,6 @@
 # Quick Start
 
-Get started with Vibex in 5 minutes.
+Get started with VibeX in 5 minutes.
 
 ## Setup
 
@@ -18,7 +18,7 @@ cp env.example .env
 
 ### 1. Basic Usage
 
-The simplest way to use Vibex:
+The simplest way to use VibeX:
 
 ```bash
 pnpm basic
@@ -103,9 +103,9 @@ Your AI assistant that:
 - Coordinates specialist agents
 - Adapts to your feedback
 
-## What Makes Vibex Different
+## What Makes VibeX Different
 
-| Traditional AI          | Vibex                    |
+| Traditional AI          | VibeX                    |
 | ----------------------- | ------------------------ |
 | Forgets after each chat | Remembers forever        |
 | Single session          | Multi-session continuity |

@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/public/logo.png" alt="Vibex Logo" width="120" />
+  <img src="docs/public/logo.png" alt="VibeX Logo" width="120" />
 </p>
 
-<h1 align="center">Vibex</h1>
+<h1 align="center">VibeX</h1>
 
 <p align="center">
-  <strong>Space-Oriented Collaborative Workspace Platform for AI Agents</strong>
+  <strong>Evolve with Dedicated Agentic Teams</strong>
 </p>
 
 <p align="center">
@@ -25,11 +25,11 @@
 
 ---
 
-## 🌟 What is Vibex?
+## 🌟 What is VibeX?
 
-Vibex is a **space-oriented collaborative workspace platform** designed for persistent, evolving work with AI agents. Unlike traditional task-oriented frameworks that simply execute and terminate, Vibex provides **persistent workspaces** where artifacts evolve through continuous user-agent collaboration.
+VibeX is a **space-oriented collaborative workspace platform** designed for persistent, evolving work with AI agents. Unlike traditional task-oriented frameworks that simply execute and terminate, VibeX provides **persistent workspaces** where artifacts evolve through continuous user-agent collaboration.
 
-| Aspect           | Task-Oriented (Others)           | Space-Oriented (Vibex)                     |
+| Aspect           | Task-Oriented (Others)           | Space-Oriented (VibeX)                     |
 | ---------------- | -------------------------------- | ------------------------------------------ |
 | **Mental Model** | "Run a task, get a result, done" | "Enter a space, evolve artifacts, iterate" |
 | **Lifecycle**    | One-shot execution               | Persistent, continuous collaboration       |
@@ -123,7 +123,7 @@ await xAgent2.streamText({
 
 ## 📚 Examples
 
-Explore these examples to see Vibex in action:
+Explore these examples to see VibeX in action:
 
 | Example                                                 | Description                                                            |
 | ------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -141,7 +141,7 @@ pnpm start
 
 ## 📦 Packages
 
-Vibex is organized as a monorepo with the following packages:
+VibeX is organized as a monorepo with the following packages:
 
 | Package                                  | Description                                                           |
 | ---------------------------------------- | --------------------------------------------------------------------- |
@@ -192,7 +192,7 @@ Vibex is organized as a monorepo with the following packages:
 
 ## 💾 Storage Providers
 
-Vibex supports two built-in storage backends:
+VibeX supports two built-in storage backends:
 
 ### Local Storage
 
@@ -248,7 +248,7 @@ pnpm format
 
 ## 📖 Documentation
 
-- **[Getting Started Guide](./docs/content/docs/getting-started.mdx)** — Your first steps with Vibex
+- **[Getting Started Guide](./docs/content/docs/getting-started.mdx)** — Your first steps with VibeX
 - **[Architecture Overview](./docs/content/docs/design/architecture.mdx)** — Deep dive into the system design
 - **[Package Structure](./docs/content/docs/design/package-structure.mdx)** — Detailed package responsibilities
 - **[API Reference](./docs/content/sdk)** — Complete SDK documentation
@@ -269,7 +269,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](./LICEN
 
 ## 🙏 Acknowledgments
 
-Vibex is built with amazing open source technologies:
+VibeX is built with amazing open source technologies:
 
 - [Vercel AI SDK](https://sdk.vercel.ai/) — AI/LLM integration
 - [Zod](https://zod.dev/) — TypeScript-first schema validation

@@ -1,0 +1,249 @@
+# mission
+
+*Module: [`vibex/mission`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts)*
+
+Mission - User's substantial intent within a Space
+
+A Mission represents a high-level goal that requires multiple tasks to complete.
+Example: "Write a research paper on AI" is a Mission containing tasks like
+"Research sources", "Create outline", "Write introduction", etc.
+
+Hierarchy:
+  Space (persistent container)
+    └── Mission (user's intent, has lifecycle)
+          └── Plan (strategy, evolves)
+                └── Task[] (individual work items)
+
+## Classes
+
+### Mission
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L33" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `title` | `string` |  |
+| `description` | `string` |  |
+| `status` | `MissionStatus` |  |
+| `priority` | `"low" \| "medium" \| "high"` |  |
+| `tags` | `string[]` |  |
+| `metadata` | `Record<string, unknown>` |  |
+| `plan` | `Plan` |  |
+| `createdAt` | `Date` |  |
+| `updatedAt` | `Date` |  |
+| `completedAt` | `Date` |  |
+
+**Methods:**
+
+#### setPlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L65" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Set the plan for this mission
+
+```typescript
+function setPlan(plan: Plan): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `plan` | `Plan` |  |
+
+---
+
+#### getTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L73" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all tasks from the plan
+
+```typescript
+function getTasks(): Task[]
+```
+
+---
+
+#### getTasksByStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L80" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get tasks by status
+
+```typescript
+function getTasksByStatus(status: TaskStatus): Task[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `status` | `TaskStatus` |  |
+
+---
+
+#### getNextTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L87" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get the next actionable task
+
+```typescript
+function getNextTask(): Task | undefined
+```
+
+---
+
+#### getCurrentTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L94" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get current running task
+
+```typescript
+function getCurrentTask(): Task | undefined
+```
+
+---
+
+#### getProgress
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L101" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Calculate mission progress (0-100)
+
+```typescript
+function getProgress(): number
+```
+
+---
+
+#### pause
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L114" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Pause the mission
+
+```typescript
+function pause(): void
+```
+
+---
+
+#### resume
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L125" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Resume a paused mission
+
+```typescript
+function resume(): void
+```
+
+---
+
+#### complete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L136" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Complete the mission
+
+```typescript
+function complete(): void
+```
+
+---
+
+#### abandon
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L145" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Abandon the mission
+
+```typescript
+function abandon(): void
+```
+
+---
+
+#### isFinished
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L154" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Check if mission is finished (completed or abandoned)
+
+```typescript
+function isFinished(): boolean
+```
+
+---
+
+#### toJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L161" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Serialize to JSON
+
+```typescript
+function toJSON(): Record<string, unknown>
+```
+
+---
+
+#### fromJSON
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L181" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Deserialize from JSON
+
+```typescript
+function fromJSON(data: Record<string, unknown>): Mission
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `data` | `Record<string, unknown>` |  |
+
+---
+
+---
+
+## Interfaces
+
+### MissionConfig
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L24" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `title` | `string` |  |
+| `description` | `string` |   (optional) |
+| `priority` | `"low" \| "medium" \| "high"` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+
+---
+
+## Types
+
+### MissionStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/mission.ts#L18" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+type MissionStatus = | "active" // Mission is being worked on
+  | "paused" // User paused the mission
+  | "completed" // All tasks done, goal achieved
+  | "abandoned"
+```
+
+---

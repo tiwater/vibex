@@ -3,13 +3,39 @@
 import { Plus, FileText, Code, Database, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { Artifact } from "./types";
 
 interface ArtifactsListProps {
   artifacts: Artifact[];
+  compact?: boolean;
 }
 
-export function ArtifactsList({ artifacts }: ArtifactsListProps) {
+export function ArtifactsList({ artifacts, compact = false }: ArtifactsListProps) {
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 overflow-x-auto">
+        {artifacts.map((artifact) => (
+          <div
+            key={artifact.id}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 cursor-pointer transition-colors shrink-0"
+          >
+            {artifact.type === "document" ? (
+              <FileText className="w-3.5 h-3.5 shrink-0 text-blue-500" />
+            ) : artifact.type === "code" ? (
+              <Code className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+            ) : artifact.type === "data" ? (
+              <Database className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+            ) : (
+              <FileText className="w-3.5 h-3.5 shrink-0 text-purple-500" />
+            )}
+            <span className="text-xs text-muted-foreground">{artifact.name}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -23,11 +49,12 @@ export function ArtifactsList({ artifacts }: ArtifactsListProps) {
         {artifacts.map((artifact) => (
           <Card
             key={artifact.id}
-            className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+            className="p-3 hover:bg-muted/50 cursor-pointer transition-colors"
           >
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center",
                   artifact.type === "document"
                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600"
                     : artifact.type === "code"
@@ -35,7 +62,7 @@ export function ArtifactsList({ artifacts }: ArtifactsListProps) {
                       : artifact.type === "data"
                         ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600"
                         : "bg-purple-100 dark:bg-purple-900/30 text-purple-600"
-                }`}
+                )}
               >
                 {artifact.type === "document" ? (
                   <FileText className="w-5 h-5 shrink-0" />

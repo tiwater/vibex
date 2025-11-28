@@ -1,7 +1,7 @@
 /**
  * Space Types - Data persistence layer types
  *
- * This file contains all types related to Vibex's data persistence:
+ * This file contains all types related to VibeX's data persistence:
  * - Data types (what gets stored)
  * - Adapter interfaces (how data is accessed)
  *

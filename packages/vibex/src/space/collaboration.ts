@@ -9,7 +9,7 @@
  */
 
 import { Space } from "./index";
-import type { AgentResponse } from "../agent/agent";
+import type { AgentResponse } from "../runtime/agent";
 
 export interface AgentMessage {
   from: string; // Agent ID

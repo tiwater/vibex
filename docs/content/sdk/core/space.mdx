@@ -1,0 +1,892 @@
+# space
+
+*Module: [`@vibex/core/space`](https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts)*
+
+Space Types - Data persistence layer types
+
+This file contains all types related to VibeX's data persistence:
+- Data types (what gets stored)
+- Adapter interfaces (how data is accessed)
+
+Concrete implementations live in separate packages:
+- @vibex/local: SQLite + filesystem
+- @vibex/supabase: Supabase backend
+
+## Interfaces
+
+### AgentType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L18" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Space Types - Data persistence layer types
+
+This file contains all types related to VibeX's data persistence:
+- Data types (what gets stored)
+- Adapter interfaces (how data is accessed)
+
+Concrete implementations live in separate packages:
+- @vibex/local: SQLite + filesystem
+- @vibex/supabase: Supabase backend
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `userId` | `string` |   (optional) |
+| `name` | `string` |  |
+| `description` | `string` |  |
+| `category` | `string` |   (optional) |
+| `icon` | `string` |   (optional) |
+| `logoUrl` | `string` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `systemPrompt` | `string` |   (optional) |
+| `llm` | `object` |   (optional) |
+| `tools` | `string[]` |   (optional) |
+| `author` | `string` |   (optional) |
+| `version` | `string` |   (optional) |
+| `usageExamples` | `string[]` |   (optional) |
+| `requirements` | `string[]` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### ToolType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L51" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Tool data type
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `userId` | `string` |   (optional) |
+| `name` | `string` |  |
+| `description` | `string` |  |
+| `type` | `"builtin" \| "mcp" \| "custom"` |  |
+| `vendor` | `string` |   (optional) |
+| `category` | `string` |   (optional) |
+| `icon` | `string` |   (optional) |
+| `logoUrl` | `string` |   (optional) |
+| `config` | `Record<string, unknown>` |   (optional) |
+| `configSchema` | `unknown[]` |   (optional) |
+| `features` | `string[]` |   (optional) |
+| `tags` | `string[]` |   (optional) |
+| `status` | `"active" \| "inactive" \| "deprecated"` |   (optional) |
+| `ready` | `boolean` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### SpaceType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L74" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Space data type
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `userId` | `string` |   (optional) |
+| `name` | `string` |  |
+| `description` | `string` |   (optional) |
+| `goal` | `string` |   (optional) |
+| `icon` | `string` |   (optional) |
+| `agents` | `string[]` |   (optional) |
+| `tools` | `string[]` |   (optional) |
+| `config` | `Record<string, unknown>` |   (optional) |
+| `activeArtifactId` | `string` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### ArtifactType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L92" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Artifact data type
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `spaceId` | `string` |   (optional) |
+| `conversationId` | `string` |   (optional) |
+| `userId` | `string` |   (optional) |
+| `category` | `"input" \| "intermediate" \| "output"` |   (optional) |
+| `storageKey` | `string` |  |
+| `originalName` | `string` |  |
+| `mimeType` | `string` |  |
+| `sizeBytes` | `number` |  |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### ConversationType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L110" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Conversation data type (chat session within a space)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `spaceId` | `string` |   (optional) |
+| `userId` | `string` |   (optional) |
+| `title` | `string` |   (optional) |
+| `messages` | `unknown[]` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### PlanSummaryType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L124" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Plan summary for progress tracking
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `totalTasks` | `number` |  |
+| `completedTasks` | `number` |  |
+| `runningTasks` | `number` |  |
+| `pendingTasks` | `number` |  |
+| `failedTasks` | `number` |  |
+| `blockedTasks` | `number` |  |
+| `progressPercentage` | `number` |  |
+
+---
+
+### PlanType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L137" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Plan data type (stored per space, contains tasks)
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `plan` | `Record<string, unknown>` |  |
+| `status` | `string` |   (optional) |
+| `summary` | `PlanSummaryType` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### ModelProviderType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L149" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Model provider configuration
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `provider` | `string` |  |
+| `enabled` | `boolean` |   (optional) |
+| `baseUrl` | `string` |   (optional) |
+| `apiKey` | `string` |   (optional) |
+| `models` | `string[] \| \{ id: string; name: string \}[]` |   (optional) |
+| `config` | `Record<string, unknown>` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### DatasetType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L165" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Dataset for knowledge management
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `type` | `string` |  |
+| `icon` | `string` |  |
+| `description` | `string` |  |
+| `items` | `number` |  |
+| `lastUpdated` | `string` |  |
+| `size` | `string` |  |
+
+---
+
+### KnowledgeDocumentType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L179" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Document in a dataset
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `name` | `string` |  |
+| `type` | `string` |  |
+| `size` | `string` |  |
+| `lastModified` | `string` |  |
+
+---
+
+### DocumentChunkType
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L190" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Document chunk with embedding for vector search
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `content` | `string` |  |
+| `metadata` | `Record<string, unknown>` |  |
+| `embedding` | `number[]` |   (optional) |
+
+---
+
+### ArtifactInfo
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L200" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Artifact info for storage operations
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `storageKey` | `string` |  |
+| `originalName` | `string` |  |
+| `mimeType` | `string` |  |
+| `sizeBytes` | `number` |  |
+| `category` | `"input" \| "intermediate" \| "output"` |   (optional) |
+| `metadata` | `Record<string, unknown>` |   (optional) |
+| `createdAt` | `string` |   (optional) |
+| `updatedAt` | `string` |   (optional) |
+
+---
+
+### ResourceAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L220" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+ResourceAdapter - Core interface for data persistence
+
+Implementations handle local files (SQLite) or remote database/API.
+This is an internal interface; external code should use SpaceManager.
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+
+**Methods:**
+
+#### getAgents
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L222" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getAgents(): Promise<AgentType[]>
+```
+
+---
+
+#### getAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L223" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getAgent(id: string): Promise<AgentType | null>
+```
+
+---
+
+#### saveAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L224" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveAgent(agent: AgentType): Promise<AgentType>
+```
+
+---
+
+#### deleteAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L225" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteAgent(id: string): Promise<void>
+```
+
+---
+
+#### cloneAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L226" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+cloneAgent(id: string): Promise<AgentType>
+```
+
+---
+
+#### getTools
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L229" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getTools(): Promise<ToolType[]>
+```
+
+---
+
+#### getTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L230" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getTool(id: string): Promise<ToolType | null>
+```
+
+---
+
+#### saveTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L231" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveTool(tool: ToolType): Promise<ToolType>
+```
+
+---
+
+#### deleteTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L232" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteTool(id: string): Promise<void>
+```
+
+---
+
+#### cloneTool
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L233" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+cloneTool(id: string): Promise<ToolType>
+```
+
+---
+
+#### getSpaces
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L236" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getSpaces(): Promise<SpaceType[]>
+```
+
+---
+
+#### getSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L237" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getSpace(id: string): Promise<SpaceType | null>
+```
+
+---
+
+#### saveSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L238" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveSpace(space: SpaceType): Promise<SpaceType>
+```
+
+---
+
+#### deleteSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L239" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteSpace(id: string): Promise<void>
+```
+
+---
+
+#### getArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L242" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifacts(spaceId: string): Promise<ArtifactType[]>
+```
+
+---
+
+#### getArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L243" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifact(id: string): Promise<ArtifactType | null>
+```
+
+---
+
+#### saveArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L244" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveArtifact(artifact: ArtifactType): Promise<ArtifactType>
+```
+
+---
+
+#### deleteArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L245" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteArtifact(id: string): Promise<void>
+```
+
+---
+
+#### getArtifactsBySpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L246" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifactsBySpace(spaceId: string): Promise<ArtifactType[]>
+```
+
+---
+
+#### getArtifactsByConversation
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L247" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifactsByConversation(conversationId: string): Promise<ArtifactType[]>
+```
+
+---
+
+#### getArtifactsByCategory
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L248" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifactsByCategory(spaceOrConversationId: string, category: "input" | "intermediate" | "output", isConversation: boolean): Promise<ArtifactType[]>
+```
+
+---
+
+#### getPlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L255" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getPlan(spaceId: string): Promise<PlanType | null>
+```
+
+---
+
+#### savePlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L256" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+savePlan(plan: PlanType): Promise<PlanType>
+```
+
+---
+
+#### deletePlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L257" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deletePlan(spaceId: string): Promise<void>
+```
+
+---
+
+#### getConversations
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L260" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getConversations(spaceId: string): Promise<ConversationType[]>
+```
+
+---
+
+#### getConversation
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L261" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getConversation(id: string): Promise<ConversationType | null>
+```
+
+---
+
+#### saveConversation
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L262" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveConversation(conversation: ConversationType): Promise<ConversationType>
+```
+
+---
+
+#### deleteConversation
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L263" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteConversation(id: string): Promise<void>
+```
+
+---
+
+#### getModelProviders
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L266" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getModelProviders(): Promise<ModelProviderType[]>
+```
+
+---
+
+#### getModelProvider
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L267" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getModelProvider(id: string): Promise<ModelProviderType | null>
+```
+
+---
+
+#### saveModelProvider
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L268" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveModelProvider(provider: ModelProviderType): Promise<ModelProviderType>
+```
+
+---
+
+#### deleteModelProvider
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L269" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteModelProvider(id: string): Promise<void>
+```
+
+---
+
+---
+
+### StorageAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L275" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+StorageAdapter - Interface for file/blob storage
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+
+**Methods:**
+
+#### readFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L277" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+readFile(path: string): Promise<Buffer>
+```
+
+---
+
+#### readTextFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L278" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+readTextFile(path: string): Promise<string>
+```
+
+---
+
+#### writeFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L279" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+writeFile(path: string, data: Buffer | string): Promise<void>
+```
+
+---
+
+#### deleteFile
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L280" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteFile(path: string): Promise<void>
+```
+
+---
+
+#### exists
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L281" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+exists(path: string): Promise<boolean>
+```
+
+---
+
+#### mkdir
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L282" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+mkdir(path: string): Promise<void>
+```
+
+---
+
+#### readdir
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L283" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+readdir(path: string): Promise<string[]>
+```
+
+---
+
+#### stat
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L284" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+stat(path: string): Promise<unknown>
+```
+
+---
+
+#### saveArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L287" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveArtifact(spaceId: string, artifact: ArtifactInfo, buffer: Buffer): Promise<ArtifactInfo>
+```
+
+---
+
+#### getArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L292" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifact(spaceId: string, artifactId: string): Promise<{ info: ArtifactInfo; buffer: Buffer } | null>
+```
+
+---
+
+#### getArtifactInfo
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L296" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getArtifactInfo(spaceId: string, artifactId: string): Promise<ArtifactInfo | null>
+```
+
+---
+
+#### listArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L300" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+listArtifacts(spaceId: string): Promise<ArtifactInfo[]>
+```
+
+---
+
+#### deleteArtifact
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L301" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteArtifact(spaceId: string, artifactId: string): Promise<void>
+```
+
+---
+
+---
+
+### KnowledgeAdapter
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L307" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+KnowledgeAdapter - Interface for knowledge/RAG operations
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+
+**Methods:**
+
+#### getDatasets
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L309" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getDatasets(): Promise<DatasetType[]>
+```
+
+---
+
+#### getDataset
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L310" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getDataset(id: string): Promise<DatasetType | null>
+```
+
+---
+
+#### saveDataset
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L311" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveDataset(dataset: DatasetType): Promise<void>
+```
+
+---
+
+#### deleteDataset
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L312" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteDataset(id: string): Promise<void>
+```
+
+---
+
+#### getDocuments
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L315" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+getDocuments(datasetId: string): Promise<KnowledgeDocumentType[]>
+```
+
+---
+
+#### addDocument
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L316" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+addDocument(datasetId: string, document: KnowledgeDocumentType): Promise<void>
+```
+
+---
+
+#### deleteDocument
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L320" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteDocument(datasetId: string, documentId: string): Promise<void>
+```
+
+---
+
+#### saveChunks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L323" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+saveChunks(chunks: DocumentChunkType[]): Promise<void>
+```
+
+---
+
+#### searchChunks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L324" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+searchChunks(vector: number[], k: number): Promise<DocumentChunkType[]>
+```
+
+---
+
+#### deleteChunks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/core/src/types/space.ts#L325" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+deleteChunks(ids: string[]): Promise<void>
+```
+
+---
+
+---

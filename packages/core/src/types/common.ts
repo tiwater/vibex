@@ -3,9 +3,9 @@
  */
 
 /**
- * Vibex error with code and details
+ * X error with code and details
  */
-export interface VibexError extends Error {
+export interface XError extends Error {
   code: string;
   details?: unknown;
 }
@@ -21,7 +21,7 @@ export interface StreamChunk {
     args: unknown;
     result?: unknown;
   };
-  error?: VibexError;
+  error?: XError;
 }
 
 /**
@@ -45,9 +45,9 @@ export interface StorageConfig {
 }
 
 /**
- * Main Vibex configuration
+ * Main X configuration
  */
-export interface VibexConfig {
+export interface XConfig {
   storage: StorageConfig;
   model: ModelConfig;
   streaming?: boolean;

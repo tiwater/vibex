@@ -1,266 +1,292 @@
 # Tutorial 1: Your First Agent
 
-**⏱️ Time: 15 minutes | 🎯 Goal: Build a simple chat agent**
+**⏱️ Time: 15 minutes | 🎯 Goal: Create a persistent workspace with XAgent**
 
-In this tutorial, you'll create your first VibeX agent - a helpful assistant that can chat with users. This is the foundation for everything else you'll build with VibeX.
+In this tutorial, you'll create your first VibeX workspace — a persistent environment where you collaborate with XAgent. This is the foundation for everything else you'll build with VibeX.
 
 ## What You'll Learn
 
-- Basic VibeX project structure
-- Agent configuration with YAML
-- Prompt engineering for agents
-- Running and interacting with agents
-- Understanding the TaskExecutor
+- Creating a Space and XAgent
+- Streaming responses from the agent
+- Persisting your workspace
+- Resuming sessions across runs
 
 ## Prerequisites
 
-- Python 3.8+ installed
-- VibeX installed (`pip install vibex`)
-- DeepSeek API key (get one free at [platform.deepseek.com](https://platform.deepseek.com))
+- Node.js 18+ installed
+- pnpm or npm
+- An LLM API key (OpenAI, Anthropic, or DeepSeek)
 
 ---
 
 ## Step 1: Set Up Your Project
 
-Let's create a clean project structure for your first agent:
+Create a new project directory:
 
 ```bash
-# Create a new project directory
 mkdir my-first-agent
 cd my-first-agent
+pnpm init
+```
 
-# Create the basic structure
-mkdir -p config/prompts
-mkdir taskspace
+Install dependencies:
+
+```bash
+pnpm add vibex dotenv
+pnpm add -D typescript tsx @types/node
+```
+
+Create `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true
+  }
+}
 ```
 
 Your project structure should look like this:
 
 ```
 my-first-agent/
-├── config/
-│   ├── team.yaml           # Agent configuration
-│   └── prompts/            # Agent prompt files
-├── taskspace/              # Working directory for agents
-└── main.py                 # Main application (we'll create this)
+├── src/
+│   └── index.ts       # Main application
+├── .env               # API key (create this)
+├── package.json
+└── tsconfig.json
 ```
 
-## Step 2: Create Your Agent Configuration
+## Step 2: Set Up Your Environment
 
-The heart of any VibeX system is the configuration file. Create `config/team.yaml`:
+Create a `.env` file:
 
-```yaml
-name: "my_first_agent"
-description: "My first VibeX agent - a helpful assistant"
-
-# Define your agents
-agents:
-  - name: "assistant"
-    description: "Helpful AI assistant"
-    prompt_template: "prompts/assistant.md"
-    tools: []
-    llm_config:
-      provider: "deepseek"
-      model: "deepseek-chat"
-      base_url: "https://api.deepseek.com"
-      temperature: 0.7
-      max_tokens: 4000
-      supports_function_calls: true
-
-# No custom tools for this simple example
-tools: []
-
-# Execution configuration
-execution:
-  mode: "autonomous"
-  initial_agent: "assistant"
-  max_rounds: 10
-  timeout_seconds: 300
-
-# Memory disabled for simplicity
-memory:
-  enabled: false
+```bash
+OPENAI_API_KEY=sk-your-key-here
+# Or use ANTHROPIC_API_KEY or DEEPSEEK_API_KEY
 ```
 
-### Understanding the Configuration
+## Step 3: Create Your First Workspace
 
-- **`name`**: Identifies your agent system
-- **`agents`**: List of agents in your system (just one for now)
-- **`prompt_template`**: Path to the agent's behavior definition
-- **`llm_config`**: Which AI model to use and how to configure it
-- **`execution`**: How the agent system should run
-- **`memory`**: Whether to remember past conversations (disabled for now)
+Create `src/index.ts`:
 
-## Step 3: Write Your Agent's Prompt
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
 
-The prompt defines your agent's personality and behavior. Create `config/prompts/assistant.md`:
+async function main() {
+  console.log("🤖 My First VibeX Agent\n");
 
-```markdown
-# Helpful Assistant
+  // Create a new Space with XAgent
+  const xAgent = await XAgent.start("Help me write a blog post about AI");
+  const space = xAgent.getSpace();
 
-You are a helpful AI assistant created with VibeX. Your role is to:
+  console.log(`✨ Created Space: ${space.spaceId}`);
+  console.log(`📋 Goal: ${space.goal}\n`);
 
-- Answer questions clearly and accurately
-- Be friendly and professional
-- Help users understand complex topics
-- Admit when you don't know something
+  // Stream a response from XAgent
+  console.log("🤖 XAgent: ");
+  const stream = await xAgent.streamText({
+    messages: [
+      {
+        role: "user",
+        content: "Hi! Can you help me brainstorm some topics for my AI blog?",
+      },
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
 
-## Guidelines
+  // Print the streamed response
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+  console.log("\n");
 
-- Keep responses concise but thorough
-- Use examples when helpful
-- Ask clarifying questions if needed
-- Always be respectful and helpful
+  // Save the workspace state
+  await space.persistState();
+  console.log(`💾 Workspace saved! Space ID: ${space.spaceId}`);
+}
 
-## Response Format
-
-Respond naturally in a conversational tone. No special formatting required.
-```
-
-### Prompt Engineering Tips
-
-- **Be specific**: Clear instructions lead to better behavior
-- **Set the tone**: Define personality and communication style
-- **Provide examples**: Show the agent how to behave in different situations
-- **Set boundaries**: Explain what the agent should and shouldn't do
-
-## Step 4: Create the Main Application
-
-Now let's create the Python application that runs your agent. Create `main.py`:
-
-```python
-#!/usr/bin/env python3
-import asyncio
-from pathlib import Path
-from vibex.core.task import TaskExecutor
-
-async def main():
-    print("🤖 My First VibeX Agent")
-    print("Type 'quit' to exit\n")
-
-    # Load the agent configuration
-    config_path = Path(__file__).parent / "config" / "team.yaml"
-    task_executor = TaskExecutor(str(config_path))
-
-    # Main chat loop
-    while True:
-        user_input = input("You: ").strip()
-        if user_input.lower() in ['quit', 'q', 'exit']:
-            print("Goodbye! 👋")
-            break
-
-        # Stream the agent's response
-        print("Assistant: ", end="", flush=True)
-        async for chunk in task_executor.execute_task(user_input, stream=True):
-            if chunk.get("type") == "content":
-                print(chunk.get("content", ""), end="", flush=True)
-        print("\n")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+main().catch(console.error);
 ```
 
 ### Understanding the Code
 
-- **`TaskExecutor`**: The main class for running VibeX agents
-- **`execute_task`**: Processes user input and generates responses
-- **`stream=True`**: Enables real-time response streaming
-- **Async/await**: VibeX uses asynchronous programming for better performance
+- **`XAgent.start(goal)`**: Creates a new Space with a goal and returns an XAgent
+- **`xAgent.getSpace()`**: Gets the Space object for persistence and metadata
+- **`xAgent.streamText()`**: Streams a response from the agent
+- **`space.persistState()`**: Saves the workspace so you can resume later
 
-## Step 5: Run Your Agent
+## Step 4: Run Your Agent
 
-Set up your environment and run the agent:
+Add a script to `package.json`:
+
+```json
+{
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  }
+}
+```
+
+Run your agent:
 
 ```bash
-# Set your API key (replace with your actual key)
-export DEEPSEEK_API_KEY="your-api-key-here"
-
-# Run your agent
-python main.py
+pnpm start
 ```
 
 You should see:
 
 ```
 🤖 My First VibeX Agent
-Type 'quit' to exit
 
-You:
+✨ Created Space: space_abc123xyz
+📋 Goal: Help me write a blog post about AI
+
+🤖 XAgent: Great! I'd be happy to help you brainstorm topics for your AI blog...
+
+💾 Workspace saved! Space ID: space_abc123xyz
 ```
 
-## Step 6: Test Your Agent
+## Step 5: Resume Your Workspace
 
-Try these example conversations:
+This is VibeX's superpower — **persistent workspaces**. Create `src/resume.ts`:
 
-**Example 1: Simple Question**
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
 
+async function main() {
+  const spaceId = process.env.SPACE_ID;
+
+  if (!spaceId) {
+    console.log("❌ No SPACE_ID provided!");
+    console.log("\nFirst, run: pnpm start");
+    console.log("Then, run: SPACE_ID=<your-space-id> pnpm resume");
+    process.exit(1);
+  }
+
+  console.log(`📂 Resuming Space: ${spaceId}\n`);
+
+  // Resume the existing space
+  const xAgent = await XAgent.resume(spaceId);
+  const space = xAgent.getSpace();
+
+  // Show what we have
+  console.log("📋 Previous context:");
+  console.log(`   Space: ${space.name}`);
+  console.log(`   Goal: ${space.goal}`);
+  console.log(`   Messages: ${space.history.messages.length}`);
+
+  // Continue the conversation - XAgent remembers everything!
+  console.log("\n🤖 Continuing our conversation...\n");
+
+  const stream = await xAgent.streamText({
+    messages: [
+      {
+        role: "user",
+        content: "Let's go with the first topic you suggested. Can you write an outline?",
+      },
+    ],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+  console.log("\n");
+
+  // Save progress
+  await space.persistState();
+  console.log("💾 Progress saved!");
+}
+
+main().catch(console.error);
 ```
-You: What is VibeX?
-Assistant: VibeX is a multi-agent framework that allows you to build AI applications with multiple specialized agents working together...
+
+Add the script:
+
+```json
+{
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "resume": "tsx src/resume.ts"
+  }
+}
 ```
 
-**Example 2: Ask for Help**
+Run the resume script:
 
-```
-You: Can you help me understand Python decorators?
-Assistant: I'd be happy to help! Python decorators are a way to modify or extend the behavior of functions...
-```
-
-**Example 3: Test Boundaries**
-
-```
-You: What's the weather like?
-Assistant: I don't have access to real-time weather data, but I can help you understand how to add weather capabilities to agents in later tutorials...
+```bash
+SPACE_ID=space_abc123xyz pnpm resume
 ```
 
 ## 🎉 Congratulations!
 
-You've successfully built your first VibeX agent! Here's what you accomplished:
+You've successfully built your first VibeX workspace! Here's what you accomplished:
 
-✅ **Created a project structure** with proper organization
-✅ **Configured an agent** using YAML
-✅ **Wrote a prompt** that defines agent behavior
-✅ **Built a Python application** that runs the agent
-✅ **Tested real conversations** with streaming responses
+✅ **Created a persistent Space** with XAgent  
+✅ **Streamed responses** in real-time  
+✅ **Saved the workspace** for later use  
+✅ **Resumed the session** with full context preserved  
 
 ## 💡 Key Concepts Learned
 
-- **Team Configuration**: YAML files define your agent setup
-- **Prompt Templates**: Markdown files define agent behavior and personality
-- **TaskExecutor**: The main class for running agents and processing tasks
-- **Streaming**: Real-time response generation for better user experience
-- **Project Structure**: Organized file layout for maintainable agent systems
+- **Space**: A persistent container for all your work
+- **XAgent**: Your AI project manager that coordinates the workspace
+- **Streaming**: Real-time response generation for better UX
+- **Persistence**: Your work survives across sessions
+
+## The VibeX Difference
+
+Unlike traditional agent frameworks that execute and terminate, VibeX workspaces are **persistent**:
+
+```typescript
+// Day 1: Start writing
+const xAgent = await XAgent.start("Write my thesis");
+await xAgent.streamText({...});
+await space.persistState();
+
+// Day 2: Continue where you left off
+const xAgent = await XAgent.resume(spaceId);
+// XAgent remembers everything from Day 1!
+await xAgent.streamText({...});
+```
 
 ## 🚀 What's Next?
 
-Your agent works great, but it's working alone. In [Tutorial 2: Multi-Agent Collaboration](/docs/tutorials/2-multi-agent), you'll learn how to create teams of agents that work together to solve more complex problems.
+Your agent works great, but it's working alone. In [Tutorial 2: Multi-Agent Collaboration](/docs/tutorials/2-multi-agent), you'll learn how to create teams of specialist agents that work together.
 
 ### Preview: What You'll Build Next
 
-- A **writer agent** that creates content
-- A **reviewer agent** that improves the content
-- **Agent handoffs** where agents pass work between each other
-- **Collaborative workflows** where the whole is greater than the sum of its parts
+- A **researcher** agent that gathers information
+- A **writer** agent that creates content
+- **Agent coordination** where specialists collaborate
+- **Collaborative workflows** where the whole is greater than the sum
 
 ## 🔧 Troubleshooting
 
 **Agent not responding?**
 
-- Check your API key is set correctly
+- Check your API key is set correctly in `.env`
 - Verify your internet connection
-- Make sure the config file path is correct
+- Ensure `dotenv/config` is imported
 
-**Getting errors?**
+**"Cannot find module" errors?**
 
-- Check that all files are in the right locations
-- Verify YAML syntax (indentation matters!)
-- Look at the error messages for clues
+- Run `pnpm install` to install dependencies
+- Check your `tsconfig.json` configuration
 
 **Want to experiment?**
 
-- Try changing the `temperature` in the config (0.1 = focused, 0.9 = creative)
-- Modify the prompt to change the agent's personality
-- Add more specific instructions for different types of questions
+- Try different goals when creating the Space
+- Ask follow-up questions to see context preservation
+- Explore the `space` object properties
 
 ---
 

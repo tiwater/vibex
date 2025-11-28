@@ -1,0 +1,286 @@
+# collaboration
+
+*Module: [`vibex/collaboration`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts)*
+
+Collaboration Module - Multi-Agent Collaboration Engine
+
+Provides:
+- Parallel agent execution
+- Agent-to-agent communication
+- Shared context management
+- Collaborative planning
+
+## Classes
+
+### AgentCollaborationManager
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L50" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Agent Collaboration Manager
+Handles agent-to-agent communication and shared context
+
+**Methods:**
+
+#### sendMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L71" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Send a message from one agent to another
+
+```typescript
+function sendMessage(from: string, to: string, content: string, metadata?: Record<string, any>): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `from` | `string` |  |
+| `to` | `string` |  |
+| `content` | `string` |  |
+| `metadata` | `Record<string, any>` (optional) |  |
+
+---
+
+#### getMessages
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L117" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get pending messages for an agent
+
+```typescript
+function getMessages(agentId: string): AgentMessage[]
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | `string` |  |
+
+---
+
+#### subscribe
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L126" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Subscribe to messages for an agent
+
+```typescript
+function subscribe(agentId: string, callback: (message: AgentMessage) => void): () => void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | `string` |  |
+| `callback` | `(message: AgentMessage) => void` |  |
+
+---
+
+#### updateContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L165" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Update shared context
+
+```typescript
+function updateContext(agentId: string, updates: Record<string, any>): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | `string` |  |
+| `updates` | `Record<string, any>` |  |
+
+---
+
+#### getContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L177" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get shared context
+
+```typescript
+function getContext(): SharedContext
+```
+
+---
+
+#### getContextValue
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L184" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get a specific value from shared context
+
+```typescript
+function getContextValue(key: string): any
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `key` | `string` |  |
+
+---
+
+---
+
+### ParallelExecutionEngine
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L193" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Parallel Execution Engine
+Executes multiple agent tasks in parallel
+
+**Methods:**
+
+#### executeParallel
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L207" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Execute multiple tasks in parallel
+
+```typescript
+function executeParallel(tasks: ParallelTask[]): Promise<ParallelExecutionResult[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `tasks` | `ParallelTask[]` |  |
+
+---
+
+#### cancelTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L309" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Cancel a running task
+
+```typescript
+function cancelTask(taskId: string): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+
+---
+
+#### getActiveTaskCount
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L321" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get active task count
+
+```typescript
+function getActiveTaskCount(): number
+```
+
+---
+
+---
+
+### CollaborativePlanner
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L330" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Collaborative Planner
+Helps agents plan together
+
+**Methods:**
+
+#### createCollaborativePlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L342" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Create a collaborative plan with multiple agents
+
+```typescript
+function createCollaborativePlan(goal: string, agentIds: string[]): Promise<{ plan: any; agentAssignments: Map<string, string[]> }>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `goal` | `string` |  |
+| `agentIds` | `string[]` |  |
+
+---
+
+---
+
+## Interfaces
+
+### AgentMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L14" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `from` | `string` |  |
+| `to` | `string` |  |
+| `content` | `string` |  |
+| `metadata` | `Record<string, any>` |   (optional) |
+| `timestamp` | `Date` |  |
+
+---
+
+### SharedContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L22" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `data` | `Record<string, any>` |  |
+| `updatedAt` | `Date` |  |
+| `updatedBy` | `string` |  |
+
+---
+
+### ParallelTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L29" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `agentId` | `string` |  |
+| `messages` | `any[]` |  |
+| `system` | `string` |   (optional) |
+| `metadata` | `Record<string, any>` |   (optional) |
+| `priority` | `number` |   (optional) |
+
+---
+
+### ParallelExecutionResult
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/collaboration.ts#L38" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `agentId` | `string` |  |
+| `result` | `AgentResponse` |  |
+| `error` | `Error` |   (optional) |
+| `duration` | `number` |  |
+
+---

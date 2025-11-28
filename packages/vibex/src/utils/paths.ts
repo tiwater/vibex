@@ -1,5 +1,5 @@
 /**
- * Centralized Vibex path resolution utility
+ * Centralized VibeX path resolution utility
  *
  * Handles the difference between local development and Railway deployment:
  * - Local: ~/.vibex (os.homedir() + '.vibex')
@@ -10,7 +10,7 @@ import path from "path";
 import os from "os";
 
 /**
- * Get the root Vibex directory path
+ * Get the root VibeX directory path
  * Respects VIBEX_STORAGE_PATH environment variable for Railway deployment
  */
 export function getVibexRoot(): string {
@@ -18,7 +18,7 @@ export function getVibexRoot(): string {
 }
 
 /**
- * Get a path within the Vibex directory structure
+ * Get a path within the VibeX directory structure
  * @param subPath - Relative path within .vibex directory (e.g., 'config/agents', 'bin/OfficeMcp')
  */
 export function getVibexPath(...subPaths: string[]): string {
@@ -26,7 +26,7 @@ export function getVibexPath(...subPaths: string[]): string {
 }
 
 /**
- * Get common Vibex directory paths
+ * Get common VibeX directory paths
  */
 export const VibexPaths = {
   root: () => getVibexRoot(),
@@ -58,4 +58,3 @@ export const VibexPaths = {
 
   // Note: MCP servers are now distributed as npm packages, not local binaries
 } as const;
-

@@ -1,0 +1,118 @@
+# SDK Reference
+
+This section contains API documentation for the VibeX framework packages.
+
+## Core Packages
+
+### [vibex](./vibex/)
+
+The core VibeX runtime engine for building AI agent workspaces.
+
+**Key Exports:**
+- `XAgent` — Create and manage AI agent workspaces
+- `Space` — Persistent container for artifacts and conversations
+
+```typescript
+import { XAgent, Space } from "vibex";
+
+// Create a new workspace
+const xAgent = await XAgent.start("My project");
+
+// Resume an existing workspace
+const xAgent = await XAgent.resume(spaceId);
+```
+
+### [@vibex/core](./core/)
+
+Shared types and interfaces used across all VibeX packages.
+
+**Key Types:**
+- `Message` — Conversation message structure
+- `Artifact` — Document/file metadata
+- `Agent` — Agent configuration
+
+```typescript
+import type { Message, Agent, Artifact } from "@vibex/core";
+```
+
+### [@vibex/react](./react/)
+
+React hooks and components for building VibeX-powered UIs.
+
+**Key Hooks:**
+- `useSpace()` — Access Space state and metadata
+- `useChat()` — Chat interface with message streaming
+- `useArtifact()` — Access artifact content
+
+```typescript
+import { useSpace, useChat } from "@vibex/react";
+
+function Chat({ spaceId }) {
+  const { messages, sendMessage } = useChat(spaceId);
+  // ...
+}
+```
+
+## Utility Packages
+
+### [@vibex/tools](https://npm.im/@vibex/tools)
+
+Standard library of tools for agents including web browsing, file I/O, and search operations.
+
+### [@vibex/defaults](https://npm.im/@vibex/defaults)
+
+Default agent configurations, prompt templates, and system defaults.
+
+### [@vibex/local](https://npm.im/@vibex/local)
+
+Local storage adapter using SQLite and the filesystem.
+
+### [@vibex/supabase](https://npm.im/@vibex/supabase)
+
+Cloud storage adapter for Supabase (PostgreSQL + Supabase Storage).
+
+## Quick Start
+
+```bash
+# Install the core package
+pnpm add vibex
+
+# For React apps
+pnpm add @vibex/react
+
+# For cloud storage
+pnpm add @vibex/supabase
+```
+
+## Basic Usage
+
+```typescript
+import "dotenv/config";
+import { XAgent } from "vibex";
+
+async function main() {
+  // Start a new workspace
+  const xAgent = await XAgent.start("Research AI trends");
+  const space = xAgent.getSpace();
+
+  // Stream a response
+  const stream = await xAgent.streamText({
+    messages: [{ role: "user", content: "What are the latest AI developments?" }],
+    metadata: { mode: "agent", requestedAgent: "X" },
+  });
+
+  for await (const chunk of stream.textStream) {
+    process.stdout.write(chunk);
+  }
+
+  // Save the workspace
+  await space.persistState();
+  console.log(`\nSaved: ${space.spaceId}`);
+}
+
+main();
+```
+
+---
+
+*Documentation auto-generated from TypeScript source code with TSDoc comments.*

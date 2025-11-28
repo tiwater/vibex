@@ -1,0 +1,288 @@
+# x
+
+*Module: [`vibex/x`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts)*
+
+XAgent - The space's conversational representative
+
+X is the interface between users and their spaces. Each space has an X agent
+that acts as its representative. When you need to interact with a space, you
+talk to X. XAgent merges TaskExecutor and Orchestrator functionality into a
+single, user-friendly interface.
+
+## Classes
+
+### XAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L48" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `singleAgentId` | `string` |  |
+
+**Methods:**
+
+#### executeWorkflow
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L107" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Execute a complex task using the Workflow Engine
+
+```typescript
+function executeWorkflow(goal: string): Promise<string>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `goal` | `string` |  |
+
+---
+
+#### getSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L155" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Getter for space (needed for external access)
+
+```typescript
+function getSpace(): Space
+```
+
+---
+
+#### getSystemPrompt
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L162" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Override getSystemPrompt to include plan and artifacts context
+
+```typescript
+function getSystemPrompt(context?: AgentContext): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `context` | `AgentContext` (optional) |  |
+
+---
+
+#### generateText
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L170" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Generate text - uses new AI SDK-style signature
+
+```typescript
+function generateText(options: {
+    messages: XMessage[];
+    system?: string;
+    [key: string]: unknown;
+  }): Promise<AgentResponse>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `\{ messages: XMessage[]; system?: string; [key: string]: unknown; \}` |  |
+
+---
+
+#### streamText
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L192" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+XAgent streamText - Orchestration Layer
+Responsibilities: History management, agent delegation, persistence
+
+```typescript
+function streamText(options: {
+    messages: XMessage[];
+    system?: string;
+    spaceId?: string;
+    metadata?: Record<string, unknown>;
+    [key: string]: unknown;
+  }): Promise<StreamTextResultType>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `object` |  |
+
+---
+
+#### stop
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L469" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Stop current operation
+
+```typescript
+function stop(): void
+```
+
+---
+
+#### addMessage
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L479" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Add message to queue (soft interrupt)
+
+```typescript
+function addMessage(message: string, metadata?: Record<string, unknown>): string
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `message` | `string` |  |
+| `metadata` | `Record<string, unknown>` (optional) |  |
+
+---
+
+#### createPlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L486" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Create or update the space plan
+
+```typescript
+function createPlan(goal?: string): Promise<Plan>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `goal` | `string` (optional) |  |
+
+---
+
+#### adaptPlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L549" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Adapt the plan based on new information or user feedback
+
+```typescript
+function adaptPlan(feedback: string): Promise<Plan>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `feedback` | `string` |  |
+
+---
+
+#### getSummary
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L728" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get XAgent summary
+
+```typescript
+function getSummary(): Record<string, unknown>
+```
+
+---
+
+#### start
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L742" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Static factory to start a new space
+
+```typescript
+function start(goal: string, options: XOptions = {}): Promise<XAgent>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `goal` | `string` |  |
+| `options` | `XOptions` |  (default: `{}`) |
+
+---
+
+#### resume
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L774" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Static factory to resume an existing space
+
+```typescript
+function resume(spaceId: string, options: XOptions = {}): Promise<XAgent>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `options` | `XOptions` |  (default: `{}`) |
+
+---
+
+---
+
+## Interfaces
+
+### XOptions
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L24" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `model` | `string` |   (optional) |
+| `storageRoot` | `string` |   (optional) |
+| `defaultGoal` | `string` |   (optional) |
+| `spaceId` | `string` |   (optional) |
+| `singleAgentId` | `string` |   (optional) |
+
+---
+
+### XStreamOptions
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L32" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `messages` | `XMessage[]` |   (optional) |
+| `tools` | `Record<string, unknown>` |   (optional) |
+| `artifactId` | `string` |   (optional) |
+
+---
+
+### XAgentResponse
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/agent/x.ts#L39" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `plan` | `Plan` |   (optional) |
+| `taskResults` | `unknown[]` |   (optional) |
+| `artifacts` | `unknown[]` |   (optional) |
+| `preservedSteps` | `string[]` |   (optional) |
+| `regeneratedSteps` | `string[]` |   (optional) |
+| `planChanges` | `Record<string, unknown>` |   (optional) |
+
+---

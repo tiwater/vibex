@@ -1,0 +1,406 @@
+# index
+
+*Module: [`vibex/index`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts)*
+
+Space - The top-level container for VibeX work (formerly Space)
+
+A Space represents a project context that contains multiple tasks.
+Each space is managed by an XAgent that serves as its orchestrator.
+
+Key concepts:
+- Space: Project container with shared configuration
+- Task: Individual conversation threads within a space
+- Each task has its own conversation history and artifacts
+
+## Classes
+
+### Space
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L60" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `userId` | `string` |  |
+| `config` | `SpaceConfig` |  |
+| `history` | `ConversationHistory` |  |
+| `tasks` | `Map<string, SpaceTask>` |  |
+| `messageQueue` | `MessageQueue` |  |
+| `agents` | `Map<string, Agent>` |  |
+| `goal` | `string` |  |
+| `name` | `string` |  |
+| `xAgent` | `XAgent` |  |
+| `createdAt` | `Date` |  |
+| `updatedAt` | `Date` |  |
+| `plan` | `Plan` |  |
+| `artifacts` | `any[]` |  |
+| `collaborationManager` | `AgentCollaborationManager` |  |
+| `parallelEngine` | `ParallelExecutionEngine` |  |
+| `collaborativePlanner` | `CollaborativePlanner` |  |
+
+**Methods:**
+
+#### getOrCreateTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L125" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get or create a task within this space
+
+```typescript
+function getOrCreateTask(taskId: string, title?: string): SpaceTask
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `title` | `string` (optional) |  |
+
+---
+
+#### getTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L146" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get task by ID
+
+```typescript
+function getTask(taskId: string): SpaceTask | undefined
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+
+---
+
+#### getAllTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L153" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Get all tasks in this space
+
+```typescript
+function getAllTasks(): SpaceTask[]
+```
+
+---
+
+#### updateSpaceTaskStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L160" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Update space task status (for conversation tasks, not Plan tasks)
+
+```typescript
+function updateSpaceTaskStatus(taskId: string, status: "active" | "completed" | "archived"): boolean
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `status` | `"active" \| "completed" \| "archived"` |  |
+
+---
+
+#### getAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L173" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getAgent(name: string): Agent | undefined
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `name` | `string` |  |
+
+---
+
+#### registerAgent
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L177" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function registerAgent(name: string, agent: Agent): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `name` | `string` |  |
+| `agent` | `Agent` |  |
+
+---
+
+#### complete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L182" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function complete(): void
+```
+
+---
+
+#### getContext
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L186" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getContext(): Record<string, any>
+```
+
+---
+
+#### createPlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L206" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function createPlan(plan: Plan): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `plan` | `Plan` |  |
+
+---
+
+#### updatePlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L214" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function updatePlan(plan: Plan): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `plan` | `Plan` |  |
+
+---
+
+#### setName
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L221" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function setName(name: string): Promise<void>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `name` | `string` |  |
+
+---
+
+#### getNextTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L228" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getNextTask(): Promise<Task | undefined>
+```
+
+---
+
+#### getParallelTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L235" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getParallelTasks(maxTasks: number = 3): Promise<Task[]>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `maxTasks` | `number` |  (default: `3`) |
+
+---
+
+#### updateTaskStatus
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L242" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function updateTaskStatus(taskId: string, status: TaskStatus): Promise<boolean>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `status` | `TaskStatus` |  |
+
+---
+
+#### assignTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L257" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function assignTask(taskId: string, agentName: string): Promise<boolean>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `taskId` | `string` |  |
+| `agentName` | `string` |  |
+
+---
+
+#### isPlanComplete
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L279" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function isPlanComplete(): boolean
+```
+
+---
+
+#### hasFailedTasks
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L286" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function hasFailedTasks(): boolean
+```
+
+---
+
+#### persistState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L293" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function persistState(): Promise<void>
+```
+
+---
+
+#### loadState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L319" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function loadState(): Promise<boolean>
+```
+
+---
+
+#### loadPlan
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L357" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function loadPlan(): Promise<Plan | undefined>
+```
+
+---
+
+#### getState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L364" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function getState(): SpaceState
+```
+
+---
+
+---
+
+## Interfaces
+
+### SpaceState
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L31" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string` |  |
+| `name` | `string` |  |
+| `goal` | `string` |  |
+| `createdAt` | `string` |  |
+| `updatedAt` | `string` |  |
+| `teamSize` | `number` |  |
+| `tasks` | `object` |   (optional) |
+| `progressPercentage` | `number` |   (optional) |
+
+---
+
+### SpaceTask
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L49" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+**Properties:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `id` | `string` |  |
+| `spaceId` | `string` |  |
+| `title` | `string` |  |
+| `history` | `ConversationHistory` |  |
+| `artifactIds` | `string[]` |  |
+| `status` | `"active" \| "completed" \| "archived"` |  |
+| `createdAt` | `Date` |  |
+| `updatedAt` | `Date` |  |
+
+---
+
+## Functions
+
+### startSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/index.ts#L399" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+Start a new space
+
+```typescript
+function startSpace({
+  goal,
+  spaceId,
+  userId,
+  name,
+  model,
+}: {
+  goal: string;
+  spaceId?: string;
+  userId?: string;
+  name?: string;
+  model?: string;
+}): Promise<Space>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `options` | `object` |  |
+
+---

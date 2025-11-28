@@ -1,0 +1,74 @@
+# state
+
+*Module: [`vibex/state`](https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/state.ts)*
+
+VibeX Unified State Store
+
+Single source of truth for all VibeX state using Zustand.
+Provides reactive state management with automatic synchronization.
+
+## Functions
+
+### useVibexSpaces
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/state.ts#L449" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexSpaces(): void
+```
+
+---
+
+### useVibexCurrentSpace
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/state.ts#L451" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexCurrentSpace(): void
+```
+
+---
+
+### useVibexArtifacts
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/state.ts#L456" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexArtifacts(spaceId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string \| null \| undefined` |  |
+
+---
+
+### useVibexConversations
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/state.ts#L458" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+function useVibexConversations(spaceId: string | null | undefined): void
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `spaceId` | `string \| null \| undefined` |  |
+
+---
+
+## Constants
+
+### useVibexStore
+
+<a href="https://github.com/tiwater/vibex/blob/main/packages/vibex/src/space/state.ts#L93" className="text-xs text-muted-foreground hover:text-primary">View source</a>
+
+```typescript
+const useVibexStore: UseBoundStore<Write<StoreApi<VibexState>, StoreSubscribeWithSelector<VibexState>>>
+```
+
+---

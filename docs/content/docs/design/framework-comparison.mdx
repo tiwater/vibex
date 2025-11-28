@@ -1,284 +1,265 @@
-# Framework Comparison: The Vibe-X Difference
+# Framework Comparison: The VibeX Difference
 
-This document compares VibeX with other popular multi-agent frameworks and explains the design decisions that make VibeX uniquely suited for building applications that **augment human experts** through a transparent, collaborative process.
+This document compares VibeX with other popular AI agent frameworks and explains what makes VibeX uniquely suited for building **persistent, collaborative workspaces** where work evolves over time.
 
-While other frameworks focus on chaining LLM calls, VibeX is architected to power the **"Vibe-X Collaborative Loop"**: a stateful, observable, and interruptible workflow where users and AI agents work together.
+## The Core Difference: Task-Oriented vs Space-Oriented
+
+Most agent frameworks are **task-oriented**: they execute a task and terminate. VibeX is **space-oriented**: it provides persistent workspaces where you collaborate with AI over days, weeks, or months.
+
+| Aspect           | Task-Oriented Frameworks         | VibeX (Space-Oriented)                     |
+| ---------------- | -------------------------------- | ------------------------------------------ |
+| **Mental Model** | "Run a task, get a result, done" | "Enter a space, evolve artifacts, iterate" |
+| **Lifecycle**    | One-shot execution               | Persistent, continuous collaboration       |
+| **State**        | Ephemeral (task context)         | Persistent (space with full history)       |
+| **Artifacts**    | Output files                     | Living documents that evolve               |
+| **Sessions**     | Independent                      | Continuous across sessions                 |
 
 ## Quick Comparison Table
 
-| Feature              | VibeX                                | AG2/AutoGen          | CrewAI             | LangGraph        | LlamaIndex        |
-| -------------------- | ------------------------------------ | -------------------- | ------------------ | ---------------- | ----------------- |
-| **Core Philosophy**  | Human-in-the-Loop Augmentation       | Agentic Automation   | Task Automation    | State Machines   | Data RAG          |
-| **Orchestration**    | Collaborative & Plan-Driven (XAgent) | GroupChat            | Process-based      | Graph-based      | Manual            |
-| **Configuration**    | YAML-based, no-code required         | Python code          | Python/YAML hybrid | Python code      | Python code       |
-| **Agent Presets**    | ✅ Built-in optimized agents         | ❌ Manual setup      | ✅ Role templates  | ❌ Manual setup  | ❌ Manual setup   |
-| **Event System**     | ✅ Comprehensive & Real-time         | ❌ Limited callbacks | ❌ Basic events    | ✅ State-based   | ❌ Limited        |
-| **Tool Ecosystem**   | ✅ Built-in + MCP support            | ⚠️ Basic tools       | ✅ Good selection  | ⚠️ Basic tools   | ✅ Good selection |
-| **Memory System**    | ✅ Semantic + Conversation History   | ⚠️ Basic context     | ✅ Short/long term | ⚠️ State-based   | ✅ Index-based    |
-| **Handoff Control**  | ✅ Natural language rules            | ⚠️ Code-based        | ⚠️ Sequential      | ✅ State machine | ❌ Manual         |
-| **Production Ready** | ✅ REST API, Monitoring, Workspaces  | ⚠️ Library only      | ⚠️ Library only    | ⚠️ Library only  | ⚠️ Library only   |
+| Feature                | VibeX                         | LangGraph         | CrewAI            | AutoGen           | Vercel AI SDK     |
+| ---------------------- | ----------------------------- | ----------------- | ----------------- | ----------------- | ----------------- |
+| **Core Focus**         | Persistent Workspaces         | State Machines    | Task Automation   | Multi-Agent Chat  | Streaming UI      |
+| **Persistence**        | ✅ Built-in (SQLite/Supabase) | ❌ Manual         | ❌ Manual         | ❌ Manual         | ❌ Manual         |
+| **Session Resume**     | ✅ Native `XAgent.resume()`   | ⚠️ Checkpointing  | ❌ Not built-in   | ❌ Not built-in   | ❌ Not built-in   |
+| **Artifact Evolution** | ✅ Version history            | ❌ Not applicable | ❌ Not applicable | ❌ Not applicable | ❌ Not applicable |
+| **Language**           | TypeScript                    | Python            | Python            | Python            | TypeScript        |
+| **React Integration**  | ✅ `@vibex/react` hooks       | ❌ Python only    | ❌ Python only    | ❌ Python only    | ✅ Native         |
+| **Storage Adapters**   | ✅ Local + Supabase           | ❌ Manual         | ❌ Manual         | ❌ Manual         | ❌ Manual         |
+| **Multi-Agent**        | ✅ XAgent coordination        | ✅ Graph-based    | ✅ Crew-based     | ✅ GroupChat      | ⚠️ Basic          |
 
-## Why We Built VibeX: Key Differentiators
+## Why VibeX: Key Differentiators
 
-### 1. Configuration Without Code
+### 1. Persistent Workspaces That Survive Sessions
 
-**The Problem with AG2/AutoGen:**
+**The Problem:**
+Traditional frameworks lose all context when execution ends. Every new session starts from scratch.
 
-```python
-# AG2 requires extensive Python code for basic setups
-assistant = AssistantAgent(
-    name="assistant",
-    system_message="You are a helpful assistant",
-    llm_config={"config_list": config_list}
-)
-user_proxy = UserProxyAgent(
-    name="user_proxy",
-    human_input_mode="NEVER",
-    code_execution_config={"use_docker": False}
-)
+```typescript
+// Other frameworks - context is lost
+const result = await agent.run("Write a thesis introduction");
+// ... session ends, everything is lost ...
+// Next session - no memory of previous work
+const result2 = await agent.run("Continue the thesis"); // Agent has no context!
 ```
 
 **VibeX Solution:**
 
-```yaml
-# Complete team setup in YAML - no Python required
-agents:
-  - "researcher" # Use optimized presets
-  - "writer" # Automatically configured
+```typescript
+// Day 1: Start your thesis
+const xAgent = await XAgent.start("Write my thesis");
+const space = xAgent.getSpace();
+
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Write the introduction" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+await space.persistState();
+
+// Day 2: Continue where you left off
+const xAgent2 = await XAgent.resume(space.spaceId);
+// XAgent remembers EVERYTHING from Day 1
+
+await xAgent2.streamText({
+  messages: [{ role: "user", content: "Now refine the abstract" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+// Full context preserved across sessions
 ```
 
-### 2. Natural Language Handoffs
+### 2. Living Artifacts That Evolve
 
-**The Problem with Code-Based Routing:**
-Most frameworks require programming state machines or complex conditional logic for agent coordination.
+**The Problem:**
+Other frameworks treat outputs as static files. Once generated, they're done.
 
-**VibeX Innovation:**
+**VibeX Solution:**
+Artifacts in VibeX are living documents that improve over time:
 
-```yaml
-handoffs:
-  - from_agent: "researcher"
-    to_agent: "analyst"
-    condition: "When quantitative analysis of the research is needed"
+```typescript
+// First pass - creates artifact v1
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Write a report on AI trends" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+
+// Refinement - creates artifact v2
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Add more examples" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+
+// Final polish - creates artifact v3
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Make the conclusion stronger" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+
+// Version history is preserved - you can rollback if needed
 ```
 
-Handoffs are evaluated by an LLM that understands context, not rigid rules. This enables:
+### 3. TypeScript-First with React Integration
 
-- Dynamic routing based on content
-- Natural language conditions
-- Adaptive workflows
+**The Problem:**
+Most agent frameworks are Python-only, making frontend integration difficult.
 
-### 3. Event-Driven Architecture
+**VibeX Solution:**
+Built with TypeScript, with first-class React support:
 
-**Traditional Approach:**
-Frameworks typically use callbacks or polling, making it hard to:
+```typescript
+// Backend
+import { XAgent } from "vibex";
 
-- Monitor agent interactions in real-time
-- Build responsive UIs
-- Implement complex workflows
-- Add observability
+const xAgent = await XAgent.start("Research assistant");
+const stream = await xAgent.streamText({
+  messages: [{ role: "user", content: "Help me research" }],
+});
 
-**VibeX Event System:**
+// Frontend with React
+import { useXChat } from "@vibex/react";
 
-```python
-# Every significant action emits typed events
-@event_bus.subscribe(EventType.TASK_STARTED)
-async def on_task_start(event: TaskEvent):
-    # React to any system event
-    await update_ui(event)
-    await log_metrics(event)
+function Chat({ spaceId }: { spaceId: string }) {
+  const { messages, append, isLoading } = useXChat({ spaceId });
+
+  return (
+    <div>
+      {messages.map((msg) => (
+        <Message key={msg.id} message={msg} />
+      ))}
+      <button onClick={() => append({ role: "user", content: "Continue" })}>
+        Send
+      </button>
+    </div>
+  );
+}
 ```
 
-This enables:
+### 4. Storage Adapters for Any Environment
 
-- Real-time monitoring dashboards
-- Webhook integrations
-- Custom middleware
-- Comprehensive observability
+**The Problem:**
+Persistence is left as an exercise for the developer.
 
-### 4. Production-First Design
+**VibeX Solution:**
+Built-in storage adapters that just work:
 
-**Library vs. Framework:**
-AG2, CrewAI, and LangGraph are primarily libraries. VibeX is a complete framework with:
+```typescript
+// Local development - SQLite + filesystem (default)
+const xAgent = await XAgent.start("My project");
+// Data stored in ./data automatically
 
-- **REST API Server**: Deploy agents as services
-- **Task Management**: Persistent task tracking and resumption
-- **Monitoring**: Built-in observability and metrics
-- **Security**: Guardrails and sandboxed execution
-- **Deployment**: Container-ready with health checks
+// Production - Supabase (PostgreSQL + Storage)
+import { createSupabaseAdapter } from "@vibex/supabase";
 
-### 5. MCP (Model Context Protocol) Support
+const adapter = createSupabaseAdapter({
+  supabaseUrl: process.env.SUPABASE_URL!,
+  supabaseKey: process.env.SUPABASE_SERVICE_KEY!,
+});
 
-**The Future of AI Tools:**
-While other frameworks rely on custom tool implementations, VibeX embraces the emerging MCP standard:
-
-```yaml
-tools:
-  - name: "database_query"
-    type: "mcp_tool"
-    server_url: "http://mcp-postgres:8080"
+const xAgent = await XAgent.start("My project", { adapter });
 ```
 
-Benefits:
+### 5. XAgent: The Intelligent Project Manager
 
-- Use any MCP-compatible tool server
-- Standard protocol for tool interaction
-- Growing ecosystem of tools
-- No custom wrapper code needed
+**The Problem:**
+Other frameworks require manual orchestration of multiple agents.
 
-### 6. Unified Orchestration with X
+**VibeX Solution:**
+XAgent is a unified interface that knows your entire project:
 
-**AG2's GroupChat Limitations:**
+```typescript
+const xAgent = await XAgent.start("Build a marketing campaign");
 
-- Rigid speaker selection
-- Limited context awareness
-- Difficult to debug
-- No conversation memory
+// XAgent coordinates specialists automatically
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Research our target audience" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+// XAgent uses Researcher agent internally
 
-**VibeX's X (Orchestrator):**
-
-```python
-# Single interface for all interactions
-x = await start_task("Build a web app", "team.yaml")
-
-# Autonomous execution
-while not x.is_complete:
-    await x.step()
-
-# Natural conversation for adjustments
-response = await x.chat("Make it more colorful")
+await xAgent.streamText({
+  messages: [{ role: "user", content: "Write the campaign copy" }],
+  metadata: { mode: "agent", requestedAgent: "X" },
+});
+// XAgent uses Writer agent, with context from research
 ```
 
-X provides:
+## Detailed Comparisons
 
-- Intelligent task planning
-- Dynamic plan adjustment
-- Conversational interface
-- State preservation
+### vs LangGraph
 
-### 7. Agent Presets and Prompt Engineering
+|                  | LangGraph                     | VibeX                               |
+| ---------------- | ----------------------------- | ----------------------------------- |
+| **Language**     | Python                        | TypeScript                          |
+| **Architecture** | State machine graphs          | Space-oriented workspaces           |
+| **Persistence**  | Manual checkpointing          | Built-in storage adapters           |
+| **Best For**     | Complex conditional workflows | Long-running collaborative projects |
 
-**Manual Setup Fatigue:**
-Other frameworks require you to write and maintain every agent's prompt, leading to:
+**When to choose LangGraph:** You need fine-grained control over agent execution flow with complex branching logic.
 
-- Inconsistent quality
-- Repeated boilerplate
-- Maintenance burden
+**When to choose VibeX:** You're building a TypeScript/React app where work evolves over multiple sessions.
 
-**VibeX Presets:**
+### vs CrewAI
 
-```yaml
-agents:
-  - "researcher" # 500+ lines of optimized prompt
-  - "developer" # Production-tested configuration
-  - "web_designer" # Including best practices
-```
+|              | CrewAI                     | VibeX                                |
+| ------------ | -------------------------- | ------------------------------------ |
+| **Language** | Python                     | TypeScript                           |
+| **Paradigm** | Task delegation to crews   | Persistent workspace collaboration   |
+| **Memory**   | Short/long term memory     | Space-scoped persistent history      |
+| **Best For** | One-shot multi-agent tasks | Iterative document/project evolution |
 
-Each preset includes:
+**When to choose CrewAI:** You need quick multi-agent task execution in Python.
 
-- Carefully crafted system prompts
-- Optimal LLM configurations
-- Appropriate tool selections
-- Memory settings
+**When to choose VibeX:** You need persistent workspaces with full session continuity.
 
-### 8. Semantic Memory System
+### vs AutoGen (AG2)
 
-**Beyond Simple Context:**
-While AG2 uses basic conversation history, VibeX implements:
+|                  | AutoGen                 | VibeX                         |
+| ---------------- | ----------------------- | ----------------------------- |
+| **Language**     | Python                  | TypeScript                    |
+| **Coordination** | GroupChat conversations | XAgent orchestration          |
+| **Persistence**  | Not built-in            | Native with adapters          |
+| **Best For**     | Agent conversations     | Persistent project management |
 
-- **Semantic Search**: Find relevant past interactions
-- **Memory Synthesis**: Automatic summarization
-- **Cross-Task Memory**: Agents remember across tasks
-- **Team Memory**: Shared knowledge base
+**When to choose AutoGen:** You want conversational agent interactions in Python.
 
-### 9. Built-in Tool Suite
+**When to choose VibeX:** You need persistent workspaces that survive across sessions.
 
-**Complete vs. Minimal:**
-Unlike frameworks that provide minimal tools, VibeX includes:
+### vs Vercel AI SDK
 
-- **File Operations**: Full workspace management
-- **Web Tools**: Search, scraping, content extraction
-- **Development**: Code execution, git operations
-- **Memory**: Context management, semantic search
-- **MCP Bridge**: Connect to any MCP tool server
+|                 | Vercel AI SDK           | VibeX                             |
+| --------------- | ----------------------- | --------------------------------- |
+| **Focus**       | Streaming UI primitives | Persistent AI workspaces          |
+| **Persistence** | Not included            | Built-in storage adapters         |
+| **Multi-Agent** | Basic                   | XAgent coordination               |
+| **React**       | Native support          | Native support via `@vibex/react` |
 
-### 10. Observability and Debugging
+**When to choose Vercel AI SDK:** You need basic streaming chat UI components.
 
-**Black Box Problem:**
-Most frameworks offer limited visibility into agent decisions.
-
-**VibeX Transparency:**
-
-- Structured logging
-- Event stream access
-- Project execution traces
-- Decision explanations
-- Performance metrics
-
-## Migration Considerations
-
-### From AG2/AutoGen
-
-**What You Gain:**
-
-- 90% less code to maintain
-- Better agent coordination
-- Production deployment options
-- Comprehensive monitoring
-
-**Migration Path:**
-
-1. Convert agent definitions to YAML
-2. Replace GroupChat with handoffs
-3. Use event system for callbacks
-4. Deploy with REST API
-
-### From CrewAI
-
-**What You Gain:**
-
-- More flexible agent routing
-- Event-driven architecture
-- MCP tool support
-- Better memory system
-
-**Migration Path:**
-
-1. Convert crew definitions to teams
-2. Update tool definitions
-3. Leverage presets for common roles
-
-### From LangGraph
-
-**What You Gain:**
-
-- No-code configuration
-- Natural language workflows
-- Built-in tool suite
-- REST API deployment
-
-**Migration Path:**
-
-1. Convert graph logic to handoffs
-2. Use X for orchestration
-3. Migrate state to context variables
-
-## Design Philosophy
-
-VibeX represents a fundamental shift in how we think about multi-agent systems:
-
-1. **Configuration over Code**: Define _what_, not _how_.
-2. **Natural Language over Logic**: Steer workflows with conversation.
-3. **Events over Callbacks**: Build reactive, observable systems.
-4. **Framework over Library**: Get a complete, production-ready solution.
-5. **Augmentation over Automation**: Empower users, don't replace them.
+**When to choose VibeX:** You need persistent workspaces with multi-agent coordination and artifact management.
 
 ## When to Choose VibeX
 
-**Choose VibeX when you need to build:**
+**Choose VibeX when you're building:**
 
-- **Developer Experience**: YAML configuration, rich presets, and natural language control.
-- **Production Readiness**: A complete framework with a REST API, monitoring, and isolated workspaces.
-- **Future-Proof Standards**: Support for the Model Context Protocol (MCP) and a fully event-driven architecture.
-- **A True Collaborative Partner**: The `XAgent` orchestrator and a stateful, semantic memory system.
+- 📝 **Document Evolution Systems** — Thesis writing, report generation, content that improves over time
+- 🔬 **Research Assistants** — Knowledge accumulation across sessions
+- 💻 **Development Workspaces** — Code projects with persistent context
+- 🤝 **Collaborative AI Tools** — Applications where users return to continue work
+- ⚛️ **TypeScript/React Applications** — Full-stack JavaScript/TypeScript projects
 
-The result is a framework that makes complex multi-agent systems accessible and practical for real-world applications that augment, rather than replace, human expertise.
+**Consider other frameworks when:**
+
+- You need Python-only solutions
+- You're doing one-shot task execution
+- You need complex state machine workflows (LangGraph)
+- You don't need persistence across sessions
+
+## The VibeX Philosophy
+
+VibeX represents a shift in how we think about AI agents:
+
+1. **Workspaces over Tasks** — Don't just execute, collaborate in persistent spaces
+2. **Evolution over Output** — Documents improve through iteration, not replacement
+3. **Continuity over Sessions** — Pick up exactly where you left off
+4. **TypeScript-First** — Native support for modern web development
+5. **Storage Built-In** — Persistence shouldn't be an afterthought
+
+The result is a framework uniquely suited for building applications where humans and AI collaborate on work that evolves over time.

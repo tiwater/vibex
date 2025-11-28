@@ -1,5 +1,5 @@
 /**
- * Basic Example - The simplest way to use Vibex
+ * Basic Example - The simplest way to use VibeX
  *
  * This shows the minimal code needed to:
  * 1. Create a Space with XAgent

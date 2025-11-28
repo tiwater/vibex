@@ -1,10 +1,11 @@
 import { type ElementType } from "react";
 
+// Re-export core types from vibex when available
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  timestamp: number;
+  createdAt?: Date;
   agent?: string;
 }
 
@@ -14,7 +15,7 @@ export interface Space {
   goal: string;
   createdAt: number;
   updatedAt: number;
-  messageCount: number;
+  messageCount?: number;
   status: "active" | "completed" | "archived";
 }
 
@@ -39,6 +40,9 @@ export interface Artifact {
   name: string;
   type: "document" | "code" | "data" | "image";
   size?: string;
+  content?: string;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface Tool {
@@ -46,4 +50,3 @@ export interface Tool {
   description: string;
   category: string;
 }
-
