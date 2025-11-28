@@ -620,6 +620,7 @@ Use "condition" for decision points.`,
 
   /**
    * Execute a request using plan-based multi-agent orchestration
+   * Streams delegation events as they happen
    */
   private async executeWithPlan(
     userRequest: string,
@@ -638,49 +639,253 @@ Use "condition" for decision points.`,
     const plan = createPlanFromAnalysis(userRequest, suggestedTasks);
     this.space.plan = plan;
 
-    // Collect delegation events for streaming
+    // Stream delegation events as they happen
     const events: DelegationEvent[] = [];
+    const eventQueue: DelegationEvent[] = [];
+    let planExecutionComplete = false;
+    let finalResponse: string | null = null;
+    let artifacts: string[] = [];
 
-    // Execute the plan
-    const { results, artifacts } = await executePlan(
-      plan,
-      this.space,
-      this.getModel({ spaceId }),
-      (event) => {
-        events.push(event);
-        console.log(`[XAgent] Delegation event:`, event);
+    // Start plan execution in background
+    const planExecutionPromise = (async () => {
+      const { results, artifacts: planArtifacts } = await executePlan(
+        plan,
+        this.space,
+        this.getModel({ spaceId }),
+        (event) => {
+          events.push(event);
+          eventQueue.push(event);
+          console.log(`[XAgent] Delegation event:`, event);
+        }
+      );
+
+      artifacts = planArtifacts;
+
+      // Synthesize final response
+      finalResponse = await synthesizeResults(
+        this.getModel({ spaceId }),
+        plan,
+        results,
+        userRequest
+      );
+
+      planExecutionComplete = true;
+    })();
+
+    // Create the streaming generator function
+    const createStreamGenerator = async function* () {
+      // Stream plan overview first
+      yield {
+        type: "text-delta" as const,
+        textDelta: `## Plan: ${plan.goal}\n\n### Task Execution\n\n`,
+      };
+
+      // Stream delegation events as they happen
+      while (!planExecutionComplete || eventQueue.length > 0) {
+        if (eventQueue.length > 0) {
+          const event = eventQueue.shift()!;
+          let eventText = "";
+
+          if (event.status === "started") {
+            eventText = `🔄 **Delegated** "${event.taskTitle}" to **${event.agentName}**\n\n`;
+          } else if (event.status === "completed") {
+            eventText = `✅ **${event.agentName}** completed "${event.taskTitle}"\n`;
+            if (event.artifactId) {
+              eventText += `   📄 Created artifact: ${event.artifactId}\n`;
+            }
+            eventText += "\n";
+          } else if (event.status === "failed") {
+            eventText = `❌ **${event.agentName}** failed on "${event.taskTitle}": ${event.error}\n\n`;
+          }
+
+          if (eventText) {
+            yield { type: "text-delta" as const, textDelta: eventText };
+          }
+        } else {
+          // Wait a bit before checking again
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
       }
-    );
 
-    // Synthesize final response
-    const finalResponse = await synthesizeResults(
-      this.getModel({ spaceId }),
-      plan,
-      results,
-      userRequest
-    );
+      // Wait for plan execution to complete
+      await planExecutionPromise;
 
-    // Build the streamed response with delegation info
+      // Stream artifacts if any
+      if (artifacts.length > 0) {
+        yield {
+          type: "text-delta" as const,
+          textDelta: `\n### Artifacts Created\n\n${artifacts.map((a) => `- ${a}`).join("\n")}\n\n`,
+        };
+      }
+
+      // Stream final response
+      if (finalResponse) {
+        yield {
+          type: "text-delta" as const,
+          textDelta: `### Summary\n\n${finalResponse}`,
+        };
+      }
+    };
+
+    // Create streaming response that yields events as they happen
     const streamContent = this.buildOrchestrationResponse(
       plan,
       events,
       artifacts,
-      finalResponse
+      finalResponse || ""
     );
 
-    // Return as a StreamTextResult
+    // Return as a StreamTextResult with streaming delegation events
     return {
-      textStream: async function* () {
-        yield { type: "text-delta" as const, textDelta: streamContent };
-      },
+      textStream: createStreamGenerator,
       fullStream: async function* () {
-        yield { type: "text-delta" as const, textDelta: streamContent };
+        for await (const chunk of createStreamGenerator()) {
+          yield chunk;
+        }
         yield { type: "finish" as const, finishReason: "stop" as const };
       },
       text: streamContent,
-      toUIMessageStreamResponse: () => {
-        return new Response(streamContent, {
-          headers: { "Content-Type": "text/plain" },
+      toUIMessageStreamResponse: async () => {
+        // Use createUIMessageStream to properly stream delegation events
+        const { createUIMessageStream, createUIMessageStreamResponse } =
+          await import("ai");
+
+        const stream = createUIMessageStream({
+          async execute({ writer }) {
+            const textId = "orchestration-text";
+
+            // Start text block
+            writer.write({
+              type: "text-start",
+              id: textId,
+            });
+
+            // Write initial plan text
+            writer.write({
+              type: "text-delta",
+              id: textId,
+              delta: `## Plan: ${plan.goal}\n\n### Task Execution\n\n`,
+            });
+
+            // Stream delegation events as custom data parts and text
+            while (!planExecutionComplete || eventQueue.length > 0) {
+              if (eventQueue.length > 0) {
+                const event = eventQueue.shift()!;
+
+                // Emit delegation as custom data part
+                if (event.status === "started") {
+                  writer.write({
+                    type: "data-delegation",
+                    id: `delegation-${event.taskId}`,
+                    data: {
+                      type: "delegation",
+                      status: "started",
+                      taskId: event.taskId,
+                      taskTitle: event.taskTitle,
+                      agentId: event.agentId,
+                      agentName: event.agentName,
+                      timestamp: event.timestamp,
+                    },
+                  });
+
+                  // Also write text for visibility
+                  writer.write({
+                    type: "text-delta",
+                    id: textId,
+                    delta: `🔄 **Delegated** "${event.taskTitle}" to **${event.agentName}**\n\n`,
+                  });
+                } else if (event.status === "completed") {
+                  writer.write({
+                    type: "data-delegation",
+                    id: `delegation-${event.taskId}`,
+                    data: {
+                      type: "delegation",
+                      status: "completed",
+                      taskId: event.taskId,
+                      taskTitle: event.taskTitle,
+                      agentName: event.agentName,
+                      result: event.result,
+                      artifactId: event.artifactId,
+                      timestamp: event.timestamp,
+                    },
+                  });
+
+                  // Also write text for visibility
+                  let text = `✅ **${event.agentName}** completed "${event.taskTitle}"\n`;
+                  if (event.artifactId) {
+                    text += `   📄 Created artifact: ${event.artifactId}\n`;
+                  }
+                  text += "\n";
+                  writer.write({
+                    type: "text-delta",
+                    id: textId,
+                    delta: text,
+                  });
+                } else if (event.status === "failed") {
+                  writer.write({
+                    type: "data-delegation",
+                    id: `delegation-${event.taskId}`,
+                    data: {
+                      type: "delegation",
+                      status: "failed",
+                      taskId: event.taskId,
+                      taskTitle: event.taskTitle,
+                      agentName: event.agentName,
+                      error: event.error,
+                      timestamp: event.timestamp,
+                    },
+                  });
+
+                  // Also write text for visibility
+                  writer.write({
+                    type: "text-delta",
+                    id: textId,
+                    delta: `❌ **${event.agentName}** failed on "${event.taskTitle}": ${event.error}\n\n`,
+                  });
+                }
+              } else {
+                // Wait a bit before checking again
+                await new Promise((resolve) => setTimeout(resolve, 100));
+              }
+            }
+
+            // Wait for plan execution to complete
+            await planExecutionPromise;
+
+            // Stream artifacts if any
+            if (artifacts.length > 0) {
+              writer.write({
+                type: "text-delta",
+                id: textId,
+                delta: `\n### Artifacts Created\n\n${artifacts.map((a) => `- ${a}`).join("\n")}\n\n`,
+              });
+            }
+
+            // Stream final response
+            if (finalResponse) {
+              writer.write({
+                type: "text-delta",
+                id: textId,
+                delta: `### Summary\n\n${finalResponse}`,
+              });
+            }
+
+            // End text block
+            writer.write({
+              type: "text-end",
+              id: textId,
+            });
+          },
+          onError: (error) => {
+            return error instanceof Error ? error.message : "Unknown error";
+          },
+        });
+
+        return createUIMessageStreamResponse({
+          stream,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+          },
         });
       },
     } as any as StreamTextResultType;

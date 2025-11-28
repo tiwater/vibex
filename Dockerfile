@@ -43,9 +43,12 @@ COPY --from=base /app/package.json ./
 
 WORKDIR /app/docs
 
-EXPOSE 3000
-ENV PORT=3000
+# Railway automatically sets PORT environment variable (usually 8080)
+# Next.js will use PORT env var if set, otherwise defaults to 3000
+# We expose 8080 as that's Railway's default, but Next.js will use whatever PORT is set
+EXPOSE 8080
 ENV NODE_ENV=production
 
+# Next.js start command respects PORT environment variable automatically
 CMD ["pnpm", "start"]
 
