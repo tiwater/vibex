@@ -1,13 +1,12 @@
 import "./globals.css";
 import { Head } from "nextra/components";
-import { Layout } from "nextra-theme-docs";
+import { Layout, Navbar } from "nextra-theme-docs";
 import { getPageMap } from "nextra/page-map";
 import Image from "next/image";
-
-import { DynamicNavbar } from "../components/DynamicNavbar";
+import React from "react";
 
 const navbar = (
-  <DynamicNavbar
+  <Navbar
     logo={
       <div>
         <Image
@@ -91,6 +90,19 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   const pageMap = await getPageMap();
+
+  // Normalize children to ensure it's a single ReactNode
+  // This helps avoid key warnings from Nextra's internal ConfigProvider
+  const normalizedChildren = Array.isArray(children) ? (
+    <>
+      {children.map((child, index) => (
+        <React.Fragment key={index}>{child}</React.Fragment>
+      ))}
+    </>
+  ) : (
+    children
+  );
+
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <Head />
@@ -102,7 +114,7 @@ export default async function RootLayout({ children }) {
           sidebar={{ defaultMenuCollapseLevel: 1 }}
           pageMap={pageMap}
         >
-          {children}
+          {normalizedChildren}
         </Layout>
       </body>
     </html>

@@ -421,13 +421,12 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+      <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-20 overflow-hidden">
         {/* Rich Gradient Background */}
         <div className="absolute inset-0 bg-white dark:bg-slate-900">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100/40 via-transparent to-transparent dark:from-blue-900/20"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-100/40 via-transparent to-transparent dark:from-purple-900/20"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-blue-100/40 via-transparent to-transparent dark:from-blue-900/20"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,var(--tw-gradient-stops))] from-purple-100/40 via-transparent to-transparent dark:from-purple-900/20"></div>
 
-          {/* Animated Grid - Rotated 45 degrees for X vision */}
           {/* Animated Grid - Rotated 45 degrees for X vision */}
           <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
             <svg
@@ -494,15 +493,6 @@ export default function HomePage() {
           className="relative max-w-7xl mx-auto px-4 text-center z-10"
         >
           <div className="max-w-5xl mx-auto">
-            {/* Badge */}
-            <motion.div
-              variants={itemVariants}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-sm font-medium mb-8"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>VibeX v0.8.2 is now available</span>
-            </motion.div>
-
             {/* Main heading */}
             <motion.h1
               variants={itemVariants}
@@ -532,8 +522,8 @@ export default function HomePage() {
                 className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-blue-600 rounded-xl hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 hover:shadow-lg hover:shadow-blue-500/30 no-underline overflow-hidden"
               >
                 <div className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer"></div>
-                <span>Quick Start</span>
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                <span className="text-white">Quick Start</span>
+                <ArrowRight className="text-white w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
 
               <StyledLink
@@ -609,7 +599,11 @@ export default function HomePage() {
                   />
                 </pattern>
               </defs>
-              <rect width="100%" height="100%" fill="url(#philosophy-x-pattern)" />
+              <rect
+                width="100%"
+                height="100%"
+                fill="url(#philosophy-x-pattern)"
+              />
             </svg>
           </div>
 
