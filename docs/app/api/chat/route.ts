@@ -93,16 +93,16 @@ export async function POST(req: Request) {
     });
 
     // Return UIMessageStream response with agent metadata
+    const displayAgent = agentId || "x";
     return stream.toUIMessageStreamResponse({
       messageMetadata: ({ part }) => {
         // Send metadata when streaming starts
         if (part.type === "start") {
           return {
-            agentName:
-              requestedAgent === "x" ? "X (Orchestrator)" : requestedAgent,
-            agentId: requestedAgent,
+            agentName: displayAgent === "x" ? "X (Orchestrator)" : displayAgent,
+            agentId: displayAgent,
             spaceId: space?.spaceId || "playground",
-            delegationType: requestedAgent === "x" ? "orchestrator" : "direct",
+            delegationType: agentId ? "direct" : "orchestrator",
             startedAt: Date.now(),
           };
         }
