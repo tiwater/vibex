@@ -462,7 +462,7 @@ Use "condition" for decision points.`,
       "[XAgent] Agent mode: handling directly (no multi-agent needed)"
     );
     const optimizedMessages = this.optimizeContextForAgent(messages);
-    return await super.streamText({
+    const directStream = await super.streamText({
       messages: optimizedMessages,
       system: systemMessage,
       spaceId,
@@ -474,6 +474,9 @@ Use "condition" for decision points.`,
       },
       ...restOptions,
     });
+
+    // Wrap the stream to include analysis visualization
+    return this.wrapStreamWithAnalysis(directStream, analysis);
   }
 
   /**
@@ -618,6 +621,125 @@ Use "condition" for decision points.`,
   /**
    * Create a simple text stream response
    */
+  /**
+   * Wrap a stream to include analysis visualization
+   */
+  private wrapStreamWithAnalysis(
+    stream: StreamTextResultType,
+    analysis: {
+      needsPlan: boolean;
+      reasoning: string;
+      suggestedTasks?: Array<{
+        title: string;
+        description: string;
+        assignedTo: string;
+        dependencies: string[];
+      }>;
+    }
+  ): StreamTextResultType {
+    return {
+      ...stream,
+      toUIMessageStreamResponse: async () => {
+        const { createUIMessageStream, createUIMessageStreamResponse } =
+          await import("ai");
+
+        const uiStream = createUIMessageStream({
+          async execute({ writer }) {
+            const textId = "direct-response-text";
+
+            // Write analysis as a data part first
+            writer.write({
+              type: "data-analysis",
+              id: "analysis-result",
+              data: {
+                type: "analysis",
+                needsPlan: analysis.needsPlan,
+                reasoning: analysis.reasoning,
+                suggestedTasks: analysis.suggestedTasks || [],
+                timestamp: Date.now(),
+              },
+            });
+
+            // Stream the original response - let the AI SDK handle tool calls properly
+            // We just need to forward the stream, not manually reconstruct it
+            try {
+              // Get the original stream response and pipe it through
+              const originalResponse = stream.toUIMessageStreamResponse();
+              const reader = originalResponse.body?.getReader();
+
+              if (reader) {
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+
+                  buffer += decoder.decode(value, { stream: true });
+                  // Process complete SSE messages
+                  const lines = buffer.split("\n\n");
+                  buffer = lines.pop() || "";
+
+                  for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                      try {
+                        const data = JSON.parse(line.slice(6));
+                        // Forward all parts from the original stream
+                        // The AI SDK will handle tool-call/tool-result types correctly
+                        if (data.type) {
+                          writer.write(data);
+                        }
+                      } catch (e) {
+                        // Ignore parse errors for non-JSON lines
+                      }
+                    }
+                  }
+                }
+
+                // Process remaining buffer
+                if (buffer) {
+                  const lines = buffer.split("\n\n");
+                  for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                      try {
+                        const data = JSON.parse(line.slice(6));
+                        if (data.type) {
+                          writer.write(data);
+                        }
+                      } catch (e) {
+                        // Ignore
+                      }
+                    }
+                  }
+                }
+              } else {
+                // Fallback: just get text (but this loses tool calls)
+                const text = await stream.text;
+                writer.write({
+                  type: "text-delta",
+                  id: textId,
+                  delta: text,
+                });
+                writer.write({
+                  type: "text-end",
+                  id: textId,
+                });
+              }
+            } catch (error) {
+              writer.write({
+                type: "error",
+                errorText:
+                  error instanceof Error ? error.message : "Unknown error",
+              });
+            }
+          },
+        });
+
+        return createUIMessageStreamResponse({ stream: uiStream });
+      },
+    } as unknown as StreamTextResultType;
+  }
+
   private createTextStreamResponse(text: string): StreamTextResultType {
     return {
       textStream: async function* () {

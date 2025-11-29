@@ -132,11 +132,20 @@ export class Agent {
       segments.push("You have tools available. To use a tool, you MUST:");
       segments.push("1. Use the tool calling mechanism provided by the system");
       segments.push(
-        "2. NEVER output tool calls as JSON, code blocks, or plain text"
+        "2. NEVER output tool calls as JSON, XML, code blocks, or plain text"
       );
-      segments.push("3. The system will automatically handle tool execution");
       segments.push(
-        "When you need to call a tool, simply invoke it directly without any formatting."
+        "3. NEVER use XML tags like <function_calls>, <invoke>, <parameter>, or <function_result>"
+      );
+      segments.push(
+        "4. NEVER describe tool calls in your response - the system handles them automatically"
+      );
+      segments.push("5. The system will automatically handle tool execution");
+      segments.push(
+        "6. When you need to call a tool, simply invoke it directly through the system's tool calling API - do NOT format it as text"
+      );
+      segments.push(
+        "7. Your response should ONLY contain natural language text for the user - no tool call descriptions"
       );
     }
 
@@ -419,21 +428,75 @@ export class Agent {
     const agentPrefix = this.name.toLowerCase().replace(/\s+/g, "-");
 
     // Convert XMessage[] to ModelMessage[] ONLY here, right before AI SDK call
-    const modelMessages: ModelMessage[] = vibexMessages
-      .filter((m) => m.role !== "tool") // Skip tool messages
-      .map((m) => ({
-        role: m.role as "system" | "user" | "assistant",
-        content:
-          typeof m.content === "string"
-            ? m.content
-            : Array.isArray(m.content)
-              ? (m.content as Array<{ type: string; text?: string }>)
-                  .filter((p) => p.type === "text" && p.text)
-                  .map((p) => p.text as string)
-                  .join("\n")
-              : "",
-      }))
-      .filter((m) => m.content); // Remove empty messages
+    // CRITICAL: Preserve tool-call and tool-result parts - don't strip them!
+    const modelMessages: any[] = vibexMessages
+      .filter((m) => {
+        // Keep tool messages if they have proper structure
+        // Skip standalone tool messages without proper tool-call context
+        if (m.role === "tool") {
+          // Only skip if it's a malformed tool message
+          return false;
+        }
+        return true;
+      })
+      .map((m) => {
+        // Preserve the content structure - AI SDK v6 supports parts arrays
+        let content: any = m.content;
+
+        // If content is an array, preserve all parts (text, tool-call, tool-result, etc.)
+        if (Array.isArray(m.content)) {
+          // Convert to AI SDK format while preserving structure
+          const parts = m.content.map((part: any) => {
+            if (part.type === "text") {
+              return { type: "text", text: part.text || "" };
+            } else if (part.type === "tool-call") {
+              return {
+                type: "tool-call",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                args: part.args || {},
+              };
+            } else if (part.type === "tool-result") {
+              return {
+                type: "tool-result",
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                result: part.result,
+              };
+            }
+            // For other part types, try to preserve them
+            return part;
+          });
+
+          // If we have parts, use them; otherwise fall back to string
+          if (parts.length > 0) {
+            content = parts;
+          } else {
+            content = "";
+          }
+        } else if (typeof m.content === "string") {
+          // String content is fine as-is
+          content = m.content;
+        } else {
+          // Unknown format, try to convert to string
+          content = String(m.content || "");
+        }
+
+        return {
+          role: m.role as "system" | "user" | "assistant" | "tool",
+          content,
+        };
+      })
+      .filter((m) => {
+        // Only filter out messages with completely empty content
+        if (typeof m.content === "string") {
+          return m.content.trim().length > 0;
+        }
+        if (Array.isArray(m.content)) {
+          return m.content.length > 0;
+        }
+        return !!m.content;
+      });
 
     // Pass through to AI SDK's streamText with agent defaults
     const result = streamText({
