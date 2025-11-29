@@ -472,7 +472,7 @@ export async function startSpace({
     name: "X",
     description: "I manage this space and coordinate all work.",
     provider: "openrouter",
-    model: model || "openai/gpt-4o-mini",
+    model: model || "openai/gpt-4o",
     temperature: 0.7,
     promptFile: "", // XAgent doesn't use prompt files
   };
@@ -508,9 +508,9 @@ async function initializeDefaultAgents(
     const { getServerResourceAdapter } = await import("./factory");
 
     const defaultAgents = [
-      createResearcherAgent({ model: model || "openai/gpt-4o-mini" }),
-      createWriterAgent({ model: model || "openai/gpt-4o-mini" }),
-      createDeveloperAgent({ model: model || "openai/gpt-4o-mini" }),
+      createResearcherAgent({ model: model || "openai/gpt-4o" }),
+      createWriterAgent({ model: model || "openai/gpt-4o" }),
+      createDeveloperAgent({ model: model || "openai/gpt-4o" }),
     ];
 
     // Try to get adapter, but don't fail if database is unavailable

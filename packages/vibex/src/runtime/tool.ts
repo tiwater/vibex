@@ -28,10 +28,29 @@ export async function buildToolMap(
   const tools: Record<string, CoreTool> = {};
 
   // Load MCP server configurations to determine tool types
-  const { getServerResourceAdapter } = await import("../space/factory");
-  const adapter = await getServerResourceAdapter();
-  const mcpServers = await adapter.getTools();
-  const mcpServerIds = new Set(mcpServers.map((s: any) => s.id));
+  // Gracefully handle database unavailability
+  let mcpServerIds = new Set<string>();
+  try {
+    const { getServerResourceAdapter } = await import("../space/factory");
+    const adapter = await getServerResourceAdapter();
+    // Try to ensure adapter is initialized, but don't fail if it can't be
+    if (
+      "ensureInitialized" in adapter &&
+      typeof adapter.ensureInitialized === "function"
+    ) {
+      await adapter.ensureInitialized().catch(() => {
+        // Database unavailable - that's okay, we'll treat all tools as custom
+      });
+    }
+    const mcpServers = await adapter.getTools().catch(() => []);
+    mcpServerIds = new Set(mcpServers.map((s: any) => s.id));
+  } catch (error) {
+    // Database unavailable - that's okay, we'll treat all tools as custom
+    console.warn(
+      `[Tools] Database unavailable, treating all tools as custom:`,
+      error instanceof Error ? error.message : String(error)
+    );
+  }
 
   // Separate custom tools and MCP tools
   const customToolIds: string[] = [];

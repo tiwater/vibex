@@ -26,6 +26,7 @@ import { z } from "zod/v3";
 import { WorkflowEngine } from "../workflow/engine";
 import { ExecutionGraph } from "../workflow/types";
 import type { XMessage } from "../space/message";
+import { getTextContent } from "../space/message";
 import {
   analyzeRequest,
   createPlanFromAnalysis,
@@ -328,10 +329,14 @@ Use "condition" for decision points.`,
 
     // Get the last user message
     const lastUserMessage = messages.filter((m) => m.role === "user").pop();
-    const userContent =
-      typeof lastUserMessage?.content === "string"
-        ? lastUserMessage.content
-        : "";
+    const userContent = lastUserMessage ? getTextContent(lastUserMessage) : "";
+
+    if (!userContent || userContent.trim().length === 0) {
+      console.warn("[XAgent] Empty user content in plan mode");
+      return this.createTextStreamResponse(
+        "I didn't receive any message content. Please provide a request to create a plan for."
+      );
+    }
 
     // Get available agents
     const availableAgents = await this.getAvailableAgents();
@@ -394,10 +399,16 @@ Use "condition" for decision points.`,
 
     // Analyze request for multi-agent orchestration
     const lastUserMessage = messages.filter((m) => m.role === "user").pop();
-    const userContent =
-      typeof lastUserMessage?.content === "string"
-        ? lastUserMessage.content
-        : "";
+    const userContent = lastUserMessage ? getTextContent(lastUserMessage) : "";
+
+    if (!userContent || userContent.trim().length === 0) {
+      console.warn(
+        "[XAgent] Empty user content, cannot analyze for multi-agent collaboration"
+      );
+      return this.createTextStreamResponse(
+        "I didn't receive any message content. Please provide a request or question."
+      );
+    }
 
     console.log("[XAgent] Getting available agents...");
     const availableAgents = await this.getAvailableAgents();

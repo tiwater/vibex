@@ -88,6 +88,14 @@ export async function analyzeRequest(
   });
 
   // Try generateObject first, fall back to generateText with JSON parsing
+  console.log(
+    "[Orchestrator] Analyzing request for multi-agent collaboration:",
+    {
+      userMessage: userMessage.slice(0, 100),
+      availableAgents: availableAgents.map((a) => a.name),
+    }
+  );
+
   try {
     const result = await generateObject({
       model,
@@ -106,9 +114,21 @@ Multi-agent orchestration is valuable when:
 
 When creating tasks:
 - Assign each task to the agent best suited for that work
-- Set dependencies so tasks execute in the right order
+- IMPORTANT: Use the EXACT agent ID from the list above (e.g., "Researcher", "Writer", "Developer")
+- Set dependencies so tasks execute in the right order (dependencies are task titles, not IDs)
 - Keep tasks focused and actionable`,
-      prompt: userMessage,
+      messages: [
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+    });
+
+    console.log("[Orchestrator] Analysis result:", {
+      needsPlan: result.object.needsPlan,
+      reasoning: result.object.reasoning,
+      taskCount: result.object.suggestedTasks?.length || 0,
     });
 
     return result.object;
@@ -125,34 +145,57 @@ When creating tasks:
       system: `Analyze whether this request needs multi-agent collaboration.
 Available agents: ${agentDescriptions}
 
+IMPORTANT: When assigning tasks, use the EXACT agent ID from the list (e.g., "Researcher", "Writer", "Developer").
+
 Respond with ONLY a JSON object (no markdown, no explanation):
 {
   "needsPlan": boolean,
   "reasoning": "brief explanation",
   "suggestedTasks": [{"title": "...", "description": "...", "assignedTo": "AgentId", "dependencies": []}]
 }`,
-      prompt: userMessage,
+      messages: [
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
     });
 
     // Parse JSON from response
     const text = result.text.trim();
+    console.log(
+      "[Orchestrator] generateText response (first 500 chars):",
+      text.slice(0, 500)
+    );
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.log(
-        "[Orchestrator] No JSON found in response, defaulting to no plan"
+        "[Orchestrator] No JSON found in response, defaulting to no plan. Full response:",
+        text
       );
       return { needsPlan: false, reasoning: "Could not parse response" };
     }
 
     try {
       const parsed = JSON.parse(jsonMatch[0]);
+      console.log("[Orchestrator] Parsed analysis result:", {
+        needsPlan: parsed.needsPlan,
+        reasoning: parsed.reasoning,
+        taskCount: parsed.suggestedTasks?.length || 0,
+      });
       return {
         needsPlan: Boolean(parsed.needsPlan),
         reasoning: String(parsed.reasoning || ""),
         suggestedTasks: parsed.suggestedTasks || undefined,
       };
     } catch (parseError) {
-      console.log("[Orchestrator] JSON parse failed:", parseError);
+      console.log(
+        "[Orchestrator] JSON parse failed:",
+        parseError,
+        "JSON string:",
+        jsonMatch[0]
+      );
       return { needsPlan: false, reasoning: "Could not parse JSON response" };
     }
   }
@@ -319,10 +362,26 @@ async function executeTask(
     timestamp: Date.now(),
   });
 
-  // Get the agent
+  // Get the agent by ID first
   let agent = space.getAgent(agentId);
   if (!agent) {
-    // Try to load agent
+    // Try to find by name (case-insensitive) as fallback
+    for (const [id, candidateAgent] of space.agents.entries()) {
+      if (
+        candidateAgent.name?.toLowerCase() === agentId.toLowerCase() ||
+        id.toLowerCase() === agentId.toLowerCase()
+      ) {
+        agent = candidateAgent;
+        console.log(
+          `[Orchestrator] Found agent by name match: ${agentId} -> ${id}`
+        );
+        break;
+      }
+    }
+  }
+
+  if (!agent) {
+    // Try to load agent from database
     try {
       const { getServerResourceAdapter } = await import("../space/factory");
       const adapter = await getServerResourceAdapter();
@@ -337,6 +396,10 @@ async function executeTask(
   }
 
   if (!agent) {
+    console.error(
+      `[Orchestrator] Agent '${agentId}' not found. Available agents:`,
+      Array.from(space.agents.keys())
+    );
     return { task, error: `Agent '${agentId}' not found` };
   }
 
@@ -375,7 +438,10 @@ async function executeTask(
     // Stream the response and collect text
     for await (const chunk of stream.fullStream) {
       if (chunk.type === "text-delta") {
-        result += chunk.textDelta;
+        // AI SDK v6 uses 'delta' property, but we also support 'textDelta' for compatibility
+        const textChunk =
+          (chunk as any).delta || (chunk as any).textDelta || "";
+        result += textChunk;
       } else if (chunk.type === "tool-call") {
         toolCalls.push({
           name: chunk.toolName,
@@ -394,6 +460,18 @@ async function executeTask(
           `[Orchestrator] Agent ${agentId} tool result: ${chunk.toolName}`,
           chunk.result
         );
+      }
+    }
+
+    // Fallback: if no text was collected from stream, try to get it from stream.text
+    if (!result || result.trim().length === 0) {
+      try {
+        const finalText = await stream.text;
+        if (finalText) {
+          result = finalText;
+        }
+      } catch (e) {
+        console.warn(`[Orchestrator] Could not get final text from stream:`, e);
       }
     }
 
