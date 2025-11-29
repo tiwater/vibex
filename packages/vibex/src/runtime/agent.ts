@@ -6,7 +6,7 @@
  * its role, tools, and LLM settings.
  */
 
-import { generateText, streamText } from "ai";
+import { generateText, streamText, generateObject } from "ai";
 import type { LanguageModel } from "ai";
 import type { ModelMessage } from "../space/message";
 import { getVibexPath } from "../utils/paths";
@@ -15,6 +15,7 @@ import { ConversationHistory, XMessage } from "../space/message";
 import { getModelProvider } from "./llm";
 import { buildToolMap } from "./tool";
 import { generateShortId } from "../utils/id";
+import { z } from "zod";
 
 export interface AgentContext {
   spaceId: string;
@@ -654,6 +655,77 @@ export class Agent {
       ...(this.topP && { topP: this.topP }),
       ...(this.frequencyPenalty && { frequencyPenalty: this.frequencyPenalty }),
       ...(this.presencePenalty && { presencePenalty: this.presencePenalty }),
+    });
+  }
+
+  /**
+   * Generate structured object
+   */
+  async generateObject(options: {
+    messages: XMessage[];
+    schema: z.ZodSchema<any>;
+    system?: string;
+    spaceId?: string;
+    metadata?: Record<string, any>;
+    [key: string]: any;
+  }): Promise<any> {
+    const {
+      messages: vibexMessages,
+      schema,
+      system,
+      spaceId,
+      metadata,
+      ...aiSdkOptions
+    } = options;
+
+    // Extract metadata from messages for context enrichment
+    let enrichedMetadata = metadata || {};
+
+    // Find the last user message to extract any document context or other metadata
+    const lastUserMsg = vibexMessages.filter((m) => m.role === "user").pop();
+    if (lastUserMsg?.metadata) {
+      enrichedMetadata = { ...lastUserMsg.metadata, ...metadata };
+    }
+
+    // Build context for system prompt generation
+    const context: AgentContext = {
+      spaceId: spaceId || "default",
+      conversationHistory: new ConversationHistory(),
+      metadata: enrichedMetadata,
+    };
+
+    // Use agent-specific prompt and append any extra system context
+    const basePrompt = this.getSystemPrompt(context);
+    const systemPrompt = system ? `${basePrompt}\n\n${system}` : basePrompt;
+
+    const model = this.getModel({ spaceId, userId: enrichedMetadata.userId });
+
+    // Convert XMessage[] to ModelMessage[]
+    const modelMessages: ModelMessage[] = vibexMessages
+      .filter((m) => m.role !== "tool") // Skip tool messages
+      .map((m) => ({
+        role: m.role as "system" | "user" | "assistant",
+        content:
+          typeof m.content === "string"
+            ? m.content
+            : Array.isArray(m.content)
+              ? (m.content as Array<{ type: string; text?: string }>)
+                  .filter((p) => p.type === "text" && p.text)
+                  .map((p) => p.text as string)
+                  .join("\n")
+              : "",
+      }))
+      .filter((m) => m.content);
+
+    return generateObject({
+      model,
+      schema,
+      system: systemPrompt,
+      messages: modelMessages as any,
+      mode: "json",
+      temperature: this.temperature,
+      maxRetries: 3,
+      ...aiSdkOptions,
     });
   }
 
