@@ -1187,7 +1187,7 @@ export default function HomePage() {
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </StyledLink>
                 <Link
-                  href="https://github.com/dustland/vibex/tree/main/examples"
+                  href="https://github.com/tiwater/vibex/tree/main/examples"
                   target="_blank"
                   style={{ color: "#ffffff" }}
                   className="inline-flex items-center border border-blue-400 font-medium px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 hover:bg-white/10 no-underline"
@@ -1261,7 +1261,7 @@ export default function HomePage() {
               </p>
               <div className="flex items-center gap-3">
                 <a
-                  href="https://github.com/dustland/vibex"
+                  href="https://github.com/tiwater/vibex"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group"
@@ -1302,7 +1302,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href="/docs/design/overview"
+                    href="/docs/design"
                     className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 group"
                   >
                     Architecture
@@ -1311,10 +1311,10 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href="/docs/api"
+                    href="/sdk"
                     className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 group"
                   >
-                    API Reference
+                    SDK Reference
                     <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </Link>
                 </li>
@@ -1338,7 +1338,7 @@ export default function HomePage() {
               <ul className="space-y-3">
                 <li>
                   <a
-                    href="https://github.com/dustland/vibex/discussions"
+                    href="https://github.com/tiwater/vibex/discussions"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 group"
@@ -1349,7 +1349,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/dustland/vibex/issues"
+                    href="https://github.com/tiwater/vibex/issues"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 group"
@@ -1360,7 +1360,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/dustland/vibex/blob/main/CONTRIBUTING.md"
+                    href="https://github.com/tiwater/vibex/blob/main/CONTRIBUTING.md"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 group"
@@ -1368,15 +1368,6 @@ export default function HomePage() {
                     Contributing
                     <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </a>
-                </li>
-                <li>
-                  <Link
-                    href="/blog"
-                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors inline-flex items-center gap-1 group"
-                  >
-                    Blog
-                    <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </Link>
                 </li>
               </ul>
             </div>
@@ -1412,7 +1403,7 @@ export default function HomePage() {
                 <span className="hidden md:inline">•</span>
                 <span className="hidden md:inline">Built with ❤️ by</span>
                 <a
-                  href="https://github.com/dustland"
+                  href="https://github.com/tiwater"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -1421,20 +1412,8 @@ export default function HomePage() {
                 </a>
               </div>
               <div className="flex items-center gap-6 text-sm">
-                <Link
-                  href="/privacy"
-                  className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  Privacy
-                </Link>
-                <Link
-                  href="/terms"
-                  className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  Terms
-                </Link>
                 <a
-                  href="https://github.com/dustland/vibex/blob/main/LICENSE"
+                  href="https://github.com/tiwater/vibex/blob/main/LICENSE"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
