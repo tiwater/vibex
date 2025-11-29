@@ -23,6 +23,8 @@ import {
   ParallelExecutionEngine,
   CollaborativePlanner,
 } from "./collaboration";
+import { getDefaultAgentIds, loadDefaultAgents } from "@vibex/defaults";
+import { createAgentFromConfig } from "../runtime/factory";
 
 // Re-export for convenience
 export type { SpaceType, PlanType };
@@ -503,15 +505,34 @@ async function initializeDefaultAgents(
   model?: string
 ): Promise<void> {
   try {
-    const { createResearcherAgent, createWriterAgent, createDeveloperAgent } =
-      await import("../runtime/factory");
-    const { getServerResourceAdapter } = await import("./factory");
+    // Load default agents from @vibex/defaults package
 
-    const defaultAgents = [
-      createResearcherAgent({ model: model || "openai/gpt-4o" }),
-      createWriterAgent({ model: model || "openai/gpt-4o" }),
-      createDeveloperAgent({ model: model || "openai/gpt-4o" }),
-    ];
+    // Get default agent IDs and load their configurations
+    const agentIds = getDefaultAgentIds();
+    const agentConfigs = loadDefaultAgents(agentIds);
+
+    // Create agent instances from loaded configs
+    const defaultAgents = agentConfigs.map(
+      (config: {
+        id: string;
+        name: string;
+        description: string;
+        provider: string;
+        model: string;
+        systemPrompt?: string;
+        tools: string[];
+        temperature?: number;
+        maxOutputTokens?: number;
+      }) =>
+        createAgentFromConfig(config, {
+          // Override model if provided, otherwise use config's model
+          model: model
+            ? model.includes(":")
+              ? model
+              : `${config.provider}:${model}`
+            : undefined,
+        })
+    );
 
     // Try to get adapter, but don't fail if database is unavailable
     // The adapter might be created but fail when actually used (e.g., better-sqlite3 native module issue)
@@ -569,7 +590,6 @@ async function initializeDefaultAgents(
       }
 
       // Always register in space's agent map for immediate use (in-memory)
-      const { Agent } = await import("../runtime/agent");
       const agent = new Agent(agentConfig);
       const agentKey = agentConfig.id || agentConfig.name;
       space.registerAgent(agentKey, agent);

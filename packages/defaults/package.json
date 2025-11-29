@@ -15,6 +15,9 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
   },
+  "dependencies": {
+    "yaml": "^2.8.1"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",

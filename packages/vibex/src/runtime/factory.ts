@@ -333,3 +333,51 @@ Always focus on the reader's experience.
     ...options,
   });
 }
+
+// ============================================================================
+// Agent Creation from Defaults Package
+// ============================================================================
+
+/**
+ * Create an agent from a loaded agent configuration (from @vibex/defaults)
+ */
+export function createAgentFromConfig(
+  config: {
+    id: string;
+    name: string;
+    description: string;
+    provider: string;
+    model: string;
+    systemPrompt?: string;
+    tools: string[];
+    temperature?: number;
+    maxOutputTokens?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
+  },
+  options?: Partial<XAgentSettings>
+): XAgentInstance {
+  // Build model string from provider and model
+  // Handle openrouter format (provider/model) vs standard format
+  let modelString: string;
+  if (config.provider === "openrouter" || config.model.includes("/")) {
+    // OpenRouter format: model already includes provider (e.g., "anthropic/claude-sonnet-4.5")
+    modelString = config.model;
+  } else {
+    // Standard format: provider:model (e.g., "openai:gpt-4o")
+    modelString = `${config.provider}:${config.model}`;
+  }
+
+  return createAgent({
+    name: config.name,
+    description: config.description,
+    model: options?.model || modelString,
+    system: config.systemPrompt,
+    tools: config.tools,
+    temperature: options?.temperature ?? config.temperature,
+    maxTokens: options?.maxTokens ?? config.maxOutputTokens,
+    autoToolContinue: true,
+    ...options,
+  });
+}

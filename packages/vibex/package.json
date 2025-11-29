@@ -23,6 +23,7 @@
     "@ai-sdk/openai": "^2.0.73",
     "@openrouter/ai-sdk-provider": "^1.2.7",
     "@vibex/core": "workspace:*",
+    "@vibex/defaults": "workspace:*",
     "@vibex/local": "workspace:*",
     "ai": "^6.0.0-beta.122",
     "nanoid": "^5.0.0",

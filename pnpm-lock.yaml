@@ -287,6 +287,10 @@ importers:
         version: 5.8.3
 
   packages/defaults:
+    dependencies:
+      yaml:
+        specifier: ^2.8.1
+        version: 2.8.1
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -418,6 +422,9 @@ importers:
       '@vibex/core':
         specifier: workspace:*
         version: link:../core
+      '@vibex/defaults':
+        specifier: workspace:*
+        version: link:../defaults
       '@vibex/local':
         specifier: workspace:*
         version: link:../local
