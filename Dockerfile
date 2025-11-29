@@ -33,13 +33,22 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-# Copy built application
+# Copy workspace configuration
+COPY --from=base /app/package.json ./
+COPY --from=base /app/pnpm-workspace.yaml ./
+COPY --from=base /app/pnpm-lock.yaml ./
+
+# Copy all built workspace packages (simpler and more maintainable)
+COPY --from=base /app/packages ./packages
+
+# Copy built docs application
 COPY --from=base /app/docs/.next ./docs/.next
 COPY --from=base /app/docs/public ./docs/public
 COPY --from=base /app/docs/package.json ./docs/
+
+# Copy node_modules (needed for runtime dependencies)
 COPY --from=base /app/docs/node_modules ./docs/node_modules
 COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/package.json ./
 
 WORKDIR /app/docs
 
