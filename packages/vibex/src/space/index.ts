@@ -571,9 +571,17 @@ async function initializeDefaultAgents(
       // Always register in space's agent map for immediate use (in-memory)
       const { Agent } = await import("../runtime/agent");
       const agent = new Agent(agentConfig);
-      space.registerAgent(agentConfig.id || agentConfig.name, agent);
-      console.log(`[Space] Registered ${agentConfig.name} in memory`);
+      const agentKey = agentConfig.id || agentConfig.name;
+      space.registerAgent(agentKey, agent);
+      console.log(
+        `[Space] Registered ${agentConfig.name} (key: ${agentKey}) in memory`
+      );
     }
+
+    console.log(
+      `[Space] Total agents registered: ${space.agents.size}`,
+      Array.from(space.agents.keys())
+    );
 
     console.log(`[Space] Initialized ${defaultAgents.length} default agents`);
   } catch (error) {

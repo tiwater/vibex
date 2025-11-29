@@ -63,7 +63,6 @@ export async function POST(req: Request) {
 
     // Get space info for metadata
     const space = xAgent.getSpace();
-    const requestedAgent = agentId || "x";
 
     // Extract chatMode from metadata (default to "agent")
     const chatMode = (metadata?.chatMode as XChatMode) || "agent";
@@ -83,12 +82,13 @@ export async function POST(req: Request) {
     );
 
     // Stream the response
+    // Only set requestedAgent if explicitly provided - otherwise let X decide
     const stream = await xAgent.streamText({
       messages: xMessages,
       metadata: {
         ...metadata,
         chatMode,
-        requestedAgent,
+        ...(agentId ? { requestedAgent: agentId } : {}),
       },
     });
 

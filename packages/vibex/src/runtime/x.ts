@@ -370,9 +370,12 @@ Use "condition" for decision points.`,
     metadata: Record<string, unknown>,
     restOptions: Record<string, unknown>
   ): Promise<StreamTextResultType> {
+    console.log("[XAgent] Entering handleAgentModeWithOrchestration");
+
     // Check for explicit agent delegation
     const requestedAgent = metadata.requestedAgent as string | undefined;
     if (requestedAgent) {
+      console.log(`[XAgent] Direct delegation requested to: ${requestedAgent}`);
       return this.handleDirectDelegation(
         messages,
         systemMessage,
@@ -396,7 +399,20 @@ Use "condition" for decision points.`,
         ? lastUserMessage.content
         : "";
 
+    console.log("[XAgent] Getting available agents...");
     const availableAgents = await this.getAvailableAgents();
+    console.log(
+      `[XAgent] Available agents count: ${availableAgents.length}`,
+      availableAgents
+    );
+
+    if (availableAgents.length === 0) {
+      console.warn(
+        `[XAgent] No agents available for delegation! Space agents:`,
+        Array.from(this.space.agents.keys())
+      );
+    }
+
     const analysis = await analyzeRequest(
       this.getModel({ spaceId }),
       userContent,
@@ -407,6 +423,10 @@ Use "condition" for decision points.`,
       needsPlan: analysis.needsPlan,
       reasoning: analysis.reasoning,
       taskCount: analysis.suggestedTasks?.length || 0,
+      suggestedTasks: analysis.suggestedTasks?.map((t) => ({
+        title: t.title,
+        assignedTo: t.assignedTo,
+      })),
     });
 
     // If multi-agent orchestration is needed, execute via plan
@@ -415,6 +435,9 @@ Use "condition" for decision points.`,
       analysis.suggestedTasks &&
       analysis.suggestedTasks.length > 0
     ) {
+      console.log(
+        `[XAgent] Creating plan with ${analysis.suggestedTasks.length} tasks`
+      );
       return await this.executeWithPlan(
         userContent,
         analysis.suggestedTasks,
@@ -608,14 +631,63 @@ Use "condition" for decision points.`,
   private async getAvailableAgents(): Promise<
     Array<{ id: string; name: string; description: string }>
   > {
-    const resourceAdapter = await getServerResourceAdapter();
-    const agents = await resourceAdapter.getAgents();
+    // First, get agents from in-memory space (these are always available)
+    const agentList: Array<{ id: string; name: string; description: string }> =
+      [];
 
-    return agents.map((a: any) => ({
-      id: a.id || a.name,
-      name: a.name,
-      description: a.description || "",
-    }));
+    // Get agents from space's agents map
+    console.log(
+      `[XAgent] Space has ${this.space.agents.size} agents registered:`,
+      Array.from(this.space.agents.keys())
+    );
+    for (const [agentId, agent] of this.space.agents.entries()) {
+      agentList.push({
+        id: agentId,
+        name: agent.name,
+        description: agent.description || "",
+      });
+      console.log(
+        `[XAgent] Added agent to list: ${agent.name} (id: ${agentId})`
+      );
+    }
+
+    // Also try to get agents from database (if available)
+    try {
+      const resourceAdapter = await getServerResourceAdapter();
+      if (
+        "ensureInitialized" in resourceAdapter &&
+        typeof resourceAdapter.ensureInitialized === "function"
+      ) {
+        await resourceAdapter.ensureInitialized();
+      }
+      const dbAgents = await resourceAdapter.getAgents();
+
+      // Merge database agents (avoid duplicates)
+      for (const dbAgent of dbAgents) {
+        const existing = agentList.find(
+          (a) => (a.id || a.name) === (dbAgent.id || dbAgent.name)
+        );
+        if (!existing) {
+          agentList.push({
+            id: dbAgent.id || dbAgent.name,
+            name: dbAgent.name,
+            description: dbAgent.description || "",
+          });
+        }
+      }
+    } catch (e) {
+      // Database unavailable - that's okay, we have in-memory agents
+      console.warn(
+        `[XAgent] Could not load agents from database (using in-memory only):`,
+        e instanceof Error ? e.message : String(e)
+      );
+    }
+
+    console.log(
+      `[XAgent] Available agents for delegation:`,
+      agentList.map((a) => a.name)
+    );
+    return agentList;
   }
 
   /**

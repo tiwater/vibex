@@ -87,28 +87,75 @@ export async function analyzeRequest(
       .describe("Tasks to create if needsPlan is true"),
   });
 
-  const result = await generateObject({
-    model,
-    schema,
-    system: `You analyze user requests and determine if they need multi-agent orchestration.
+  // Try generateObject first, fall back to generateText with JSON parsing
+  try {
+    const result = await generateObject({
+      model,
+      schema,
+      mode: "json", // Force JSON mode
+      system: `You determine whether a user request would benefit from multi-agent collaboration.
+Return ONLY a valid JSON object matching the required schema. No explanatory text.
 
-Available agents:
+Available specialized agents:
 ${agentDescriptions}
 
-Guidelines:
-- Simple questions or single-domain tasks: needsPlan = false
-- Complex requests requiring research + writing: needsPlan = true
-- Requests spanning multiple domains: needsPlan = true
-- Requests that could benefit from specialized expertise: needsPlan = true
+Multi-agent orchestration is valuable when:
+- The request involves multiple distinct phases (e.g., gathering information then producing output)
+- Different specialized skills are needed for different parts of the work
+- The task would naturally be divided among team members in a real workplace
 
 When creating tasks:
-- Each task should be assigned to the most appropriate agent
-- Use dependencies to ensure proper execution order
+- Assign each task to the agent best suited for that work
+- Set dependencies so tasks execute in the right order
 - Keep tasks focused and actionable`,
-    prompt: userMessage,
-  });
+      prompt: userMessage,
+    });
 
-  return result.object;
+    return result.object;
+  } catch (error) {
+    // Fallback: use generateText and parse JSON manually
+    console.log(
+      "[Orchestrator] generateObject failed, falling back to text parsing:",
+      error
+    );
+
+    const { generateText } = await import("ai");
+    const result = await generateText({
+      model,
+      system: `Analyze whether this request needs multi-agent collaboration.
+Available agents: ${agentDescriptions}
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{
+  "needsPlan": boolean,
+  "reasoning": "brief explanation",
+  "suggestedTasks": [{"title": "...", "description": "...", "assignedTo": "AgentId", "dependencies": []}]
+}`,
+      prompt: userMessage,
+    });
+
+    // Parse JSON from response
+    const text = result.text.trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.log(
+        "[Orchestrator] No JSON found in response, defaulting to no plan"
+      );
+      return { needsPlan: false, reasoning: "Could not parse response" };
+    }
+
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        needsPlan: Boolean(parsed.needsPlan),
+        reasoning: String(parsed.reasoning || ""),
+        suggestedTasks: parsed.suggestedTasks || undefined,
+      };
+    } catch (parseError) {
+      console.log("[Orchestrator] JSON parse failed:", parseError);
+      return { needsPlan: false, reasoning: "Could not parse JSON response" };
+    }
+  }
 }
 
 /**
@@ -250,12 +297,24 @@ async function executeTask(
 
   // Emit delegation started event
   task.start();
+
+  // Get agent name for better visibility
+  let agentName = agentId;
+  try {
+    const agent = space.getAgent(agentId);
+    if (agent) {
+      agentName = agent.name || agentId;
+    }
+  } catch (e) {
+    // Agent not found yet, will be loaded below
+  }
+
   onEvent({
     type: "delegation",
     taskId: task.id,
     taskTitle: task.title,
     agentId,
-    agentName: agentId,
+    agentName,
     status: "started",
     timestamp: Date.now(),
   });
@@ -373,13 +432,16 @@ async function executeTask(
     // Mark task as completed
     task.complete(result);
 
+    // Get agent name for better visibility
+    const agentName = agent.name || agentId;
+
     // Emit completion event with tool calls and artifact info
     onEvent({
       type: "delegation",
       taskId: task.id,
       taskTitle: task.title,
       agentId,
-      agentName: agentId,
+      agentName,
       status: "completed",
       result: result.slice(0, 200), // Include preview in event
       artifactId,
@@ -400,13 +462,24 @@ async function executeTask(
     // Mark task as failed
     task.fail(errorMessage);
 
+    // Get agent name for better visibility
+    let agentName = agentId;
+    try {
+      const failedAgent = space.getAgent(agentId);
+      if (failedAgent) {
+        agentName = failedAgent.name || agentId;
+      }
+    } catch (e) {
+      // Agent not found
+    }
+
     // Emit failure event
     onEvent({
       type: "delegation",
       taskId: task.id,
       taskTitle: task.title,
       agentId,
-      agentName: agentId,
+      agentName,
       status: "failed",
       error: errorMessage,
       timestamp: Date.now(),

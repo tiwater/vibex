@@ -194,7 +194,7 @@ export function useXChat({
         agentId,
         metadata: {
           ...metadata,
-          mode: agentId ? "agent" : "chat",
+          chatMode: metadata?.chatMode || (agentId ? "agent" : "ask"), // Use chatMode from metadata
           requestedAgent: agentId,
         },
       },
