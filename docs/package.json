@@ -42,7 +42,11 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "vibex": "workspace:*"
+    "vibex": "workspace:*",
+    "@vibex/local": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@vibex/tools": "workspace:*"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",

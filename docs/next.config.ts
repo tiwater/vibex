@@ -38,18 +38,11 @@ export default withNextra({
       ],
     });
 
-    // Externalize vibex and playwright for server-side only
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push({
-        playwright: "commonjs playwright",
-        "playwright-core": "commonjs playwright-core",
-      });
-    }
-
     return config;
   },
-  serverExternalPackages: ["vibex", "playwright", "playwright-core"],
+  // serverExternalPackages works with both webpack and Turbopack
+  // These packages should not be bundled - they're server-only dependencies
+  serverExternalPackages: ["vibex", "@vibex/local", "better-sqlite3"],
   experimental: {
     optimizePackageImports: ["nextra-theme-docs"],
   },

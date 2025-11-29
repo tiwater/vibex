@@ -7,7 +7,7 @@
  */
 
 import { AgentConfig } from "../config";
-import { getServerResourceAdapter } from "../space/factory";
+// getServerResourceAdapter is imported dynamically where needed
 import { BaseStorage } from "../space/storage";
 
 // Type for defaults categories.yaml structure
@@ -489,7 +489,8 @@ export class AgentMarket {
    */
   static async isTemplateInstalled(templateId: string): Promise<boolean> {
     try {
-      const adapter = getServerResourceAdapter();
+      const { getServerResourceAdapter } = await import("../space/factory");
+      const adapter = await getServerResourceAdapter();
       const agents = await adapter.getAgents();
       return agents.some((agent) => agent.id === templateId);
     } catch {

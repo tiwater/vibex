@@ -27,6 +27,11 @@ export interface DelegationEvent {
   result?: string;
   artifactId?: string;
   error?: string;
+  toolCalls?: Array<{
+    name: string;
+    args: unknown;
+    result?: unknown;
+  }>;
   timestamp: number;
 }
 
@@ -203,43 +208,19 @@ export async function executePlan(
 
     const taskResults = await Promise.all(taskPromises);
 
-    // Process results
+    // Process results (events are already emitted by executeTask)
     for (const { task, result, artifactId, error } of taskResults) {
       if (error) {
-        task.fail(error);
-        onEvent({
-          type: "delegation",
-          taskId: task.id,
-          taskTitle: task.title,
-          agentId: task.assignedTo || "unknown",
-          agentName: task.assignedTo || "Unknown Agent",
-          status: "failed",
-          error,
-          timestamp: Date.now(),
-        });
+        // Task already marked as failed in executeTask
+        continue;
       } else {
-        task.complete(result);
+        // Task already marked as completed in executeTask
         completedTaskIds.add(task.id);
         results.set(task.id, result || "");
 
         if (artifactId) {
           artifacts.push(artifactId);
         }
-
-        onEvent({
-          type: "delegation",
-          taskId: task.id,
-          taskTitle: task.title,
-          agentId: task.assignedTo || "unknown",
-          agentName: task.assignedTo || "Unknown Agent",
-          status: "completed",
-          result:
-            result && result.length > 200
-              ? result.substring(0, 200) + "..."
-              : result,
-          artifactId,
-          timestamp: Date.now(),
-        });
       }
     }
   }
@@ -285,7 +266,7 @@ async function executeTask(
     // Try to load agent
     try {
       const { getServerResourceAdapter } = await import("../space/factory");
-      const adapter = getServerResourceAdapter();
+      const adapter = await getServerResourceAdapter();
       const agentConfig = await adapter.getAgent(agentId);
       if (agentConfig) {
         agent = new Agent(agentConfig as any);
@@ -316,8 +297,8 @@ async function executeTask(
     : task.description;
 
   try {
-    // Execute the agent
-    const response = await agent.generateText({
+    // Execute the agent using streamText to capture tool calls
+    const stream = await agent.streamText({
       messages: [{ role: "user", content: prompt }] as XMessage[],
       spaceId: space.spaceId,
       metadata: {
@@ -327,23 +308,110 @@ async function executeTask(
       },
     });
 
-    const result = response.text;
+    // Collect text and tool calls
+    let result = "";
+    const toolCalls: Array<{ name: string; args: unknown; result?: unknown }> =
+      [];
+
+    // Stream the response and collect text
+    for await (const chunk of stream.fullStream) {
+      if (chunk.type === "text-delta") {
+        result += chunk.textDelta;
+      } else if (chunk.type === "tool-call") {
+        toolCalls.push({
+          name: chunk.toolName,
+          args: chunk.args,
+        });
+        console.log(
+          `[Orchestrator] Agent ${agentId} called tool: ${chunk.toolName}`,
+          chunk.args
+        );
+      } else if (chunk.type === "tool-result") {
+        const toolCall = toolCalls.find((tc) => tc.name === chunk.toolName);
+        if (toolCall) {
+          toolCall.result = chunk.result;
+        }
+        console.log(
+          `[Orchestrator] Agent ${agentId} tool result: ${chunk.toolName}`,
+          chunk.result
+        );
+      }
+    }
 
     // Create artifact if result is substantial
     let artifactId: string | undefined;
     if (result && result.length > 500) {
       artifactId = `artifact_${task.id}_${Date.now()}`;
-      // In a real implementation, save to storage
-      // For now, just track the ID
-      console.log(
-        `[Orchestrator] Created artifact ${artifactId} for task ${task.id}`
-      );
+      // Save artifact to storage
+      try {
+        const { getStorageAdapter } = await import("../space/factory");
+        const storage = await getStorageAdapter();
+        const artifactInfo = {
+          id: artifactId,
+          storageKey: artifactId,
+          originalName: `${task.title}.txt`,
+          title: task.title,
+          mimeType: "text/plain",
+          sizeBytes: Buffer.byteLength(result, "utf-8"),
+          metadata: {
+            taskId: task.id,
+            agentId,
+            toolCalls: toolCalls.length,
+          },
+        };
+        const buffer = Buffer.from(result, "utf-8");
+        await storage.saveArtifact(space.spaceId, artifactInfo, buffer);
+        console.log(
+          `[Orchestrator] Created artifact ${artifactId} for task ${task.id}`
+        );
+      } catch (e) {
+        console.error(`[Orchestrator] Failed to save artifact:`, e);
+        // Still track the ID even if save fails
+      }
     }
+
+    // Mark task as completed
+    task.complete(result);
+
+    // Emit completion event with tool calls and artifact info
+    onEvent({
+      type: "delegation",
+      taskId: task.id,
+      taskTitle: task.title,
+      agentId,
+      agentName: agentId,
+      status: "completed",
+      result: result.slice(0, 200), // Include preview in event
+      artifactId,
+      toolCalls: toolCalls.map((tc) => ({
+        name: tc.name,
+        args: tc.args,
+        result:
+          typeof tc.result === "string" ? tc.result.slice(0, 100) : tc.result,
+      })),
+      timestamp: Date.now(),
+    });
 
     return { task, result, artifactId };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
+
+    // Mark task as failed
+    task.fail(errorMessage);
+
+    // Emit failure event
+    onEvent({
+      type: "delegation",
+      taskId: task.id,
+      taskTitle: task.title,
+      agentId,
+      agentName: agentId,
+      status: "failed",
+      error: errorMessage,
+      timestamp: Date.now(),
+    });
+
     return { task, error: errorMessage };
   }
 }

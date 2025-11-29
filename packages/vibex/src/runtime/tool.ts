@@ -29,7 +29,7 @@ export async function buildToolMap(
 
   // Load MCP server configurations to determine tool types
   const { getServerResourceAdapter } = await import("../space/factory");
-  const adapter = getServerResourceAdapter();
+  const adapter = await getServerResourceAdapter();
   const mcpServers = await adapter.getTools();
   const mcpServerIds = new Set(mcpServers.map((s: any) => s.id));
 
@@ -51,9 +51,17 @@ export async function buildToolMap(
     try {
       // Dynamic import with variable to prevent TypeScript from statically resolving
       // @vibex/tools is an optional package that may not be installed
+      // Use a function to make the import truly dynamic (webpack can't analyze it)
       const toolsPackageName = "@vibex/tools";
       // @ts-ignore - Optional package, may not be installed
-      const toolsModule = await import(toolsPackageName).catch(() => null);
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const dynamicImport = new Function(
+        "moduleName",
+        "return import(moduleName)"
+      );
+      const toolsModule = await dynamicImport(toolsPackageName).catch(
+        () => null
+      );
       if (toolsModule) {
         const buildCustomToolMap = (toolsModule as any).buildToolMap;
         if (buildCustomToolMap) {

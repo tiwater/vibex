@@ -18,7 +18,7 @@ import type {
   KnowledgeDocumentType,
   DocumentChunkType,
 } from "@vibex/core";
-import { getResourceAdapter, getKnowledgeAdapter } from "./factory";
+// getResourceAdapter and getKnowledgeAdapter are imported dynamically where needed
 import { BaseStorage } from "./storage";
 
 export interface SpaceFilters {
@@ -60,8 +60,18 @@ export class SpaceManager {
     resourceAdapter?: ResourceAdapter,
     knowledgeAdapter?: KnowledgeAdapter
   ) {
-    this.resourceAdapter = resourceAdapter || getResourceAdapter();
-    this.knowledgeAdapter = knowledgeAdapter || getKnowledgeAdapter();
+    // Note: These will be initialized asynchronously if not provided
+    // Callers should use createServer() for proper async initialization
+    if (resourceAdapter) {
+      this.resourceAdapter = resourceAdapter;
+    } else {
+      throw new Error("ResourceAdapter is required. Use SpaceManager.createServer() for async initialization.");
+    }
+    if (knowledgeAdapter) {
+      this.knowledgeAdapter = knowledgeAdapter;
+    } else {
+      throw new Error("KnowledgeAdapter is required. Use SpaceManager.createServer() for async initialization.");
+    }
     this.cache = new Map();
     this.subscriptions = new Map();
   }
@@ -72,7 +82,9 @@ export class SpaceManager {
   static async createServer(): Promise<SpaceManager> {
     const { getResourceAdapter: getRA, getKnowledgeAdapter: getKA } =
       await import("./factory");
-    return new SpaceManager(getRA(), getKA());
+    const resourceAdapter = await getRA();
+    const knowledgeAdapter = await getKA();
+    return new SpaceManager(resourceAdapter, knowledgeAdapter);
   }
 
   /**

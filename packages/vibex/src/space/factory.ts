@@ -29,7 +29,7 @@ function detectMode(): DataMode {
  * Get resource adapter for server-side use
  * Uses SQLite for local mode, throws for database mode (use @vibex/supabase)
  */
-export function getServerResourceAdapter(): ResourceAdapter {
+export async function getServerResourceAdapter(): Promise<ResourceAdapter> {
   if (typeof window !== "undefined") {
     throw new Error("getServerResourceAdapter() can only be called on the server");
   }
@@ -47,8 +47,7 @@ export function getServerResourceAdapter(): ResourceAdapter {
   }
 
   // Dynamic import to avoid bundling @vibex/local in client code
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { LocalResourceAdapter } = require("@vibex/local");
+  const { LocalResourceAdapter } = await import("@vibex/local");
   const adapter = new LocalResourceAdapter();
   resourceAdapterInstance = adapter;
   return adapter;
@@ -57,14 +56,14 @@ export function getServerResourceAdapter(): ResourceAdapter {
 /**
  * Get resource adapter (alias for getServerResourceAdapter)
  */
-export function getResourceAdapter(): ResourceAdapter {
+export async function getResourceAdapter(): Promise<ResourceAdapter> {
   return getServerResourceAdapter();
 }
 
 /**
  * Get storage adapter for server-side use
  */
-export function getStorageAdapter(): StorageAdapter {
+export async function getStorageAdapter(): Promise<StorageAdapter> {
   if (typeof window !== "undefined") {
     throw new Error("getStorageAdapter() can only be called on the server");
   }
@@ -81,8 +80,7 @@ export function getStorageAdapter(): StorageAdapter {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { LocalStorageAdapter } = require("@vibex/local");
+  const { LocalStorageAdapter } = await import("@vibex/local");
   const adapter = new LocalStorageAdapter();
   storageAdapterInstance = adapter;
   return adapter;
@@ -91,7 +89,7 @@ export function getStorageAdapter(): StorageAdapter {
 /**
  * Get knowledge adapter for server-side use
  */
-export function getKnowledgeAdapter(): KnowledgeAdapter {
+export async function getKnowledgeAdapter(): Promise<KnowledgeAdapter> {
   if (typeof window !== "undefined") {
     throw new Error("getKnowledgeAdapter() can only be called on the server");
   }
@@ -108,8 +106,7 @@ export function getKnowledgeAdapter(): KnowledgeAdapter {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { LocalKnowledgeAdapter } = require("@vibex/local");
+  const { LocalKnowledgeAdapter } = await import("@vibex/local");
   const adapter = new LocalKnowledgeAdapter();
   knowledgeAdapterInstance = adapter;
   return adapter;

@@ -527,7 +527,7 @@ Use "condition" for decision points.`,
     console.log(`[XAgent] Direct delegation to '${targetAgent}'`);
     let agent = this.space.getAgent(targetAgent);
     if (!agent) {
-      const resourceAdapter = getServerResourceAdapter();
+      const resourceAdapter = await getServerResourceAdapter();
       const agentConfig = await resourceAdapter.getAgent(targetAgent);
       if (!agentConfig) {
         throw new Error(`Agent '${targetAgent}' not found`);
@@ -608,7 +608,7 @@ Use "condition" for decision points.`,
   private async getAvailableAgents(): Promise<
     Array<{ id: string; name: string; description: string }>
   > {
-    const resourceAdapter = getServerResourceAdapter();
+    const resourceAdapter = await getServerResourceAdapter();
     const agents = await resourceAdapter.getAgents();
 
     return agents.map((a: any) => ({
@@ -810,8 +810,47 @@ Use "condition" for decision points.`,
                     },
                   });
 
+                  // Stream tool calls as data parts (AI SDK v6 doesn't support tool-call/tool-result directly in writer)
+                  if (event.toolCalls && event.toolCalls.length > 0) {
+                    for (const toolCall of event.toolCalls) {
+                      writer.write({
+                        type: "data-tool-call",
+                        id: `tool-${event.taskId}-${toolCall.name}`,
+                        data: {
+                          type: "tool-call",
+                          toolName: toolCall.name,
+                          args: toolCall.args,
+                          result: toolCall.result,
+                        },
+                      });
+                      // Also include in text for visibility
+                      writer.write({
+                        type: "text-delta",
+                        id: textId,
+                        delta: `   🔧 **${toolCall.name}**${toolCall.result !== undefined ? " ✓" : ""}\n`,
+                      });
+                    }
+                  }
+
+                  // Stream artifact as data part if available
+                  if (event.artifactId) {
+                    writer.write({
+                      type: "data-artifact",
+                      id: `artifact-${event.artifactId}`,
+                      data: {
+                        type: "artifact",
+                        artifactId: event.artifactId,
+                        title: event.taskTitle,
+                        version: 1,
+                      },
+                    });
+                  }
+
                   // Also write text for visibility
                   let text = `✅ **${event.agentName}** completed "${event.taskTitle}"\n`;
+                  if (event.toolCalls && event.toolCalls.length > 0) {
+                    text += `   🔧 Used ${event.toolCalls.length} tool(s)\n`;
+                  }
                   if (event.artifactId) {
                     text += `   📄 Created artifact: ${event.artifactId}\n`;
                   }
@@ -1265,6 +1304,13 @@ These artifacts are pre-loaded in the space and can be referenced in your respon
   static async start(goal: string, options: XOptions = {}): Promise<XAgent> {
     const { spaceId, model, singleAgentId } = options;
 
+    // Validate goal is a non-empty string
+    if (!goal || typeof goal !== "string") {
+      throw new Error(
+        `Invalid goal: must be a non-empty string, got ${typeof goal}`
+      );
+    }
+
     // Use provided spaceId or generate one
     const id =
       spaceId ||
@@ -1275,7 +1321,7 @@ These artifacts are pre-loaded in the space and can be referenced in your respon
     const space = await startSpace({
       spaceId: id,
       goal,
-      name: goal.slice(0, 50),
+      name: goal.slice(0, 50) || "New Space",
       model,
     });
 
@@ -1305,7 +1351,7 @@ These artifacts are pre-loaded in the space and can be referenced in your respon
     const { startSpace } = await import("../space");
 
     // Check if space exists using ResourceAdapter
-    const adapter = getServerResourceAdapter();
+    const adapter = await getServerResourceAdapter();
     const spaceModel = await adapter.getSpace(spaceId);
 
     if (!spaceModel) {

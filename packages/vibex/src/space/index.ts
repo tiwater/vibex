@@ -291,34 +291,58 @@ export class Space {
   }
 
   async persistState(): Promise<void> {
-    const adapter = getServerResourceAdapter();
-    await adapter.saveSpace({
-      id: this.spaceId,
-      name: this.name,
-      description: this.goal,
-      goal: this.goal,
-      userId: this.userId,
-      config: this.config,
-      createdAt: this.createdAt.toISOString(),
-      updatedAt: this.updatedAt.toISOString(),
-    } as any);
+    try {
+      const adapter = await getServerResourceAdapter();
+      // Test if adapter actually works (ensureInitialized is a LocalResourceAdapter method)
+      if (
+        "ensureInitialized" in adapter &&
+        typeof adapter.ensureInitialized === "function"
+      ) {
+        await adapter.ensureInitialized();
+      }
 
-    if (this.plan) {
-      await adapter.savePlan({
-        spaceId: this.spaceId,
-        plan: this.plan.toJSON(),
-        status: this.plan.isComplete() ? "completed" : "active",
-        summary: this.plan.getProgressSummary(),
-      });
-    } else {
-      await adapter.deletePlan(this.spaceId);
+      await adapter.saveSpace({
+        id: this.spaceId,
+        name: this.name,
+        description: this.goal,
+        goal: this.goal,
+        userId: this.userId,
+        config: this.config,
+        createdAt: this.createdAt.toISOString(),
+        updatedAt: this.updatedAt.toISOString(),
+      } as any);
+
+      if (this.plan) {
+        await adapter.savePlan({
+          spaceId: this.spaceId,
+          plan: this.plan.toJSON(),
+          status: this.plan.isComplete() ? "completed" : "active",
+          summary: this.plan.getProgressSummary(),
+        });
+      } else {
+        await adapter.deletePlan(this.spaceId);
+      }
+      console.log("[Space] State persisted via ResourceAdapter");
+    } catch (e) {
+      // Database unavailable - this is non-critical, space works in memory
+      console.warn(
+        `[Space] Failed to persist state (non-critical, working in-memory):`,
+        e instanceof Error ? e.message : String(e)
+      );
     }
-    console.log("[Space] State persisted via ResourceAdapter");
   }
 
   async loadState(): Promise<boolean> {
     try {
-      const adapter = getServerResourceAdapter();
+      const adapter = await getServerResourceAdapter();
+      // Test if adapter actually works (ensureInitialized is a LocalResourceAdapter method)
+      if (
+        "ensureInitialized" in adapter &&
+        typeof adapter.ensureInitialized === "function"
+      ) {
+        await adapter.ensureInitialized();
+      }
+
       const spaceData = await adapter.getSpace(this.spaceId);
       const planData = await adapter.getPlan(this.spaceId);
 
@@ -413,7 +437,9 @@ export async function startSpace({
 
   // Create minimal space config
   const spaceConfig: SpaceConfig = {
-    name: name || goal.slice(0, 50),
+    name:
+      name ||
+      (goal && typeof goal === "string" ? goal.slice(0, 50) : "New Space"),
     autoSave: true,
     checkpointInterval: 300,
   };
@@ -457,6 +483,9 @@ export async function startSpace({
   });
   space.xAgent = xAgent;
 
+  // Initialize default agents for multi-agent collaboration
+  await initializeDefaultAgents(space, model);
+
   // MCP tools are now loaded on-demand by agents, not pre-loaded
   // This avoids the need for a central tool registry
 
@@ -464,4 +493,91 @@ export async function startSpace({
   await space.persistState();
 
   return space;
+}
+
+/**
+ * Initialize default agents for multi-agent collaboration
+ */
+async function initializeDefaultAgents(
+  space: Space,
+  model?: string
+): Promise<void> {
+  try {
+    const { createResearcherAgent, createWriterAgent, createDeveloperAgent } =
+      await import("../runtime/factory");
+    const { getServerResourceAdapter } = await import("./factory");
+
+    const defaultAgents = [
+      createResearcherAgent({ model: model || "openai/gpt-4o-mini" }),
+      createWriterAgent({ model: model || "openai/gpt-4o-mini" }),
+      createDeveloperAgent({ model: model || "openai/gpt-4o-mini" }),
+    ];
+
+    // Try to get adapter, but don't fail if database is unavailable
+    // The adapter might be created but fail when actually used (e.g., better-sqlite3 native module issue)
+    let adapter: any = null;
+    let adapterAvailable = false;
+    try {
+      adapter = await getServerResourceAdapter();
+      // Test if adapter actually works by trying to use it
+      // This will fail if better-sqlite3 can't be loaded
+      await adapter.ensureInitialized?.();
+      adapterAvailable = true;
+    } catch (e) {
+      // Database unavailable (e.g., better-sqlite3 native module issue in Next.js)
+      // This is non-critical - agents will work in memory
+      console.warn(
+        `[Space] Database unavailable, agents will be in-memory only:`,
+        e instanceof Error ? e.message : String(e)
+      );
+      adapter = null;
+      adapterAvailable = false;
+    }
+
+    for (const agentInstance of defaultAgents) {
+      const agentConfig = agentInstance.toAgentConfig();
+
+      // Register agent in resource adapter (persistent storage) if available
+      if (adapter && adapterAvailable) {
+        try {
+          await adapter.saveAgent({
+            id: agentConfig.id || agentConfig.name,
+            name: agentConfig.name,
+            description: agentConfig.description || "",
+            systemPrompt: agentConfig.systemPrompt,
+            tools: agentConfig.tools || [],
+            llm:
+              agentConfig.provider && agentConfig.model
+                ? {
+                    provider: agentConfig.provider,
+                    model: agentConfig.model,
+                    settings: {
+                      temperature: agentConfig.temperature,
+                      maxOutputTokens: agentConfig.maxOutputTokens,
+                    },
+                  }
+                : undefined,
+          });
+          console.log(`[Space] Registered default agent: ${agentConfig.name}`);
+        } catch (e) {
+          // Agent might already exist or database unavailable - that's okay
+          console.warn(
+            `[Space] Agent ${agentConfig.name} persistence failed (non-critical):`,
+            e instanceof Error ? e.message : String(e)
+          );
+        }
+      }
+
+      // Always register in space's agent map for immediate use (in-memory)
+      const { Agent } = await import("../runtime/agent");
+      const agent = new Agent(agentConfig);
+      space.registerAgent(agentConfig.id || agentConfig.name, agent);
+      console.log(`[Space] Registered ${agentConfig.name} in memory`);
+    }
+
+    console.log(`[Space] Initialized ${defaultAgents.length} default agents`);
+  } catch (error) {
+    console.error("[Space] Failed to initialize default agents:", error);
+    // Don't throw - space can still work without default agents
+  }
 }

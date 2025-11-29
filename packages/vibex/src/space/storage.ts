@@ -21,10 +21,10 @@ export class BaseStorage {
     } else {
       // Only create LocalStorageAdapter on server
       if (typeof window === "undefined") {
-        // Dynamic import to avoid bundling fs in client
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { LocalStorageAdapter } = require("@vibex/local");
-        this.adapter = new LocalStorageAdapter();
+        // This will be initialized asynchronously - use init() method
+        throw new Error(
+          "BaseStorage requires an adapter. Use BaseStorage.init() for async initialization or provide an adapter in the constructor."
+        );
       } else {
         throw new Error(
           "LocalStorageAdapter cannot be used in client code. Provide a client-compatible adapter."

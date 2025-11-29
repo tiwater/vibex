@@ -50,19 +50,28 @@ export function getTextContent(message: Message): string {
  * This is used in API routes to extract text from client messages
  */
 export function getTextFromXChatMessage(msg: {
-  content: string;
+  content?: string;
   parts?: Array<{
     type: string;
     text?: string;
   }>;
 }): string {
-  if (msg.parts && msg.parts.length > 0) {
-    return msg.parts
-      .filter((p): p is { type: "text"; text: string } => p.type === "text")
-      .map((p) => p.text)
-      .join("");
+  if (!msg) {
+    return "";
   }
-  return msg.content || "";
+  if (msg.parts && Array.isArray(msg.parts) && msg.parts.length > 0) {
+    const textParts = msg.parts
+      .filter(
+        (p): p is { type: "text"; text: string } =>
+          p.type === "text" && p.text != null && typeof p.text === "string"
+      )
+      .map((p) => p.text || "")
+      .filter((text) => text && text.length > 0);
+    if (textParts.length > 0) {
+      return textParts.join("");
+    }
+  }
+  return msg.content && typeof msg.content === "string" ? msg.content : "";
 }
 
 /**

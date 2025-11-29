@@ -13,11 +13,28 @@ import type {
   ModelProviderType,
   PlanType,
 } from "@vibex/core";
-import Database from "better-sqlite3";
 import { customAlphabet } from "nanoid";
 import os from "os";
 import path from "path";
 import fs from "fs";
+
+// Lazy load better-sqlite3 to avoid bundling issues with native modules
+let Database: any = null;
+let DatabasePromise: Promise<any> | null = null;
+
+async function getDatabase(): Promise<any> {
+  if (Database) {
+    return Database;
+  }
+  if (DatabasePromise) {
+    return await DatabasePromise;
+  }
+  DatabasePromise = import("better-sqlite3").then((mod) => {
+    Database = mod.default || mod;
+    return Database;
+  });
+  return await DatabasePromise;
+}
 
 const ID_ALPHABET =
   "abcdefghijklmnopqrstuvwxyz0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -36,16 +53,43 @@ function resolveRoot(): string {
 }
 
 export class LocalResourceAdapter implements ResourceAdapter {
-  private db: Database.Database;
+  private db: any;
+  private initPromise: Promise<void>;
 
   constructor() {
-    const root = resolveRoot();
-    if (!fs.existsSync(root)) {
-      fs.mkdirSync(root, { recursive: true });
+    this.initPromise = this.init();
+  }
+
+  private async init(): Promise<void> {
+    try {
+      const Database = await getDatabase();
+      const root = resolveRoot();
+      if (!fs.existsSync(root)) {
+        fs.mkdirSync(root, { recursive: true });
+      }
+      const dbPath = path.join(root, "vibex.db");
+      this.db = new Database(dbPath);
+      this.initSchema();
+    } catch (error) {
+      // Database initialization failed (e.g., better-sqlite3 native module issue)
+      // Store the error so ensureInitialized() can throw it
+      this.db = null;
+      throw error;
     }
-    const dbPath = path.join(root, "vibex.db");
-    this.db = new Database(dbPath);
-    this.initSchema();
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    try {
+      await this.initPromise;
+    } catch (error) {
+      // Re-throw with a clearer message
+      throw new Error(
+        `Database initialization failed: ${error instanceof Error ? error.message : String(error)}. This is likely due to better-sqlite3 native module issues in Next.js/Turbopack.`
+      );
+    }
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
   }
 
   private initSchema() {
@@ -145,6 +189,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   // ==================== Agents ====================
 
   async getAgents(): Promise<AgentType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare("SELECT * FROM agents ORDER BY created_at DESC")
       .all() as any[];
@@ -159,6 +204,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getAgent(id: string): Promise<AgentType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM agents WHERE id = ?")
       .get(id) as any;
@@ -174,6 +220,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async saveAgent(agent: AgentType): Promise<AgentType> {
+    await this.ensureInitialized();
     const { id, name, description, createdAt, updatedAt, ...rest } = agent;
     const now = new Date().toISOString();
 
@@ -201,10 +248,12 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deleteAgent(id: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM agents WHERE id = ?").run(id);
   }
 
   async cloneAgent(id: string): Promise<AgentType> {
+    await this.ensureInitialized();
     const agent = await this.getAgent(id);
     if (!agent) throw new Error(`Agent ${id} not found`);
 
@@ -217,6 +266,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   // ==================== Tools ====================
 
   async getTools(): Promise<ToolType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare("SELECT * FROM tools ORDER BY created_at DESC")
       .all() as any[];
@@ -232,6 +282,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getTool(id: string): Promise<ToolType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM tools WHERE id = ?")
       .get(id) as any;
@@ -248,6 +299,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async saveTool(tool: ToolType): Promise<ToolType> {
+    await this.ensureInitialized();
     const { id, name, description, createdAt, updatedAt, ...rest } = tool;
     const now = new Date().toISOString();
 
@@ -275,10 +327,12 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deleteTool(id: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM tools WHERE id = ?").run(id);
   }
 
   async cloneTool(id: string): Promise<ToolType> {
+    await this.ensureInitialized();
     const tool = await this.getTool(id);
     if (!tool) throw new Error(`Tool ${id} not found`);
 
@@ -291,6 +345,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   // ==================== Spaces ====================
 
   async getSpaces(): Promise<SpaceType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare("SELECT * FROM spaces ORDER BY updated_at DESC")
       .all() as any[];
@@ -306,6 +361,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getSpace(id: string): Promise<SpaceType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM spaces WHERE id = ?")
       .get(id) as any;
@@ -322,6 +378,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async saveSpace(space: SpaceType): Promise<SpaceType> {
+    await this.ensureInitialized();
     const { id, name, description, goal, config, createdAt } = space;
     const now = new Date().toISOString();
     const serializedConfig = JSON.stringify(config || {});
@@ -344,12 +401,14 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deleteSpace(id: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM spaces WHERE id = ?").run(id);
   }
 
   // ==================== Plans ====================
 
   async getPlan(spaceId: string): Promise<PlanType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM space_plans WHERE space_id = ?")
       .get(spaceId) as any;
@@ -365,6 +424,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async savePlan(plan: PlanType): Promise<PlanType> {
+    await this.ensureInitialized();
     const now = new Date().toISOString();
     this.db
       .prepare(
@@ -394,6 +454,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deletePlan(spaceId: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM space_plans WHERE space_id = ?").run(spaceId);
   }
 
@@ -416,6 +477,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getArtifacts(spaceId: string): Promise<ArtifactType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare(
         "SELECT * FROM artifacts WHERE space_id = ? ORDER BY created_at DESC"
@@ -425,6 +487,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getArtifact(id: string): Promise<ArtifactType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM artifacts WHERE id = ?")
       .get(id) as any;
@@ -433,6 +496,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async saveArtifact(artifact: ArtifactType): Promise<ArtifactType> {
+    await this.ensureInitialized();
     const {
       id,
       spaceId,
@@ -481,10 +545,12 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deleteArtifact(id: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM artifacts WHERE id = ?").run(id);
   }
 
   async getArtifactsBySpace(spaceId: string): Promise<ArtifactType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare(
         "SELECT * FROM artifacts WHERE space_id = ? AND conversation_id IS NULL ORDER BY created_at DESC"
@@ -496,6 +562,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   async getArtifactsByConversation(
     conversationId: string
   ): Promise<ArtifactType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare(
         "SELECT * FROM artifacts WHERE conversation_id = ? ORDER BY created_at DESC"
@@ -509,6 +576,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
     category: "input" | "intermediate" | "output",
     isConversation = false
   ): Promise<ArtifactType[]> {
+    await this.ensureInitialized();
     const field = isConversation ? "conversation_id" : "space_id";
     const rows = this.db
       .prepare(
@@ -521,6 +589,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   // ==================== Conversations ====================
 
   async getConversations(spaceId: string): Promise<ConversationType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare(
         "SELECT * FROM conversations WHERE space_id = ? ORDER BY updated_at DESC"
@@ -538,6 +607,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getConversation(id: string): Promise<ConversationType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM conversations WHERE id = ?")
       .get(id) as any;
@@ -556,6 +626,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   async saveConversation(
     conversation: ConversationType
   ): Promise<ConversationType> {
+    await this.ensureInitialized();
     const { id, spaceId, title, messages, metadata, createdAt } = conversation;
     const now = new Date().toISOString();
 
@@ -585,12 +656,14 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deleteConversation(id: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM conversations WHERE id = ?").run(id);
   }
 
   // ==================== Model Providers ====================
 
   async getModelProviders(): Promise<ModelProviderType[]> {
+    await this.ensureInitialized();
     const rows = this.db
       .prepare("SELECT * FROM model_providers ORDER BY created_at DESC")
       .all() as any[];
@@ -605,6 +678,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async getModelProvider(id: string): Promise<ModelProviderType | null> {
+    await this.ensureInitialized();
     const row = this.db
       .prepare("SELECT * FROM model_providers WHERE id = ?")
       .get(id) as any;
@@ -622,6 +696,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   async saveModelProvider(
     provider: ModelProviderType
   ): Promise<ModelProviderType> {
+    await this.ensureInitialized();
     const { id, provider: providerName, createdAt, ...rest } = provider;
     const now = new Date().toISOString();
 
@@ -641,6 +716,7 @@ export class LocalResourceAdapter implements ResourceAdapter {
   }
 
   async deleteModelProvider(id: string): Promise<void> {
+    await this.ensureInitialized();
     this.db.prepare("DELETE FROM model_providers WHERE id = ?").run(id);
   }
 }

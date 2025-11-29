@@ -82,6 +82,38 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
           status,
         });
       }
+    } else if (part.type.startsWith("data-")) {
+      // Handle custom data parts (e.g., delegation events)
+      // AI SDK v6 uses "data-${string}" format, e.g., "data-delegation"
+      const dataPart = part as { type: string; data?: unknown };
+      if (dataPart.data && typeof dataPart.data === "object") {
+        const data = dataPart.data as Record<string, unknown>;
+        if (data.type === "delegation") {
+          // Format delegation event as text for visibility
+          const status = data.status as string;
+          const taskTitle = data.taskTitle as string;
+          const agentName = data.agentName as string;
+          const artifactId = data.artifactId as string | undefined;
+          const error = data.error as string | undefined;
+
+          let delegationText = "";
+          if (status === "started") {
+            delegationText = `🔄 **Delegated** "${taskTitle}" to **${agentName}**\n\n`;
+          } else if (status === "completed") {
+            delegationText = `✅ **${agentName}** completed "${taskTitle}"\n`;
+            if (artifactId) {
+              delegationText += `   📄 Created artifact: ${artifactId}\n`;
+            }
+            delegationText += "\n";
+          } else if (status === "failed") {
+            delegationText = `❌ **${agentName}** failed on "${taskTitle}": ${error || "Unknown error"}\n\n`;
+          }
+
+          if (delegationText) {
+            xParts.push({ type: "text", text: delegationText });
+          }
+        }
+      }
     }
   }
 

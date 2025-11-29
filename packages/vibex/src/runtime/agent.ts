@@ -97,7 +97,7 @@ export class Agent {
     this.tools = config.tools || [];
     this.personality = config.personality;
 
-    // Custom tools registered dynamically (for subclasses like BrowserAgent)
+    // Custom tools registered dynamically (for agent subclasses)
     this.customTools = new Map();
   }
 
@@ -105,7 +105,7 @@ export class Agent {
   protected customTools: Map<string, any>;
 
   /**
-   * Register a custom tool (for subclasses like BrowserAgent)
+   * Register a custom tool (for agent subclasses)
    */
   protected registerTool(name: string, tool: any): void {
     this.customTools.set(name, tool);
