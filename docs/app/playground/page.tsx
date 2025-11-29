@@ -164,7 +164,7 @@ export default function PlaygroundPage() {
                             className={`h-7 px-2 text-xs transition-all ${
                               (value as ChatMode) === chatMode
                                 ? "bg-muted text-foreground border-border shadow-sm font-semibold"
-                                : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
+                                : "bg-transparent shadow-none text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
                             }`}
                           >
                             <Icon className="w-3 h-3 shrink-0" />
@@ -210,7 +210,7 @@ export default function PlaygroundPage() {
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
               {/* Messages */}
               {messages.length === 0 ? (
-                <div className="flex-1 flex items-start justify-center overflow-auto">
+                <div className="flex-1 flex items-center justify-center overflow-auto">
                   <div className="text-center max-w-md px-8 pt-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
