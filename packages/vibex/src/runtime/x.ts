@@ -19,7 +19,11 @@ import { Space } from "../space";
 import { getServerResourceAdapter } from "../space/factory";
 import { Plan } from "../space/plan";
 import { Task } from "../space/task";
-import { generateObject } from "ai";
+import {
+  generateObject,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+} from "ai";
 import type { StreamTextResult } from "ai";
 type StreamTextResultType = StreamTextResult<Record<string, any>, any>;
 import { z } from "zod/v3";
@@ -640,9 +644,6 @@ Use "condition" for decision points.`,
     return {
       ...stream,
       toUIMessageStreamResponse: async () => {
-        const { createUIMessageStream, createUIMessageStreamResponse } =
-          await import("ai");
-
         const uiStream = createUIMessageStream({
           async execute({ writer }) {
             const textId = "direct-response-text";
@@ -952,9 +953,6 @@ Use "condition" for decision points.`,
       text: streamContent,
       toUIMessageStreamResponse: async () => {
         // Use createUIMessageStream to properly stream delegation events
-        const { createUIMessageStream, createUIMessageStreamResponse } =
-          await import("ai");
-
         const stream = createUIMessageStream({
           async execute({ writer }) {
             const textId = "orchestration-text";

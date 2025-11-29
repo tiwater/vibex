@@ -54,7 +54,7 @@ async function loadToolConfig(toolId: string): Promise<ToolConfig> {
   try {
     // Dynamic import to avoid circular dependency
     const { getServerResourceAdapter } = await import("vibex");
-    const adapter = getServerResourceAdapter();
+    const adapter = await getServerResourceAdapter();
 
     // Get tool from adapter
     const tool = await adapter.getTool(toolId);
