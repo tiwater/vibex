@@ -210,8 +210,8 @@ export default function PlaygroundPage() {
             <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
               {/* Messages */}
               {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center overflow-auto">
-                  <div className="text-center max-w-md px-8 pt-8">
+                <div className="flex-1 flex items-center justify-center overflow-auto pt-8">
+                  <div className="text-center max-w-md px-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}

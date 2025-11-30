@@ -324,7 +324,7 @@ export async function executePlan(
 async function executeTask(
   task: Task,
   space: Space,
-  _model: LanguageModel, // Reserved for future use
+  model: LanguageModel, // Model to use for agent execution
   previousResults: Map<string, string>,
   onEvent: (event: DelegationEvent) => void
 ): Promise<{
@@ -420,9 +420,11 @@ async function executeTask(
 
   try {
     // Execute the agent using streamText to capture tool calls
+    // Pass the model from the orchestrator so all agents use the same model
     const stream = await agent.streamText({
       messages: [{ role: "user", content: prompt }] as XMessage[],
       spaceId: space.spaceId,
+      model, // Use the orchestrator's model for consistency
       metadata: {
         taskId: task.id,
         taskTitle: task.title,

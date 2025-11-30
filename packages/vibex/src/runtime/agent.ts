@@ -391,6 +391,7 @@ export class Agent {
     system?: string;
     spaceId?: string;
     metadata?: Record<string, any>;
+    model?: LanguageModel; // Optional model override
     [key: string]: any; // Allow all other AI SDK options to pass through
   }): Promise<any> {
     // Extract context-specific options
@@ -399,6 +400,7 @@ export class Agent {
       system,
       spaceId,
       metadata,
+      model: modelOverride,
       ...aiSdkOptions
     } = options;
 
@@ -422,7 +424,8 @@ export class Agent {
     const basePrompt = this.getSystemPrompt(context);
     const systemPrompt = system ? `${basePrompt}\n\n${system}` : basePrompt;
 
-    const model = this.getModel({ spaceId, userId: enrichedMetadata.userId });
+    // Use override model if provided, otherwise use agent's configured model
+    const model = modelOverride || this.getModel({ spaceId, userId: enrichedMetadata.userId });
     const tools = await this.getTools({ spaceId });
 
     // Generate a message ID that includes the agent name
@@ -591,6 +594,7 @@ export class Agent {
     system?: string;
     spaceId?: string;
     metadata?: Record<string, any>;
+    model?: LanguageModel; // Optional model override
     [key: string]: any;
   }): Promise<any> {
     const {
@@ -598,6 +602,7 @@ export class Agent {
       system,
       spaceId,
       metadata,
+      model: modelOverride,
       ...aiSdkOptions
     } = options;
 
@@ -621,7 +626,8 @@ export class Agent {
     const basePrompt = this.getSystemPrompt(context);
     const systemPrompt = system ? `${basePrompt}\n\n${system}` : basePrompt;
 
-    const model = this.getModel({ spaceId, userId: enrichedMetadata.userId });
+    // Use override model if provided, otherwise use agent's configured model
+    const model = modelOverride || this.getModel({ spaceId, userId: enrichedMetadata.userId });
     const tools = await this.getTools({ spaceId });
 
     // Convert XMessage[] to ModelMessage[] ONLY here, right before AI SDK call
