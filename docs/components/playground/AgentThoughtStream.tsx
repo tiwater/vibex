@@ -54,11 +54,11 @@ const AGENT_COLORS: Record<string, string> = {
 };
 
 const EVENT_ICONS = {
-  thought: "💭",
-  action: "⚡",
-  handoff: "🔄",
-  artifact: "📄",
-  complete: "✅",
+  thought: "",
+  action: "",
+  handoff: "",
+  artifact: "",
+  complete: "",
 };
 
 function ThoughtEventCard({ event }: { event: ThoughtEvent }) {

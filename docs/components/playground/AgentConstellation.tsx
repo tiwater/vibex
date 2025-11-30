@@ -120,7 +120,7 @@ function AgentNode({ agent }: { agent: ConstellationAgent }) {
               "max-w-[180px] truncate"
             )}
           >
-            <span className={cn("mr-1", colors.text)}>💭</span>
+            <span className={cn("mr-1", colors.text)}></span>
             {agent.thought}
             {/* Arrow */}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-popover/95" />
