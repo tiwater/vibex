@@ -585,25 +585,45 @@ export async function synthesizeResults(
     })
     .join("\n\n");
 
-  const result = await generateObject({
-    model,
-    schema: z.object({
-      text: z.string().describe("The final synthesized response"),
-    }),
-    system: `You are X, synthesizing results from multiple agents to answer the user's request.
+  const systemPrompt = `You are X, synthesizing results from multiple agents to answer the user's request.
 
 Your role:
 - Combine the insights from all agents into a coherent response
 - Credit the agents that contributed to each part
 - Highlight key findings and recommendations
-- Be concise but comprehensive`,
-    prompt: `Original request: ${originalRequest}
+- Be concise but comprehensive`;
+
+  const userPrompt = `Original request: ${originalRequest}
 
 Results from agents:
 ${resultsSummary}
 
-Synthesize these results into a final response for the user.`,
-  });
+Synthesize these results into a final response for the user.`;
 
-  return result.object.text;
+  try {
+    // Try structured output first
+    const result = await generateObject({
+      model,
+      schema: z.object({
+        text: z.string().describe("The final synthesized response"),
+      }),
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
+    return result.object.text;
+  } catch (error) {
+    // Fallback to plain text generation if structured output fails
+    console.warn(
+      "[synthesizeResults] Structured output failed, falling back to text generation:",
+      error instanceof Error ? error.message : error
+    );
+
+    const { generateText } = await import("ai");
+    const textResult = await generateText({
+      model,
+      system: systemPrompt,
+      prompt: userPrompt,
+    });
+    return textResult.text;
+  }
 }
