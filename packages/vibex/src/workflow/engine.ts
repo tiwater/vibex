@@ -16,11 +16,19 @@ import {
   ExecutionContext,
   ExecutionNode,
   ExecutionStatus,
+  AgentExecutionNode,
+  ToolExecutionNode,
+  ConditionNode,
   // Legacy aliases for backward compatibility
   Workflow,
 } from "./types";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from "uuid";
+import { Agent } from "../runtime/agent";
+import type { AgentConfig } from "../config";
+import { buildToolMap } from "../runtime/tool";
+import type { XMessage } from "../space/message";
+import jsonLogic from "json-logic-js";
 
 export class WorkflowEngine extends EventEmitter {
   private graphs: Map<string, ExecutionGraph> = new Map();
@@ -221,25 +229,98 @@ export class WorkflowEngine extends EventEmitter {
   private async executeAgentNode(
     context: ExecutionContext,
     node: ExecutionNode
-  ): Promise<Record<string, string>> {
-    const config = node.config as { prompt?: string } | undefined;
-    const prompt = config?.prompt
+  ): Promise<Record<string, unknown>> {
+    const agentNode = node as AgentExecutionNode;
+    const config = agentNode.config;
+
+    if (!config?.agentConfig) {
+      throw new Error(
+        `[WorkflowEngine] Agent node ${node.id} is missing agentConfig`
+      );
+    }
+
+    const agentConfig: AgentConfig = {
+      id: config.agentConfig.id || config.agentId || node.id,
+      name: config.agentConfig.name || config.agentId || node.name,
+      description:
+        config.agentConfig.description ||
+        node.description ||
+        `Workflow agent ${config.agentId}`,
+      ...config.agentConfig,
+    };
+
+    // Ensure required LLM configuration is present
+    if (!agentConfig.llm && (!agentConfig.provider || !agentConfig.model)) {
+      throw new Error(
+        `[WorkflowEngine] Agent node ${node.id} missing provider/model configuration`
+      );
+    }
+
+    const agent = new Agent(agentConfig);
+    const prompt = config.prompt
       ? this.replaceVariables(config.prompt, context.variables)
       : "";
-    // TODO: Integrate with actual agent execution
-    return { [node.id]: `Executed agent with prompt: ${prompt}` };
+
+    const messages: XMessage[] = [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ];
+
+    const response = await agent.generateText({
+      messages,
+      system: config.system,
+      spaceId: this.getSpaceIdFromContext(context),
+      metadata: {
+        workflowContextId: context.id,
+        nodeId: node.id,
+      },
+      temperature: config.temperature,
+    });
+
+    return {
+      [`${config.agentId || node.id}_output`]: response.text,
+      [`${config.agentId || node.id}_toolCalls`]: response.toolCalls,
+      [`${config.agentId || node.id}_metadata`]: response.metadata,
+    };
   }
 
   private async executeToolNode(
     context: ExecutionContext,
     node: ExecutionNode
   ): Promise<Record<string, unknown>> {
-    const config = node.config as
-      | { toolName?: string; arguments?: Record<string, unknown> }
-      | undefined;
-    // TODO: Integrate with tool registry
-    void context; // Will be used for variable resolution
-    return { [node.id]: `Executed tool: ${config?.toolName}` };
+    const toolNode = node as ToolExecutionNode;
+    const config = toolNode.config;
+
+    if (!config?.toolName) {
+      throw new Error(
+        `[WorkflowEngine] Tool node ${node.id} missing toolName configuration`
+      );
+    }
+
+    const toolMap = await buildToolMap([config.toolName]);
+    const tool = toolMap[config.toolName];
+
+    if (!tool) {
+      throw new Error(
+        `[WorkflowEngine] Tool ${config.toolName} not found in registry`
+      );
+    }
+
+    const resolvedArgs = this.resolveArguments(
+      config.arguments || {},
+      context.variables
+    );
+
+    const result = await tool.execute(resolvedArgs, {
+      workflowContextId: context.id,
+      nodeId: node.id,
+    });
+
+    return {
+      [`${config.toolName}_result`]: result,
+    };
   }
 
   private async executeParallelNode(
@@ -267,13 +348,27 @@ export class WorkflowEngine extends EventEmitter {
     context: ExecutionContext,
     node: ExecutionNode
   ): string {
-    const config = node.config as
-      | { expression?: string; yes?: string; no?: string }
-      | undefined;
-    // TODO: Implement secure expression evaluation (json-logic-js)
-    // For now, always take the 'yes' branch
-    void context; // Will be used for expression evaluation
-    return config?.yes || "";
+    const conditionNode = node as ConditionNode;
+    const config = conditionNode.config;
+    if (!config?.expression) {
+      return config?.yes || "";
+    }
+
+    try {
+      const replaced = this.replaceVariables(
+        config.expression,
+        context.variables
+      );
+      const expression = JSON.parse(replaced);
+      const result = jsonLogic.apply(expression, context.variables);
+      return result ? config.yes : config.no;
+    } catch (error) {
+      console.warn(
+        `[WorkflowEngine] Failed to evaluate condition for node ${node.id}:`,
+        error
+      );
+      return config.no || "";
+    }
   }
 
   private replaceVariables(
@@ -284,6 +379,38 @@ export class WorkflowEngine extends EventEmitter {
       const value = variables[key.trim()];
       return value !== undefined ? String(value) : "";
     });
+  }
+
+  private resolveArguments(
+    value: unknown,
+    variables: Record<string, unknown>
+  ): unknown {
+    if (typeof value === "string") {
+      return this.replaceVariables(value, variables);
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.resolveArguments(item, variables));
+    }
+
+    if (value && typeof value === "object") {
+      const result: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(
+        value as Record<string, unknown>
+      )) {
+        result[key] = this.resolveArguments(val, variables);
+      }
+      return result;
+    }
+
+    return value;
+  }
+
+  private getSpaceIdFromContext(
+    context: ExecutionContext
+  ): string | undefined {
+    const spaceId = context.variables?.spaceId;
+    return typeof spaceId === "string" ? spaceId : undefined;
   }
 
   // Legacy aliases for backward compatibility

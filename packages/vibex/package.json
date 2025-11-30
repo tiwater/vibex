@@ -26,6 +26,7 @@
     "@vibex/defaults": "workspace:*",
     "@vibex/local": "workspace:*",
     "ai": "^6.0.0-beta.122",
+    "json-logic-js": "^2.0.5",
     "nanoid": "^5.0.0",
     "uuid": "^13.0.0",
     "yaml": "^2.8.1",
