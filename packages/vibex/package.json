@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --external @vibex/core --external @vibex/local --external @vibex/tools",
+    "build": "tsup",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "lint": "eslint src/",
     "test": "vitest"
@@ -21,10 +21,12 @@
     "@ai-sdk/anthropic": "^2.0.49",
     "@ai-sdk/deepseek": "^1.0.29",
     "@ai-sdk/openai": "^2.0.73",
+    "@modelcontextprotocol/sdk": "^1.23.0",
     "@openrouter/ai-sdk-provider": "^1.2.7",
     "@vibex/core": "workspace:*",
     "@vibex/defaults": "workspace:*",
     "@vibex/local": "workspace:*",
+    "@vibex/tools": "workspace:*",
     "ai": "^6.0.0-beta.122",
     "json-logic-js": "^2.0.5",
     "nanoid": "^5.0.0",

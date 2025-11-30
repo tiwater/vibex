@@ -2,95 +2,95 @@
  * @vibex/defaults - Default configurations and templates
  *
  * This package provides default configurations for agents, tools, spaces, and prompts.
- * The actual YAML/MD files are in the src/ directory and should be accessed via
- * the file system or bundled as assets.
+ * All YAML/MD files are imported at build time and bundled into the output.
  */
-
-import * as path from "path";
-import * as fs from "fs";
-import * as yaml from "yaml";
-import { fileURLToPath } from "url";
-
-// Handle both CommonJS and ESM
-const getDirname = () => {
-  if (typeof __dirname !== "undefined") {
-    return __dirname;
-  }
-  // ESM mode - use import.meta.url
-  if (typeof import.meta !== "undefined" && import.meta.url) {
-    return path.dirname(fileURLToPath(import.meta.url));
-  }
-  // Fallback
-  throw new Error("Cannot determine __dirname in this environment");
-};
-
-/**
- * Get the path to the defaults directory
- */
-export function getDefaultsPath(): string {
-  return path.join(getDirname(), "..");
-}
-
-/**
- * Get the path to a specific defaults subdirectory
- */
-export function getDefaultsSubPath(subPath: string): string {
-  return path.join(getDefaultsPath(), subPath);
-}
-
-/**
- * List all agent templates
- */
-export function listAgentTemplates(): string[] {
-  const agentsDir = getDefaultsSubPath("agents");
-  try {
-    return fs.readdirSync(agentsDir).filter((f) => f.endsWith(".yaml"));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * List all space templates
- */
-export function listSpaceTemplates(): string[] {
-  const spacesDir = getDefaultsSubPath("spaces");
-  try {
-    return fs.readdirSync(spacesDir).filter((f) => {
-      const stat = fs.statSync(path.join(spacesDir, f));
-      return stat.isDirectory();
-    });
-  } catch {
-    return [];
-  }
-}
-
-/**
- * List all tool configurations
- */
-export function listToolConfigs(): string[] {
-  const toolsDir = getDefaultsSubPath("tools");
-  try {
-    return fs.readdirSync(toolsDir).filter((f) => f.endsWith(".yaml"));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Default paths for common resources
- */
-export const DefaultPaths = {
-  agents: () => getDefaultsSubPath("agents"),
-  spaces: () => getDefaultsSubPath("spaces"),
-  tools: () => getDefaultsSubPath("tools"),
-  prompts: () => getDefaultsSubPath("prompts"),
-  config: () => getDefaultsSubPath("config"),
-  datasources: () => getDefaultsSubPath("datasources"),
-} as const;
 
 // ============================================================================
-// Agent YAML Configuration Types
+// Agent Imports (YAML files bundled at build time)
+// ============================================================================
+
+import assistantAgent from "./agents/assistant.yaml";
+import codeReviewerAgent from "./agents/code-reviewer.yaml";
+import contentWriterAgent from "./agents/content-writer.yaml";
+import dbaAgent from "./agents/dba.yaml";
+import developerAgent from "./agents/developer.yaml";
+import officeAgent from "./agents/office.yaml";
+import researcherAgent from "./agents/researcher.yaml";
+import webResearcherAgent from "./agents/web-researcher.yaml";
+
+// ============================================================================
+// Tool Imports (YAML files bundled at build time)
+// ============================================================================
+
+import chromeDevtoolsTool from "./tools/chrome-devtools.yaml";
+import dbgateTool from "./tools/dbgate.yaml";
+import githubTool from "./tools/github.yaml";
+import officeTool from "./tools/office.yaml";
+import playwrightTool from "./tools/playwright.yaml";
+import postgresTool from "./tools/postgres.yaml";
+import supabaseTool from "./tools/supabase.yaml";
+
+// ============================================================================
+// Config Imports
+// ============================================================================
+
+import toolsConfig from "./config/tools.yaml";
+
+// ============================================================================
+// Prompt Imports (MD files bundled at build time)
+// ============================================================================
+
+import assistantPrompt from "./prompts/assistant.md";
+import codeReviewerPrompt from "./prompts/code-reviewer.md";
+import contentWriterPrompt from "./prompts/content-writer.md";
+import dbaPrompt from "./prompts/dba.md";
+import developerPrompt from "./prompts/developer.md";
+import officePrompt from "./prompts/office.md";
+import researcherPrompt from "./prompts/researcher.md";
+import webResearcherPrompt from "./prompts/web-researcher.md";
+
+// ============================================================================
+// Agent Registry
+// ============================================================================
+
+const agentConfigs: Record<string, AgentYamlConfig> = {
+  assistant: assistantAgent as AgentYamlConfig,
+  "code-reviewer": codeReviewerAgent as AgentYamlConfig,
+  "content-writer": contentWriterAgent as AgentYamlConfig,
+  dba: dbaAgent as AgentYamlConfig,
+  developer: developerAgent as AgentYamlConfig,
+  office: officeAgent as AgentYamlConfig,
+  researcher: researcherAgent as AgentYamlConfig,
+  "web-researcher": webResearcherAgent as AgentYamlConfig,
+};
+
+const promptContents: Record<string, string> = {
+  "assistant.md": assistantPrompt as string,
+  "code-reviewer.md": codeReviewerPrompt as string,
+  "content-writer.md": contentWriterPrompt as string,
+  "dba.md": dbaPrompt as string,
+  "developer.md": developerPrompt as string,
+  "office.md": officePrompt as string,
+  "researcher.md": researcherPrompt as string,
+  "web-researcher.md": webResearcherPrompt as string,
+};
+
+// ============================================================================
+// Tool Registry
+// ============================================================================
+
+const toolConfigs: Record<string, ToolYamlConfig> = {
+  "chrome-devtools": chromeDevtoolsTool as unknown as ToolYamlConfig,
+  dbgate: dbgateTool as unknown as ToolYamlConfig,
+  github: githubTool as unknown as ToolYamlConfig,
+  office: officeTool as unknown as ToolYamlConfig,
+  playwright: playwrightTool as unknown as ToolYamlConfig,
+  postgres: postgresTool as unknown as ToolYamlConfig,
+  supabase: supabaseTool as unknown as ToolYamlConfig,
+};
+
+// ============================================================================
+// Type Definitions
 // ============================================================================
 
 export interface AgentYamlConfig {
@@ -141,74 +141,58 @@ export interface LoadedAgentConfig {
   presencePenalty?: number;
 }
 
+export interface ToolYamlConfig {
+  id: string;
+  name: string;
+  description?: string;
+  type: "builtin" | "mcp";
+  category?: string;
+  icon?: string;
+  transport?: "stdio" | "http" | "sse" | "websocket";
+  command?: string;
+  args?: string[];
+  url?: string;
+  enabled?: boolean;
+  configSchema?: Array<{
+    field: string;
+    label: string;
+    type: string;
+    required?: boolean;
+    envVar?: string;
+  }>;
+  tags?: string[];
+  features?: string[];
+}
+
+interface RuntimeToolConfig {
+  id: string;
+  enabled: boolean;
+  config?: Record<string, unknown>;
+}
+
 // ============================================================================
-// Agent Loading Functions
+// Agent Functions
 // ============================================================================
 
 /**
- * Get the source directory path (handles both dev and production builds)
+ * List all agent template IDs
  */
-function getSourcePath(): string {
-  // In development: __dirname = packages/defaults/src
-  // In production: __dirname = packages/defaults/dist
-  // We need to go up and check for src/ or use the current structure
-  const defaultsPath = getDefaultsPath();
-  const srcPath = path.join(defaultsPath, "src");
-
-  // Check if we're in a built package (dist exists) or source (src exists)
-  if (fs.existsSync(srcPath)) {
-    return srcPath;
-  }
-  // If src doesn't exist, we might be in a different structure
-  // Try to find src relative to the package root
-  const possibleSrc = path.join(defaultsPath, "..", "src");
-  if (fs.existsSync(possibleSrc)) {
-    return possibleSrc;
-  }
-  // Fallback: assume we're in the package root and src is here
-  return defaultsPath;
+export function listAgentTemplates(): string[] {
+  return Object.keys(agentConfigs);
 }
 
 /**
- * Load an agent YAML configuration file
+ * Load an agent YAML configuration by ID
  */
 export function loadAgentYaml(agentId: string): AgentYamlConfig | null {
-  try {
-    const sourcePath = getSourcePath();
-    const agentsDir = path.join(sourcePath, "agents");
-    const yamlPath = path.join(agentsDir, `${agentId}.yaml`);
-
-    if (!fs.existsSync(yamlPath)) {
-      return null;
-    }
-
-    const content = fs.readFileSync(yamlPath, "utf-8");
-    const config = yaml.parse(content) as AgentYamlConfig;
-    return config;
-  } catch (error) {
-    console.warn(`[defaults] Failed to load agent ${agentId}:`, error);
-    return null;
-  }
+  return agentConfigs[agentId] || null;
 }
 
 /**
- * Load a prompt file
+ * Load a prompt file by name
  */
 export function loadPromptFile(promptFileName: string): string | null {
-  try {
-    const sourcePath = getSourcePath();
-    const promptsDir = path.join(sourcePath, "prompts");
-    const promptPath = path.join(promptsDir, promptFileName);
-
-    if (!fs.existsSync(promptPath)) {
-      return null;
-    }
-
-    return fs.readFileSync(promptPath, "utf-8");
-  } catch (error) {
-    console.warn(`[defaults] Failed to load prompt ${promptFileName}:`, error);
-    return null;
-  }
+  return promptContents[promptFileName] || null;
 }
 
 /**
@@ -271,6 +255,103 @@ export function loadDefaultAgents(agentIds: string[]): LoadedAgentConfig[] {
  * Get the default agent IDs that should be initialized
  */
 export function getDefaultAgentIds(): string[] {
-  // These are the core default agents that should be initialized
   return ["researcher", "developer", "content-writer"];
 }
+
+// ============================================================================
+// Tool Functions
+// ============================================================================
+
+/**
+ * List all tool configuration file names
+ */
+export function listToolConfigs(): string[] {
+  return Object.keys(toolConfigs).map((id) => `${id}.yaml`);
+}
+
+/**
+ * Load a tool YAML configuration by ID
+ */
+export function loadToolYaml(toolId: string): ToolYamlConfig | null {
+  return toolConfigs[toolId] || null;
+}
+
+/**
+ * Load runtime tool configurations
+ */
+export function loadRuntimeConfig<T = unknown>(configName: string): T | null {
+  if (configName === "tools") {
+    return toolsConfig as T;
+  }
+  return null;
+}
+
+/**
+ * Get all tool IDs
+ */
+export function getToolIds(): string[] {
+  return Object.keys(toolConfigs);
+}
+
+/**
+ * Get all MCP tool configurations
+ */
+export function getMcpTools(): ToolYamlConfig[] {
+  return Object.values(toolConfigs).filter((t) => t.type === "mcp");
+}
+
+/**
+ * Get enabled MCP servers based on runtime config
+ */
+export function getEnabledMcpServers(): ToolYamlConfig[] {
+  const runtimeConfig = toolsConfig as { tools?: RuntimeToolConfig[] };
+  const enabledIds = new Set(
+    (runtimeConfig.tools || []).filter((t) => t.enabled).map((t) => t.id)
+  );
+
+  return getMcpTools().filter(
+    (tool) =>
+      tool.enabled !== false &&
+      (enabledIds.size === 0 || enabledIds.has(tool.id))
+  );
+}
+
+// ============================================================================
+// Legacy Exports (for backward compatibility)
+// ============================================================================
+
+/**
+ * @deprecated Use loadAgentYaml instead
+ */
+export function getDefaultsPath(): string {
+  console.warn("getDefaultsPath is deprecated - YAML files are now bundled");
+  return "";
+}
+
+/**
+ * @deprecated Use loadAgentYaml instead
+ */
+export function getDefaultsSubPath(_subPath: string): string {
+  console.warn("getDefaultsSubPath is deprecated - YAML files are now bundled");
+  return "";
+}
+
+/**
+ * @deprecated Use listAgentTemplates instead
+ */
+export function listSpaceTemplates(): string[] {
+  console.warn("listSpaceTemplates is deprecated");
+  return [];
+}
+
+/**
+ * Default paths - deprecated, kept for backward compatibility
+ */
+export const DefaultPaths = {
+  agents: () => "",
+  spaces: () => "",
+  tools: () => "",
+  prompts: () => "",
+  config: () => "",
+  datasources: () => "",
+} as const;

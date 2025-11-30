@@ -2,12 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
     "moduleResolution": "node",
     "types": ["node"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "src/types.d.ts",
+    "tsup.config.ts"
   ]
 }
 

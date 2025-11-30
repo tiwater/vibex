@@ -406,9 +406,7 @@ export class WorkflowEngine extends EventEmitter {
     return value;
   }
 
-  private getSpaceIdFromContext(
-    context: ExecutionContext
-  ): string | undefined {
+  private getSpaceIdFromContext(context: ExecutionContext): string | undefined {
     const spaceId = context.variables?.spaceId;
     return typeof spaceId === "string" ? spaceId : undefined;
   }

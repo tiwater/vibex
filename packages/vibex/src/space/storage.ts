@@ -198,4 +198,42 @@ export class BaseStorage {
   async deleteArtifact(spaceId: string, artifactId: string): Promise<void> {
     return this.adapter.deleteArtifact(spaceId, artifactId);
   }
+
+  /**
+   * Get file stats (if supported by adapter)
+   */
+  async stat(relativePath: string): Promise<{
+    size: number;
+    mtime: Date;
+    isFile: boolean;
+    isDirectory: boolean;
+  }> {
+    const fullPath = this.getPath(relativePath);
+    if (this.adapter.stat) {
+      return this.adapter.stat(fullPath) as Promise<{
+        size: number;
+        mtime: Date;
+        isFile: boolean;
+        isDirectory: boolean;
+      }>;
+    }
+    // Fallback: try to read the file to get size
+    const content = await this.adapter.readFile(fullPath);
+    return {
+      size: content.length,
+      mtime: new Date(),
+      isFile: true,
+      isDirectory: false,
+    };
+  }
+}
+
+/**
+ * Get storage for a specific space
+ * This is the main entry point for tools that need space storage
+ */
+export async function getSpaceStorage(spaceId: string): Promise<BaseStorage> {
+  const { getSpaceManager } = await import("./manager");
+  const manager = getSpaceManager();
+  return manager.getSpaceStorage(spaceId);
 }

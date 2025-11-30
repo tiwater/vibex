@@ -10,7 +10,6 @@
 
 import { Space } from "./index";
 import type { AgentResponse } from "../runtime/agent";
-import { z } from "zod";
 
 export interface AgentMessage {
   from: string; // Agent ID
@@ -34,13 +33,12 @@ export interface ParallelTask {
   system?: string;
   metadata?: Record<string, any>;
   priority?: number; // Higher = more important
-  schema?: z.ZodSchema<any>; // Optional schema for structured output
 }
 
 export interface ParallelExecutionResult {
   taskId: string;
   agentId: string;
-  result: AgentResponse | any; // AgentResponse for text, any for object
+  result: AgentResponse;
   error?: Error;
   duration: number;
 }
@@ -266,52 +264,28 @@ export class ParallelExecutionEngine {
         throw new Error(`Agent ${task.agentId} not found`);
       }
 
-      let result;
-
-      if (task.schema) {
-        // Generate structured object
-        const objectResult = await agent.generateObject({
-          messages: task.messages,
-          schema: task.schema,
-          system: task.system,
-          spaceId: this.space.spaceId,
-          metadata: {
-            ...task.metadata,
-            parallelTaskId: task.id,
-          },
-        });
-        
-        result = {
-          object: objectResult.object,
-          text: JSON.stringify(objectResult.object),
-          metadata: objectResult.usage ? { usage: objectResult.usage } : undefined,
-        };
-      } else {
-        // Generate text
-        const textResult = await agent.generateText({
-          messages: task.messages,
-          system: task.system,
-          spaceId: this.space.spaceId,
-          metadata: {
-            ...task.metadata,
-            parallelTaskId: task.id,
-          },
-        });
-        
-        result = {
-          text: textResult.text || "",
-          toolCalls: textResult.toolCalls,
-          reasoningText: textResult.reasoningText,
-          metadata: textResult.metadata,
-        };
-      }
+      // Execute agent
+      const result = await agent.generateText({
+        messages: task.messages,
+        system: task.system,
+        spaceId: this.space.spaceId,
+        metadata: {
+          ...task.metadata,
+          parallelTaskId: task.id,
+        },
+      });
 
       const duration = Date.now() - startTime;
 
       return {
         taskId: task.id,
         agentId: task.agentId,
-        result,
+        result: {
+          text: result.text || "",
+          toolCalls: result.toolCalls,
+          reasoningText: result.reasoningText,
+          metadata: result.metadata,
+        },
         duration,
       };
     } catch (error) {
@@ -372,23 +346,6 @@ export class CollaborativePlanner {
     // Get shared context
     const context = this.collaborationManager.getContext();
 
-    // Schema for agent plan
-    const planSchema = z.object({
-      tasks: z.array(
-        z.object({
-          description: z.string().describe("Description of the task"),
-          dependencies: z
-            .array(z.string())
-            .describe("Descriptions of tasks this depends on"),
-          estimatedDuration: z
-            .string()
-            .optional()
-            .describe("Estimated duration"),
-        })
-      ),
-      rationale: z.string().describe("Why this plan is proposed"),
-    });
-
     // Create planning tasks for each agent
     const planningTasks: ParallelTask[] = agentIds.map((agentId, index) => ({
       id: `plan-${agentId}-${Date.now()}`,
@@ -409,7 +366,6 @@ export class CollaborativePlanner {
         goal,
         otherAgents: agentIds.filter((id) => id !== agentId),
       },
-      schema: planSchema,
     }));
 
     // Execute planning in parallel
@@ -419,8 +375,8 @@ export class CollaborativePlanner {
     // Aggregate plans
     const agentPlans = new Map<string, any>();
     for (const result of results) {
-      if (!result.error && result.result.object) {
-        agentPlans.set(result.agentId, result.result.object);
+      if (!result.error) {
+        agentPlans.set(result.agentId, result.result);
       }
     }
 
@@ -435,26 +391,30 @@ export class CollaborativePlanner {
    * Merge multiple agent plans into one
    */
   private mergePlans(agentPlans: Map<string, any>, goal: string): any {
+    // Simple merge strategy - in a real implementation, this would be more sophisticated
     const tasks: any[] = [];
-    let taskIdCounter = 1;
+    let taskId = 1;
 
     for (const [agentId, plan] of agentPlans.entries()) {
-      if (plan.tasks && Array.isArray(plan.tasks)) {
-        for (const task of plan.tasks) {
+      if (plan.text) {
+        // Extract tasks from plan text (simplified)
+        const lines = plan.text
+          .split("\n")
+          .filter(
+            (line: string) =>
+              line.trim().startsWith("-") || line.trim().match(/^\d+\./)
+          );
+
+        for (const line of lines) {
           tasks.push({
-            id: `task-${taskIdCounter++}`,
-            description: task.description,
+            id: `task-${taskId++}`,
+            description: line.replace(/^[-•\d.]+\s*/, "").trim(),
             assignedAgent: agentId,
-            dependencies: task.dependencies || [],
             status: "pending",
-            rationale: plan.rationale,
           });
         }
       }
     }
-
-    // Simple deduplication based on description similarity could be added here
-    // For now, we assume agents are distinct enough or orchestration handles it
 
     return {
       goal,

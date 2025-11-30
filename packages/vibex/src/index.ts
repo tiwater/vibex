@@ -67,11 +67,15 @@ export * from "./runtime/llm";
 export * from "./runtime/tool";
 export * from "./runtime/prompts";
 export * from "./runtime/factory";
+export * from "./runtime/orchestrator";
 
-// Core Engine
+// Workflow Engine
 export * from "./stream";
 export * from "./workflow/types";
 export * from "./workflow/engine";
+export * from "./workflow/planner";
+export * from "./workflow/executor";
+export * from "./workflow/controller";
 
 // Data layer (part of space subsystem)
 export * from "./space/factory";

@@ -12,9 +12,11 @@
     }
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@vibex/core": "workspace:*",
+    "@vibex/defaults": "workspace:*",
     "reflect-metadata": "^0.2.2",
-    "vibex": "workspace:*",
+    "yaml": "^2.8.1",
     "zod": "^3.22.0"
   },
   "devDependencies": {
@@ -23,7 +25,7 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --external @vibex/core --external vibex",
+    "build": "tsup src/index.ts --format cjs,esm --dts --external @vibex/core",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
   }
 }

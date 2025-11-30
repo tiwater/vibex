@@ -4,11 +4,50 @@
  */
 
 import { z } from "zod/v3";
-import * as path from "path";
-import { promises as fs } from "fs";
 import "reflect-metadata";
 import type { CoreTool } from "@vibex/core";
-import { getVibexRoot } from "./utils/paths";
+
+/**
+ * Storage interface for space-aware tools
+ * This is injected by the runtime (vibex) when tools are initialized
+ */
+export interface ToolStorage {
+  readFile(path: string): Promise<Buffer>;
+  writeFile(path: string, data: Buffer | string): Promise<void>;
+  exists(path: string): Promise<boolean>;
+  list(path: string): Promise<string[]>;
+  delete(path: string): Promise<void>;
+  stat?(path: string): Promise<{
+    size: number;
+    mtime: Date;
+    isFile: boolean;
+    isDirectory: boolean;
+  }>;
+}
+
+/**
+ * Storage provider function type
+ * Called with spaceId to get storage for that space
+ */
+export type StorageProvider = (spaceId: string) => Promise<ToolStorage>;
+
+// Global storage provider - set by vibex runtime
+let globalStorageProvider: StorageProvider | null = null;
+
+/**
+ * Set the global storage provider
+ * Called by vibex runtime during initialization
+ */
+export function setStorageProvider(provider: StorageProvider): void {
+  globalStorageProvider = provider;
+}
+
+/**
+ * Get the global storage provider
+ */
+export function getStorageProvider(): StorageProvider | null {
+  return globalStorageProvider;
+}
 
 const TOOLS_METADATA_KEY = Symbol("tools");
 
@@ -282,70 +321,22 @@ export abstract class Tool {
   }
 
   /**
-   * Get space-aware storage path
-   * Utility method for tools that need to work with space-specific storage
-   */
-  protected async getSpacePathAsync(subPath: string = ""): Promise<string> {
-    if (!this.spaceId) {
-      throw new Error("Space ID not set. This tool requires space context.");
-    }
-    // Use the vibex path utilities
-    const { getVibexPath } = await import("./utils/paths");
-    const basePath = getVibexPath("spaces", this.spaceId);
-    return subPath ? path.join(basePath, subPath) : basePath;
-  }
-
-  private static getRootPath(): string {
-    return getVibexRoot();
-  }
-
-  protected getSpacePath(subPath: string = ""): string {
-    if (!this.spaceId) {
-      throw new Error("Space ID not set. This tool requires space context.");
-    }
-    // Use the root path from vibex path utilities
-    const rootPath = Tool.getRootPath();
-    const basePath = path.join(rootPath, "spaces", this.spaceId);
-    return subPath ? path.join(basePath, subPath) : basePath;
-  }
-
-  /**
-   * Get space artifacts directory path
-   * Utility method for tools that work with space artifacts
-   */
-  protected getSpaceArtifactsPath(fileName: string = ""): string {
-    const artifactsPath = this.getSpacePath("artifacts");
-    return fileName ? path.join(artifactsPath, fileName) : artifactsPath;
-  }
-
-  /**
-   * Resolve file path within space artifacts directory
-   * Handles both relative and absolute paths, with security checks
-   */
-  protected resolveArtifactPath(filePath: string): string {
-    if (path.isAbsolute(filePath)) {
-      // For absolute paths, check if they're within the space artifacts directory
-      const artifactsPath = this.getSpaceArtifactsPath();
-      const resolved = path.resolve(filePath);
-      if (!resolved.startsWith(artifactsPath)) {
-        throw new Error(
-          "Absolute paths outside space artifacts directory are not allowed"
-        );
-      }
-      return resolved;
-    }
-    // For relative paths, resolve within artifacts directory
-    return this.getSpaceArtifactsPath(filePath);
-  }
-
-  /**
    * Get storage instance for space operations
+   * Uses the storage provider injected by the runtime
    */
-  private async getStorage(): Promise<import("vibex").BaseStorage> {
-    const { BaseStorage } = await import("vibex");
-    const { getVibexPath } = await import("./utils/paths");
-    const basePath = getVibexPath("spaces", this.spaceId!);
-    return new BaseStorage(basePath);
+  private async getStorage(): Promise<ToolStorage> {
+    if (!this.spaceId) {
+      throw new Error("Space ID not set. This tool requires space context.");
+    }
+
+    const provider = getStorageProvider();
+    if (!provider) {
+      throw new Error(
+        "Storage provider not configured. The vibex runtime must call setStorageProvider() before using space-aware tools."
+      );
+    }
+
+    return provider(this.spaceId);
   }
 
   /**
@@ -415,19 +406,43 @@ export abstract class Tool {
 
   /**
    * Get file stats from space artifacts directory
-   * Note: This method still uses fs.stat for local storage compatibility
-   * For Supabase storage, size info is available through artifact metadata
+   * Returns file metadata through the storage abstraction
    */
-  protected async getArtifactFileStats(filePath: string) {
+  protected async getArtifactFileStats(filePath: string): Promise<{
+    size: number;
+    mtime: Date;
+    isFile: boolean;
+    isDirectory: boolean;
+  }> {
     if (!this.spaceId) {
       throw new Error("Space ID not set. This tool requires space context.");
     }
 
-    // For local storage, we can still use fs.stat on the resolved path
-    // This is acceptable since getArtifactFileStats is primarily used for
-    // file metadata that's already available through other means in Supabase
-    const fullPath = this.resolveArtifactPath(filePath);
-    return await fs.stat(fullPath);
+    const storage = await this.getStorage();
+
+    // Normalize path
+    const normalizedPath = filePath.startsWith("artifacts/")
+      ? filePath.substring(10)
+      : filePath;
+    const artifactPath = `artifacts/${normalizedPath}`;
+
+    // Try to get stats from storage
+    if (storage.stat) {
+      return await storage.stat(artifactPath);
+    }
+
+    // Fallback: read the file to get size, use current time for mtime
+    try {
+      const content = await storage.readFile(artifactPath);
+      return {
+        size: content.length,
+        mtime: new Date(),
+        isFile: true,
+        isDirectory: false,
+      };
+    } catch {
+      throw new Error(`File not found: ${filePath}`);
+    }
   }
 
   /**

@@ -29,6 +29,10 @@ import { createAgentFromConfig } from "../runtime/factory";
 // Re-export for convenience
 export type { SpaceType, PlanType };
 
+// Re-export manager helpers so consumers can import from "vibex/space"
+export type { SpaceManager } from "./manager";
+export { getSpaceManager, getSpaceManagerServer } from "./manager";
+
 // Space state for getState() method
 export interface SpaceState {
   spaceId: string;

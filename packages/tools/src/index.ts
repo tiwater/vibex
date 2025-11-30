@@ -47,22 +47,21 @@ interface ToolConfig {
   [key: string]: unknown;
 }
 
-/**
- * Load tool configuration through ResourceAdapter
- */
-async function loadToolConfig(toolId: string): Promise<ToolConfig> {
-  try {
-    // Dynamic import to avoid circular dependency
-    const { getServerResourceAdapter } = await import("vibex");
-    const adapter = await getServerResourceAdapter();
+// Tool configuration cache (can be set externally by vibex)
+const toolConfigs = new Map<string, ToolConfig>();
 
-    // Get tool from adapter
-    const tool = await adapter.getTool(toolId);
-    return ((tool as { config?: ToolConfig })?.config || {}) as ToolConfig;
-  } catch (error) {
-    console.error(`[loadToolConfig] Error loading config for ${toolId}:`, error);
-    return {};
-  }
+/**
+ * Set tool configuration (called by vibex runtime)
+ */
+export function setToolConfig(toolId: string, config: ToolConfig): void {
+  toolConfigs.set(toolId, config);
+}
+
+/**
+ * Get tool configuration
+ */
+function getToolConfig(toolId: string): ToolConfig {
+  return toolConfigs.get(toolId) || {};
 }
 
 /**
@@ -76,18 +75,11 @@ export function getToolInstance(toolId: string): Tool | null {
     try {
       const instance = new ToolClass();
 
-      // Load configuration from file if available
-      // This is async but we handle it synchronously for now
-      // In production, configuration should be loaded at startup
-      loadToolConfig(toolId)
-        .then((config) => {
-          if (Object.keys(config).length > 0) {
-            instance.setConfig(config);
-          }
-        })
-        .catch((error) => {
-          console.error(`[getToolInstance] Error loading config for ${toolId}:`, error);
-        });
+      // Load configuration if available
+      const config = getToolConfig(toolId);
+      if (Object.keys(config).length > 0) {
+        instance.setConfig(config);
+      }
 
       // Check if tool is available
       if (!instance.isAvailable()) {
@@ -259,9 +251,21 @@ export function getToolProviders(): ToolInfo[] {
             type: "select",
             description: "选择默认使用的搜索引擎提供商",
             options: [
-              { value: "auto", label: "自动选择", description: "根据可用性自动选择最佳搜索引擎" },
-              { value: "tavily", label: "Tavily", description: "专为 AI 优化的搜索引擎，提供高质量结构化结果" },
-              { value: "serper", label: "Serper", description: "Google 搜索 API，提供全面的搜索结果" },
+              {
+                value: "auto",
+                label: "自动选择",
+                description: "根据可用性自动选择最佳搜索引擎",
+              },
+              {
+                value: "tavily",
+                label: "Tavily",
+                description: "专为 AI 优化的搜索引擎，提供高质量结构化结果",
+              },
+              {
+                value: "serper",
+                label: "Serper",
+                description: "Google 搜索 API，提供全面的搜索结果",
+              },
             ],
             defaultValue: "auto",
             required: false,
@@ -276,14 +280,16 @@ export function getToolProviders(): ToolInfo[] {
           tavilyApiKey: {
             name: "Tavily API 密钥",
             type: "string",
-            description: "用于 Tavily 网络搜索服务的 API 密钥。可以在此直接设置，或通过环境变量 TAVILY_API_KEY 提供",
+            description:
+              "用于 Tavily 网络搜索服务的 API 密钥。可以在此直接设置，或通过环境变量 TAVILY_API_KEY 提供",
             envVar: "TAVILY_API_KEY",
             required: false,
           },
           serperApiKey: {
             name: "Serper API 密钥",
             type: "string",
-            description: "用于 Serper (Google 搜索) 服务的 API 密钥。可以在此直接设置，或通过环境变量 SERPER_API_KEY 提供",
+            description:
+              "用于 Serper (Google 搜索) 服务的 API 密钥。可以在此直接设置，或通过环境变量 SERPER_API_KEY 提供",
             envVar: "SERPER_API_KEY",
             required: false,
           },
@@ -339,7 +345,8 @@ export function getToolProviders(): ToolInfo[] {
           includeDomains: {
             name: "优先域名",
             type: "array",
-            description: "优先显示这些域名的搜索结果（例如：[\"baidu.com\", \"zhihu.com\"]）",
+            description:
+              '优先显示这些域名的搜索结果（例如：["baidu.com", "zhihu.com"]）',
             defaultValue: [],
             required: false,
           },
@@ -409,10 +416,10 @@ export function getToolProviders(): ToolInfo[] {
           id === "file"
             ? ["Files", "Storage", "Local", "System", "IO"]
             : id === "search"
-            ? ["Search", "Web", "Research", "Internet", "Information"]
-            : id === "web"
-            ? ["Web", "Extraction", "Crawling", "Content", "Scraping"]
-            : [];
+              ? ["Search", "Web", "Research", "Internet", "Information"]
+              : id === "web"
+                ? ["Web", "Extraction", "Crawling", "Content", "Scraping"]
+                : [];
 
         tools.push({
           ...metadata,
@@ -448,10 +455,10 @@ export function getToolProvider(toolId: string): ToolInfo | null {
       toolId === "file"
         ? ["Files", "Storage", "Local", "System", "IO"]
         : toolId === "search"
-        ? ["Search", "Web", "Research", "Internet", "Information"]
-        : toolId === "web"
-        ? ["Web", "Extraction", "Crawling", "Content", "Scraping"]
-        : [];
+          ? ["Search", "Web", "Research", "Internet", "Information"]
+          : toolId === "web"
+            ? ["Web", "Extraction", "Crawling", "Content", "Scraping"]
+            : [];
 
     return {
       ...metadata,
@@ -482,8 +489,8 @@ export function setProviderEnabled(
 }
 
 /**
- * Build a tool map for specific tool IDs
- * This is the ONLY function that core/tool.ts imports
+ * Build a tool map for specific tool IDs (sync version for built-in tools only)
+ * For MCP tools, use buildToolMapAsync
  */
 export function buildToolMap(
   toolIds: string[],
@@ -532,7 +539,93 @@ export function buildToolMap(
     }
 
     if (!found) {
-      console.warn(`[Tools] Tool not found: ${toolId}`);
+      // Don't warn here - might be an MCP tool handled by async version
+    }
+  }
+
+  return tools;
+}
+
+/**
+ * Build a tool map for specific tool IDs (async version with MCP support)
+ * This is the primary function that should be used by the runtime
+ */
+export async function buildToolMapAsync(
+  toolIds: string[],
+  context?: { spaceId?: string }
+): Promise<Record<string, CoreTool>> {
+  const tools: Record<string, CoreTool> = {};
+
+  // Separate built-in tools from MCP tools
+  const builtinToolIds: string[] = [];
+  const mcpToolIds: string[] = [];
+
+  // Import MCP utilities
+  const { isMcpTool, loadToolDefinition } = await import("./defaults");
+  const { connectMcpServer, getMcpServerTools } = await import("./mcp");
+
+  for (const toolId of toolIds) {
+    // Check if it's a built-in tool class
+    if (toolClasses.has(toolId)) {
+      builtinToolIds.push(toolId);
+      continue;
+    }
+
+    // Check if it's a specific function from a built-in tool
+    let isBuiltin = false;
+    for (const [id] of toolClasses) {
+      const tool = getToolInstance(id);
+      if (tool) {
+        const toolFunctions = tool.getTools();
+        if (toolId in toolFunctions) {
+          builtinToolIds.push(toolId);
+          isBuiltin = true;
+          break;
+        }
+      }
+    }
+
+    if (!isBuiltin) {
+      // Check if it's an MCP tool
+      if (isMcpTool(toolId)) {
+        mcpToolIds.push(toolId);
+      } else {
+        console.warn(`[Tools] Tool not found: ${toolId}`);
+      }
+    }
+  }
+
+  // Load built-in tools synchronously
+  if (builtinToolIds.length > 0) {
+    Object.assign(tools, buildToolMap(builtinToolIds, context));
+  }
+
+  // Load MCP tools asynchronously
+  for (const mcpToolId of mcpToolIds) {
+    const definition = loadToolDefinition(mcpToolId);
+    if (!definition) {
+      console.warn(`[Tools] MCP tool definition not found: ${mcpToolId}`);
+      continue;
+    }
+
+    // Connect to MCP server
+    const connected = await connectMcpServer({
+      id: definition.id,
+      name: definition.name,
+      description: definition.description,
+      type: "mcp",
+      transport: definition.transport || "stdio",
+      command: definition.command,
+      args: definition.args,
+      url: definition.url,
+      enabled: true,
+      configSchema: definition.configSchema,
+    });
+
+    if (connected) {
+      // Get tools from the connected server
+      const mcpTools = getMcpServerTools(mcpToolId);
+      Object.assign(tools, mcpTools);
     }
   }
 
@@ -594,3 +687,38 @@ export function getAvailableTools(): string[] {
 export type ToolProviderInfo = ToolInfo;
 
 // Export registry functions for static access (no instantiation)
+
+// ============================================================================
+// MCP and Defaults Exports
+// ============================================================================
+
+// Re-export MCP utilities
+export {
+  connectMcpServer,
+  disconnectMcpServer,
+  getMcpServerTools,
+  getAllMcpTools,
+  isMcpServerConnected,
+  clearMcpClients,
+  getConnectedMcpServers,
+  type McpServerConfig,
+} from "./mcp";
+
+// Re-export defaults utilities
+export {
+  loadToolDefinition,
+  loadMcpToolDefinitions,
+  loadRuntimeToolConfigs,
+  getEnabledMcpServers,
+  getDefaultToolIds,
+  isMcpTool,
+  type ToolYamlConfig,
+} from "./defaults";
+
+// Re-export storage interface and provider (for vibex runtime to inject)
+export {
+  setStorageProvider,
+  getStorageProvider,
+  type ToolStorage,
+  type StorageProvider,
+} from "./base";
