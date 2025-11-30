@@ -1,22 +1,22 @@
 id: code-project
-category: 开发
-name: 代码项目
-description: 软件开发和代码审查工作区
+category: development
+name: Code Project
+description: Software development and code review workspace
 icon: Code
 agents:
   - code-reviewer
 quickMessages:
-  - 审查这个 GitHub 仓库的代码质量和潜在问题
-  - 帮我分析最新的 Pull Request 并提供改进建议
-  - 查找仓库中的安全漏洞和性能瓶颈
-  - 为这个项目创建详细的代码审查报告
+  - Review code quality and potential issues in this GitHub repository
+  - Help me analyze the latest Pull Request and provide improvement suggestions
+  - Find security vulnerabilities and performance bottlenecks in the repository
+  - Create a detailed code review report for this project
 
 # Marketplace metadata
 tags:
-  - 编程
-  - 开发
-  - 代码审查
-author: Supen 团队
+  - programming
+  - development
+  - code-review
+author: Supen Team
 featured: true
 downloads: 0
 rating: 0

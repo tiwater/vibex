@@ -1,6 +1,6 @@
 id: postgres
 name: PostgreSQL
-description: 直接连接 PostgreSQL 数据库执行查询，无需配置数据源。支持表结构查询和 SQL 执行。
+description: Directly connect to PostgreSQL database to execute queries without configuring data sources. Supports table structure queries and SQL execution.
 version: "1.0.0"
 type: mcp
 category: data
@@ -14,45 +14,44 @@ args:
 enabled: false
 configSchema:
   - field: connectionString
-    label: 连接字符串
+    label: Connection String
     type: string
     required: true
     placeholder: "postgresql://postgres:[YOUR_PASSWORD]@db.xxxxx.supabase.co:5432/postgres"
-    help: "PostgreSQL 连接字符串（URI 格式）"
+    help: "PostgreSQL connection string (URI format)"
     envVar: POSTGRES_URL
 tags:
   - database
-  - 数据库
   - postgresql
   - postgres
   - sql
-  - 查询
-  - 数据分析
+  - query
+  - data-analysis
 features:
-  - PostgreSQL 数据库查询
-  - 表结构检查
-  - 只读 SQL 查询执行
-  - 数据库资源发现
-  - 无需数据源配置
+  - PostgreSQL database queries
+  - Table structure inspection
+  - Read-only SQL query execution
+  - Database resource discovery
+  - No data source configuration required
 requirements:
   - platform: ["windows", "macos", "linux"]
   - runtime: "node-18+"
-  - PostgreSQL 数据库访问
+  - PostgreSQL database access
 usageNotes: |
-  ## 配置说明
+  ## Configuration
 
-  在启用此工具前，需要配置 PostgreSQL 连接字符串：
+  Before enabling this tool, you need to configure the PostgreSQL connection string:
 
-  - `POSTGRES_URL`: PostgreSQL 连接字符串（URI 格式）
-    - 格式：`postgresql://用户名:密码@主机:端口/数据库`
-    - 示例（Supabase）：`postgresql://postgres:your_password@db.xxxxx.supabase.co:5432/postgres`
-    - 示例（本地）：`postgresql://postgres:password@localhost:5432/mydb`
+  - `POSTGRES_URL`: PostgreSQL connection string (URI format)
+    - Format: `postgresql://username:password@host:port/database`
+    - Example (Supabase): `postgresql://postgres:your_password@db.xxxxx.supabase.co:5432/postgres`
+    - Example (Local): `postgresql://postgres:password@localhost:5432/mydb`
 
-  ## 与数据源的区别
+  ## Difference from Data Sources
 
-  - **PostgreSQL MCP**: 直接连接单个数据库，无需配置数据源，适合快速查询
-  - **数据源 + DbGate**: 支持多个数据库和文件，统一管理，适合复杂场景
+  - **PostgreSQL MCP**: Directly connects to a single database, no data source configuration needed, suitable for quick queries
+  - **Data Source + DbGate**: Supports multiple databases and files, unified management, suitable for complex scenarios
 
-  ## 安全提示
+  ## Security Notice
 
-  此工具仅支持只读查询，不能执行 INSERT/UPDATE/DELETE 等修改操作。
+  This tool only supports read-only queries and cannot execute modification operations like INSERT/UPDATE/DELETE.

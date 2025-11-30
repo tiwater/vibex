@@ -1,6 +1,6 @@
 id: researcher
-name: 研究员
-description: 擅长信息研究和分析
+name: Researcher
+description: Skilled in information research and analysis
 
 llm:
   provider: openai

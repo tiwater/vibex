@@ -1,6 +1,6 @@
 id: assistant
-name: 通用助手
-description: 可处理各种任务的 AI 助手
+name: General Assistant
+description: AI assistant capable of handling various tasks
 
 llm:
   provider: openrouter

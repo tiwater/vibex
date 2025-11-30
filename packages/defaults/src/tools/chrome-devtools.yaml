@@ -1,6 +1,6 @@
 id: chrome-devtools
 name: Chrome DevTools
-description: 控制和检查实时 Chrome 浏览器，用于浏览器自动化、调试和网页分析。
+description: Control and inspect live Chrome browsers for browser automation, debugging, and web page analysis.
 version: "1.0.0"
 type: mcp
 category: browser
@@ -12,65 +12,65 @@ args: ["-y", "chrome-devtools-mcp@latest"]
 enabled: true
 configSchema:
   - field: headless
-    label: 无头模式
+    label: Headless Mode
     type: boolean
     required: false
-    help: "在无头模式下运行浏览器（无可见 UI）"
+    help: "Run browser in headless mode (no visible UI)"
     defaultValue: false
   - field: isolated
-    label: 隔离模式
+    label: Isolated Mode
     type: boolean
     required: false
-    help: "创建临时用户数据目录，关闭后清理"
+    help: "Create temporary user data directory, cleaned up after closing"
     defaultValue: true
   - field: viewport
-    label: 视口尺寸
+    label: Viewport Size
     type: string
     required: false
     placeholder: "1280x720"
-    help: "初始浏览器窗口尺寸（例如：1280x720）"
+    help: "Initial browser window size (e.g., 1280x720)"
   - field: channel
-    label: Chrome 渠道
+    label: Chrome Channel
     type: select
     required: false
-    help: "要使用的 Chrome 渠道版本"
+    help: "Chrome channel version to use"
     defaultValue: stable
     options:
       - value: stable
         label: Stable
-        description: "稳定版本"
+        description: "Stable version"
       - value: beta
         label: Beta
-        description: "测试版本"
+        description: "Beta version"
       - value: dev
         label: Dev
-        description: "开发版本"
+        description: "Development version"
       - value: canary
         label: Canary
-        description: "金丝雀版本"
+        description: "Canary version"
   - field: acceptInsecureCerts
-    label: 接受不安全证书
+    label: Accept Insecure Certificates
     type: boolean
     required: false
-    help: "忽略 SSL 证书错误"
+    help: "Ignore SSL certificate errors"
     defaultValue: false
 tags:
-  - 浏览器
-  - 调试
-  - DevTools
-  - Chrome
-  - 自动化
-  - 性能
-  - 网络
+  - browser
+  - debugging
+  - devtools
+  - chrome
+  - automation
+  - performance
+  - network
 features:
-  - 浏览器控制和导航
-  - DOM 检查和操作
-  - 网络请求监控
-  - 性能分析
-  - JavaScript 调试
-  - 控制台日志访问
-  - 截图和 PDF 生成
-  - Cookie 和存储管理
+  - Browser control and navigation
+  - DOM inspection and manipulation
+  - Network request monitoring
+  - Performance analysis
+  - JavaScript debugging
+  - Console log access
+  - Screenshot and PDF generation
+  - Cookie and storage management
 requirements:
   - platform: ["windows", "macos", "linux"]
   - runtime: "node-18+"

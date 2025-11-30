@@ -1,6 +1,6 @@
 id: playwright
 name: Playwright
-description: 使用 Microsoft Playwright 进行浏览器自动化、截图和网页交互，支持全页面截图、元素截图、表单填充等。
+description: Browser automation, screenshots, and web page interaction using Microsoft Playwright, supporting full-page screenshots, element screenshots, form filling, and more.
 version: "1.0.0"
 type: mcp
 category: browser
@@ -12,49 +12,49 @@ args: ["@playwright/mcp@latest"]
 enabled: true
 configSchema:
   - field: browser
-    label: 浏览器类型
+    label: Browser Type
     type: select
     required: false
     placeholder: chromium
-    help: "用于自动化的浏览器引擎"
+    help: "Browser engine for automation"
     defaultValue: chromium
     options:
       - value: chromium
         label: Chromium
-        description: "默认浏览器，兼容性最佳"
+        description: "Default browser with best compatibility"
       - value: firefox
         label: Firefox
-        description: "Mozilla Firefox 浏览器"
+        description: "Mozilla Firefox browser"
       - value: webkit
         label: WebKit
-        description: "Safari 的浏览器引擎"
+        description: "Safari's browser engine"
   - field: headless
-    label: 无头模式
+    label: Headless Mode
     type: boolean
     required: false
-    help: "在无头模式下运行浏览器（无可见 UI）"
+    help: "Run browser in headless mode (no visible UI)"
     defaultValue: true
   - field: screenshotPath
-    label: 截图目录
+    label: Screenshot Directory
     type: string
     required: false
     placeholder: "./screenshots"
-    help: "保存截图的目录路径"
+    help: "Directory path to save screenshots"
     envVar: PLAYWRIGHT_SCREENSHOT_DIR
 tags:
-  - 浏览器
-  - 自动化
-  - 截图
-  - 网页
-  - 测试
+  - browser
+  - automation
+  - screenshot
+  - web
+  - testing
 features:
-  - 浏览器自动化和导航
-  - 全页面和元素截图
-  - 表单填充和交互
-  - PDF 生成
-  - 多标签页管理
-  - 网络请求监控
-  - JavaScript 执行
+  - Browser automation and navigation
+  - Full-page and element screenshots
+  - Form filling and interaction
+  - PDF generation
+  - Multi-tab management
+  - Network request monitoring
+  - JavaScript execution
 requirements:
   - platform: ["windows", "macos", "linux"]
   - runtime: "node-18+"

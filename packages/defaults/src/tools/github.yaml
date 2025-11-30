@@ -1,6 +1,6 @@
 id: github
 name: GitHub
-description: 访问和管理 GitHub 仓库、搜索代码、创建 Issue、管理 Pull Request、浏览仓库内容，支持完整的代码审查工作流。
+description: Access and manage GitHub repositories, search code, create issues, manage pull requests, browse repository content, supporting complete code review workflows.
 version: "1.0.0"
 type: mcp
 category: development
@@ -16,24 +16,24 @@ configSchema:
     type: password
     required: true
     placeholder: "ghp_xxxxxxxxxxxxxxxxxxxx"
-    help: "GitHub 个人访问令牌（需要 repo 权限）。在 GitHub Settings > Developer settings > Personal access tokens 中创建"
+    help: "GitHub personal access token (requires repo scope). Create at GitHub Settings > Developer settings > Personal access tokens"
     envVar: GITHUB_PERSONAL_ACCESS_TOKEN
 tags:
-  - 代码托管
-  - 仓库
-  - 代码审查
-  - 版本控制
-  - 协作
-  - 拉取请求
-  - 问题追踪
+  - code-hosting
+  - repository
+  - code-review
+  - version-control
+  - collaboration
+  - pull-request
+  - issue-tracking
 features:
-  - 仓库访问和浏览
-  - 代码搜索
-  - 文件操作 (读取、创建、更新)
-  - Issue 管理
-  - Pull Request 管理
-  - 分支操作
-  - 代码审查工作流
+  - Repository access and browsing
+  - Code search
+  - File operations (read, create, update)
+  - Issue management
+  - Pull request management
+  - Branch operations
+  - Code review workflows
 requirements:
   - platform: ["windows", "macos", "linux"]
   - runtime: "node-18+"

@@ -1,6 +1,6 @@
 id: dba
-name: 数据库管理员
-description: 专业的数据库管理和 SQL 查询专家，擅长数据探索和分析
+name: Database Administrator
+description: Professional database management and SQL query expert, skilled in data exploration and analysis
 
 # Market metadata
 category: analyst
@@ -18,15 +18,15 @@ version: 1.0.0
 protected: true
 
 usageExamples:
-  - 执行 SQL 查询和数据分析
-  - 探索数据库表结构和关系
-  - 从 CSV/Excel 文件查询数据
-  - PostgreSQL 数据库管理
-  - 生成数据统计和报表
+  - Execute SQL queries and data analysis
+  - Explore database table structures and relationships
+  - Query data from CSV/Excel files
+  - PostgreSQL database management
+  - Generate data statistics and reports
 
 requirements:
-  - DbGate MCP 工具（支持多数据源）或 PostgreSQL MCP（直连单数据库）
-  - 配置好的数据源（PostgreSQL/CSV/XLSX），或直接配置 PostgreSQL MCP 环境变量
+  - DbGate MCP tool (supports multiple data sources) or PostgreSQL MCP (direct connection to single database)
+  - Configured data sources (PostgreSQL/CSV/XLSX), or directly configure PostgreSQL MCP environment variables
 
 llm:
   provider: openrouter

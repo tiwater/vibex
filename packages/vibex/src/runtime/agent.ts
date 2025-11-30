@@ -425,7 +425,9 @@ export class Agent {
     const systemPrompt = system ? `${basePrompt}\n\n${system}` : basePrompt;
 
     // Use override model if provided, otherwise use agent's configured model
-    const model = modelOverride || this.getModel({ spaceId, userId: enrichedMetadata.userId });
+    const model =
+      modelOverride ||
+      this.getModel({ spaceId, userId: enrichedMetadata.userId });
     const tools = await this.getTools({ spaceId });
 
     // Generate a message ID that includes the agent name
@@ -627,7 +629,9 @@ export class Agent {
     const systemPrompt = system ? `${basePrompt}\n\n${system}` : basePrompt;
 
     // Use override model if provided, otherwise use agent's configured model
-    const model = modelOverride || this.getModel({ spaceId, userId: enrichedMetadata.userId });
+    const model =
+      modelOverride ||
+      this.getModel({ spaceId, userId: enrichedMetadata.userId });
     const tools = await this.getTools({ spaceId });
 
     // Convert XMessage[] to ModelMessage[] ONLY here, right before AI SDK call

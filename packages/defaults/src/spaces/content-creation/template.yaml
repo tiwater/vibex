@@ -1,22 +1,22 @@
 id: content-creation
-category: 创意
-name: 内容创作
-description: 专业的内容写作和编辑工作区
+category: creative
+name: Content Creation
+description: Professional content writing and editing workspace
 icon: PenTool
 agents:
   - content-writer
 quickMessages:
-  - 帮我写一篇关于人工智能的博客文章
-  - 帮我创作一段产品营销文案
-  - 帮我撰写一份技术文档
-  - 帮我策划本周的社交媒体内容
+  - Help me write a blog post about artificial intelligence
+  - Help me create product marketing copy
+  - Help me write a technical document
+  - Help me plan this week's social media content
 
 # Marketplace metadata
 tags:
-  - 写作
-  - 内容
-  - 创意
-author: Supen 团队
+  - writing
+  - content
+  - creative
+author: Supen Team
 featured: true
 downloads: 0
 rating: 0

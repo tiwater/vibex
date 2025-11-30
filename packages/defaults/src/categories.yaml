@@ -4,112 +4,93 @@ version: "1.0"
 # Main hub categories
 categories:
   - id: tools
-    name: 工具提供商
-    description: 扩展 AI 能力的工具和服务
+    name: Tool Providers
+    description: Tools and services that extend AI capabilities
     icon: Wrench
     endpoint: /api/hub/tools
     subcategories:
       - id: builtin
-        name: 内置工具
+        name: Built-in Tools
         icon: Box
       - id: mcp
-        name: MCP 服务
+        name: MCP Services
         icon: Server
       - id: integration
-        name: 第三方集成
+        name: Third-party Integrations
         icon: Zap
 
   - id: templates
-    name: 项目模板
-    description: 快速启动新项目的模板
+    name: Project Templates
+    description: Templates to quickly start new projects
     icon: FileText
     endpoint: /api/hub/templates
     subcategories:
       - id: web
-        name: Web 应用
+        name: Web Applications
         icon: Globe
       - id: api
-        name: API 服务
+        name: API Services
         icon: Server
       - id: mobile
-        name: 移动应用
+        name: Mobile Applications
         icon: Smartphone
       - id: ai
-        name: AI 项目
+        name: AI Projects
         icon: Brain
 
   - id: agents
-    name: 智能体模板
-    description: 预配置的 AI 智能体
+    name: Agent Templates
+    description: Pre-configured AI agents
     icon: Bot
     endpoint: /api/hub/agents
     subcategories:
       - id: assistant
-        name: 助手
+        name: Assistant
         icon: MessageSquare
       - id: developer
-        name: 开发者
+        name: Developer
         icon: Code
       - id: analyst
-        name: 分析师
+        name: Analyst
         icon: TrendingUp
       - id: creative
-        name: 创意
+        name: Creative
         icon: Palette
 
-  - id: datasources
-    name: 数据源
-    description: 连接外部数据和资料库
-    icon: Database
-    endpoint: /api/hub/datasources
-    subcategories:
-      - id: database
-        name: 数据库
-        icon: Database
-      - id: api
-        name: API
-        icon: Cloud
-      - id: files
-        name: 文件系统
-        icon: Folder
-      - id: cloud
-        name: 云存储
-        icon: CloudUpload
-
   - id: workflows
-    name: 工作流
-    description: 自动化任务和流程
+    name: Workflows
+    description: Automated tasks and processes
     icon: GitBranch
     endpoint: /api/hub/workflows
     subcategories:
       - id: automation
-        name: 自动化
+        name: Automation
         icon: Zap
       - id: cicd
         name: CI/CD
         icon: GitMerge
       - id: data
-        name: 数据处理
+        name: Data Processing
         icon: Filter
       - id: testing
-        name: 测试
+        name: Testing
         icon: CheckCircle
 
   - id: prompts
-    name: 提示词库
-    description: 优化的提示词模板
+    name: Prompt Library
+    description: Optimized prompt templates
     icon: MessageCircle
     endpoint: /api/hub/prompts
     subcategories:
       - id: coding
-        name: 编程
+        name: Programming
         icon: Code
       - id: writing
-        name: 写作
+        name: Writing
         icon: PenTool
       - id: analysis
-        name: 分析
+        name: Analysis
         icon: BarChart
       - id: creative
-        name: 创意
+        name: Creative
         icon: Lightbulb

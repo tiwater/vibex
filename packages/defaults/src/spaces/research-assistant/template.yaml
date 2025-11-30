@@ -1,23 +1,23 @@
 id: research-assistant
-category: 研究
-name: 研究助手
-description: 学术研究和内容写作工作区
+category: research
+name: Research Assistant
+description: Academic research and content writing workspace
 icon: BookOpen
 agents:
   - web-researcher
   - content-writer
 quickMessages:
-  - 帮我研究量子计算的最新发展
-  - 调研人工智能在医疗领域的应用
-  - 分析当前区块链技术的发展趋势
-  - 帮我了解元宇宙的商业化现状
+  - Help me research the latest developments in quantum computing
+  - Research applications of artificial intelligence in healthcare
+  - Analyze current trends in blockchain technology
+  - Help me understand the commercialization status of the metaverse
 
 # Marketplace metadata
 tags:
-  - 研究
-  - 分析
-  - 写作
-author: Supen 团队
+  - research
+  - analysis
+  - writing
+author: Supen Team
 featured: true
 downloads: 0
 rating: 0

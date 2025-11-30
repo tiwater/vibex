@@ -1,6 +1,6 @@
 id: supabase
 name: Supabase
-description: 访问和管理 Supabase 项目、数据库、存储和边缘函数，支持完整的后端开发工作流。
+description: Access and manage Supabase projects, databases, storage, and edge functions, supporting complete backend development workflows.
 version: "1.0.0"
 type: mcp
 category: backend
@@ -15,30 +15,30 @@ configSchema:
     type: password
     required: false
     placeholder: "sbp_xxxxxxxxxxxxxxxxxxxx"
-    help: "Supabase 访问令牌（可选，支持 OAuth）。在 Supabase Dashboard > Account > Access Tokens 中创建"
+    help: "Supabase access token (optional, supports OAuth). Create at Supabase Dashboard > Account > Access Tokens"
     envVar: SUPABASE_ACCESS_TOKEN
   - field: projectRef
     label: Project Reference
     type: string
     required: false
     placeholder: "your-project-ref"
-    help: "默认的 Supabase 项目引用 ID"
+    help: "Default Supabase project reference ID"
     envVar: SUPABASE_PROJECT_REF
 tags:
-  - 后端
-  - 数据库
-  - 存储
-  - 认证
-  - 边缘函数
-  - BaaS
+  - backend
+  - database
+  - storage
+  - authentication
+  - edge-functions
+  - baas
 features:
-  - 项目管理
-  - 数据库访问和查询
-  - 存储桶管理
-  - 边缘函数部署
-  - 认证配置
-  - 实时订阅
-  - 数据库架构管理
+  - Project management
+  - Database access and queries
+  - Storage bucket management
+  - Edge function deployment
+  - Authentication configuration
+  - Realtime subscriptions
+  - Database schema management
 requirements:
   - platform: ["windows", "macos", "linux"]
   - network: "internet"

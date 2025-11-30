@@ -1,6 +1,6 @@
 id: web-researcher
-name: 网络研究员
-description: 擅长网络搜索和信息收集的研究专家
+name: Web Researcher
+description: Research expert skilled in web search and information gathering
 
 # Market metadata
 category: analyst
@@ -16,14 +16,14 @@ version: 1.0.0
 protected: true
 
 usageExamples:
-  - 深度网络调研和信息汇总
-  - 竞品分析和市场研究
-  - 学术文献搜索和整理
-  - 实时新闻和趋势追踪
+  - In-depth web research and information aggregation
+  - Competitive analysis and market research
+  - Academic literature search and organization
+  - Real-time news and trend tracking
 
 requirements:
-  - search 工具
-  - web 工具
+  - search tool
+  - web tool
 
 llm:
   provider: openrouter

@@ -1,6 +1,6 @@
 id: content-writer
-name: 内容创作者
-description: 专业的文案撰写和内容创作专家
+name: Content Writer
+description: Professional copywriting and content creation expert
 
 # Market metadata
 category: creative
@@ -16,10 +16,10 @@ version: 1.0.0
 protected: false
 
 usageExamples:
-  - 营销文案和广告语创作
-  - 博客文章和社交媒体内容
-  - 产品描述和品牌故事
-  - 邮件营销和新闻稿
+  - Marketing copy and advertising slogans
+  - Blog posts and social media content
+  - Product descriptions and brand stories
+  - Email marketing and press releases
 
 requirements: []
 

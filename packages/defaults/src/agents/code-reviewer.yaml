@@ -1,6 +1,6 @@
 id: code-reviewer
-name: 代码审查员
-description: 专业的代码审查和质量分析专家
+name: Code Reviewer
+description: Professional code review and quality analysis expert
 
 # Market metadata
 category: developer
@@ -16,14 +16,14 @@ version: 1.0.0
 protected: true
 
 usageExamples:
-  - 代码质量审查和改进建议
-  - 识别潜在的 bug 和安全问题
-  - 代码风格和最佳实践检查
-  - 重构建议和性能优化
+  - Code quality review and improvement suggestions
+  - Identify potential bugs and security issues
+  - Code style and best practices checking
+  - Refactoring suggestions and performance optimization
 
 requirements:
-  - file 工具
-  - GitHub 访问权限
+  - file tool
+  - GitHub access
 
 llm:
   provider: openrouter

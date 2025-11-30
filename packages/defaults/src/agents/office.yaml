@@ -1,6 +1,6 @@
 id: office
-name: Office 助手
-description: 专业的 Office 文档处理专家
+name: Office Assistant
+description: Professional Office document processing expert
 
 # Market metadata
 category: assistant
@@ -16,13 +16,13 @@ version: 1.0.0
 protected: true
 
 usageExamples:
-  - 处理 Excel 表格和数据分析
-  - 创建和编辑 Word 文档
-  - 生成 PowerPoint 演示文稿
-  - 文档格式转换和批处理
+  - Process Excel spreadsheets and data analysis
+  - Create and edit Word documents
+  - Generate PowerPoint presentations
+  - Document format conversion and batch processing
 
 requirements:
-  - office-mcp 工具
+  - office-mcp tool
 
 llm:
   provider: openrouter
