@@ -53,7 +53,7 @@ export async function analyzeRequest(
 ): Promise<{
   needsPlan: boolean;
   reasoning: string;
-  suggestedTasks?: Array<{
+  suggestedTasks: Array<{
     title: string;
     description: string;
     assignedTo: string;
@@ -64,6 +64,8 @@ export async function analyzeRequest(
     .map((a) => `- ${a.id}: ${a.name} - ${a.description}`)
     .join("\n");
 
+  // Note: All properties must be required for OpenAI JSON mode
+  // suggestedTasks should be an empty array when needsPlan is false
   const schema = z.object({
     needsPlan: z
       .boolean()
@@ -84,8 +86,7 @@ export async function analyzeRequest(
             .describe("Task titles that must complete before this one"),
         })
       )
-      .optional()
-      .describe("Tasks to create if needsPlan is true"),
+      .describe("Tasks to create if needsPlan is true, empty array if needsPlan is false"),
   });
 
   console.log(
@@ -93,14 +94,16 @@ export async function analyzeRequest(
     {
       userMessage: userMessage.slice(0, 100),
       availableAgents: availableAgents.map((a) => a.name),
+      modelId: (model as any).modelId || "unknown",
     }
   );
 
-  const result = await generateObject({
-    model,
-    schema,
-    mode: "json",
-    system: `You determine whether a user request would benefit from multi-agent collaboration.
+  try {
+    const result = await generateObject({
+      model,
+      schema,
+      mode: "json",
+      system: `You determine whether a user request would benefit from multi-agent collaboration.
 
 Available specialized agents:
 ${agentDescriptions}
@@ -113,17 +116,30 @@ Multi-agent orchestration is valuable when:
 When creating tasks:
 - Use the EXACT agent ID from the list above (e.g., "researcher", "developer")
 - Set dependencies so tasks execute in the right order (use task titles)
-- Keep tasks focused and actionable`,
-    messages: [{ role: "user", content: userMessage }],
-  });
+- Keep tasks focused and actionable
+- If needsPlan is false, return suggestedTasks as an empty array []`,
+      messages: [{ role: "user", content: userMessage }],
+    });
 
-  console.log("[Orchestrator] Analysis result:", {
-    needsPlan: result.object.needsPlan,
-    reasoning: result.object.reasoning,
-    taskCount: result.object.suggestedTasks?.length || 0,
-  });
+    console.log("[Orchestrator] Analysis result:", {
+      needsPlan: result.object.needsPlan,
+      reasoning: result.object.reasoning,
+      taskCount: result.object.suggestedTasks?.length || 0,
+    });
 
-  return result.object;
+    return result.object;
+  } catch (error: any) {
+    // Log detailed error information
+    console.error("[Orchestrator] generateObject failed:", {
+      errorName: error?.name,
+      errorMessage: error?.message,
+      errorCause: error?.cause?.message || error?.cause,
+      responseBody: error?.responseBody,
+      statusCode: error?.statusCode,
+      fullError: error,
+    });
+    throw error;
+  }
 }
 
 /**
