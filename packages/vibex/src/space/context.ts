@@ -3,7 +3,7 @@
  * Handles token counting, message compression, and context window management
  */
 
-import type { ModelMessage } from "./message";
+import type { ModelMessage } from "../types/message";
 
 /**
  * Simple token estimation (4 chars ≈ 1 token)

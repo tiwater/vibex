@@ -6,20 +6,14 @@
 import type { LanguageModelUsage } from "ai";
 import { startSpace } from "./space";
 
-interface ContentPart {
-  type: string;
-  text?: string;
-  [key: string]: any;
-}
+
+
+import type { XMessage } from "./types/message";
 
 export interface StreamTextOptions {
   // Core AI SDK options
   model?: any; // Ignored in VibeX (uses agent configs)
-  messages: Array<{
-    role: "system" | "user" | "assistant";
-    content: string | ContentPart[];
-    [key: string]: any;
-  }>;
+  messages: XMessage[];
   system?: string;
 
   // VibeX agent selection

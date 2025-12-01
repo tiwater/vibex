@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useMemo, memo, useRef } from "react";
 import {
   Bot,
   User,
@@ -13,7 +12,6 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
-  Users,
   Copy,
   Check,
   Terminal,
@@ -23,7 +21,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,9 +36,12 @@ interface ChatMessageProps {
   message: XChatMessage;
 }
 
+// Use a simple format to avoid hydration mismatch (locale-dependent formatting differs server/client)
 function formatTime(date: Date | undefined): string {
   if (!date) return "";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 // Predefined color palette for consistent agent colors
@@ -486,8 +486,12 @@ function getToolIcon(toolName: string) {
   return Wrench;
 }
 
-// Tool Call Component - shown as a separate message from the agent
-function ToolCallMessage({ item }: { item: TimelineItem }) {
+// Tool Call Component - shown as a separate message from the agent (memoized)
+const ToolCallMessage = memo(function ToolCallMessage({
+  item,
+}: {
+  item: TimelineItem;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const Icon = getToolIcon(item.toolName || "");
   const colors = getAgentColor(item.agentName);
@@ -527,11 +531,7 @@ function ToolCallMessage({ item }: { item: TimelineItem }) {
   const StatusIcon = status.icon;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex gap-2 my-2"
-    >
+    <div className="flex gap-2 my-2">
       {/* Agent Avatar */}
       <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
         <AvatarFallback className="text-[10px] font-medium text-white">
@@ -574,56 +574,49 @@ function ToolCallMessage({ item }: { item: TimelineItem }) {
             </div>
           </button>
 
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: "auto" }}
-                exit={{ height: 0 }}
-                className="overflow-hidden border-t border-inherit"
-              >
-                <div className="p-2 space-y-2 text-xs">
-                  {item.toolArgs && Object.keys(item.toolArgs).length > 0 && (
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase mb-1">
-                        Input
-                      </div>
-                      <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto">
-                        {JSON.stringify(item.toolArgs, null, 2)}
-                      </pre>
+          {isExpanded && (
+            <div className="overflow-hidden border-t border-inherit">
+              <div className="p-2 space-y-2 text-xs">
+                {item.toolArgs && Object.keys(item.toolArgs).length > 0 && (
+                  <div>
+                    <div className="text-[10px] text-slate-500 uppercase mb-1">
+                      Input
                     </div>
-                  )}
-                  {item.toolResult && (
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase mb-1">
-                        Output
-                      </div>
-                      <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto max-h-96 overflow-y-auto">
-                        {item.toolResult}
-                      </pre>
+                    <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto">
+                      {JSON.stringify(item.toolArgs, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                {item.toolResult && (
+                  <div>
+                    <div className="text-[10px] text-slate-500 uppercase mb-1">
+                      Output
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto max-h-96 overflow-y-auto">
+                      {item.toolResult}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
-// Tool Result Component - shown as a separate message
-function ToolResultMessage({ item }: { item: TimelineItem }) {
+// Tool Result Component - shown as a separate message (memoized)
+const ToolResultMessage = memo(function ToolResultMessage({
+  item,
+}: {
+  item: TimelineItem;
+}) {
   const colors = getAgentColor(item.agentName);
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex gap-2 my-2"
-    >
+    <div className="flex gap-2 my-2">
       <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
         <AvatarFallback className="text-[10px] font-medium text-white">
           {item.agentName.slice(0, 2).toUpperCase()}
@@ -661,12 +654,12 @@ function ToolResultMessage({ item }: { item: TimelineItem }) {
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
-// Artifact Message Component
-function ArtifactMessage({
+// Artifact Message Component (memoized)
+const ArtifactMessage = memo(function ArtifactMessage({
   item,
   spaceId = "playground",
 }: {
@@ -713,11 +706,7 @@ function ArtifactMessage({
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex gap-2 my-2"
-      >
+      <div className="flex gap-2 my-2">
         <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
           <AvatarFallback className="text-[10px] font-medium text-white">
             {item.agentName.slice(0, 2).toUpperCase()}
@@ -750,7 +739,7 @@ function ArtifactMessage({
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Artifact Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -783,19 +772,19 @@ function ArtifactMessage({
       </Dialog>
     </>
   );
-}
+});
 
-// Agent Message Bubble - group chat style
-function AgentMessageBubble({ item }: { item: TimelineItem }) {
+// Agent Message Bubble - group chat style (memoized)
+const AgentMessageBubble = memo(function AgentMessageBubble({
+  item,
+}: {
+  item: TimelineItem;
+}) {
   const agentName = item.agentName || "Agent";
   const colors = getAgentColor(agentName);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex gap-2 my-2"
-    >
+    <div className="flex gap-2 my-2">
       {/* Agent Avatar */}
       <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
         <AvatarFallback className="text-[10px] font-medium text-white">
@@ -819,12 +808,16 @@ function AgentMessageBubble({ item }: { item: TimelineItem }) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
-// User Message Component
-function UserMessage({ message }: { message: XChatMessage }) {
+// User Message Component (memoized)
+const UserMessage = memo(function UserMessage({
+  message,
+}: {
+  message: XChatMessage;
+}) {
   const content =
     message.content ||
     message.parts
@@ -834,11 +827,7 @@ function UserMessage({ message }: { message: XChatMessage }) {
     "";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex gap-3 flex-row-reverse"
-    >
+    <div className="flex gap-3 flex-row-reverse">
       <Avatar className="w-8 h-8 shrink-0 bg-slate-200 dark:bg-slate-700">
         <AvatarFallback>
           <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
@@ -855,28 +844,31 @@ function UserMessage({ message }: { message: XChatMessage }) {
           <p className="text-sm text-left">{content}</p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
 // Assistant Message Component - TRUE GROUP CHAT TIMELINE
-function AssistantMessage({ message }: { message: XChatMessage }) {
+// Memoized to prevent re-renders during streaming
+const AssistantMessage = memo(function AssistantMessage({
+  message,
+}: {
+  message: XChatMessage;
+}) {
   // Extract spaceId from message metadata for artifact access
   const spaceId = (message.metadata?.spaceId as string) || "playground";
 
-  const timelineItems = useMemo(
-    () => parseMessageToTimeline(message),
-    [message]
-  );
+  // Track if this is the first render to apply animations only once
+  const isFirstRender = useRef(true);
 
-  // If no timeline items, show loading state
+  const timelineItems = useMemo(() => {
+    return parseMessageToTimeline(message);
+  }, [message.parts, message.content]); // Only recompute when parts or content changes
+
+  // If no timeline items, show loading state (no animation to prevent jumping)
   if (timelineItems.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex gap-2 my-2"
-      >
+      <div className="flex gap-2 my-2">
         <Avatar className="w-7 h-7 shrink-0 bg-violet-500">
           <AvatarFallback>
             <Bot className="w-4 h-4 text-white" />
@@ -886,38 +878,40 @@ function AssistantMessage({ message }: { message: XChatMessage }) {
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-sm">Thinking...</span>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   // Render each timeline item as a separate chat bubble
+  // Use stable keys based on content hash to prevent re-renders
   return (
     <div className="space-y-0">
       {timelineItems.map((item, idx) => {
+        // Create a stable key based on item content
+        const stableKey = `${item.type}-${item.agentName}-${idx}-${item.toolCallId || item.artifactId || ""}`;
+
         if (item.type === "tool-call") {
-          return <ToolCallMessage key={`tool-call-${idx}`} item={item} />;
+          return <ToolCallMessage key={stableKey} item={item} />;
         } else if (item.type === "tool-result") {
-          return <ToolResultMessage key={`tool-result-${idx}`} item={item} />;
+          return <ToolResultMessage key={stableKey} item={item} />;
         } else if (item.type === "artifact") {
           return (
-            <ArtifactMessage
-              key={`artifact-${idx}`}
-              item={item}
-              spaceId={spaceId}
-            />
+            <ArtifactMessage key={stableKey} item={item} spaceId={spaceId} />
           );
         } else {
-          return <AgentMessageBubble key={`agent-${idx}`} item={item} />;
+          return <AgentMessageBubble key={stableKey} item={item} />;
         }
       })}
     </div>
   );
-}
+});
 
-// Main Export
-export function ChatMessage({ message }: ChatMessageProps) {
+// Main Export (memoized to prevent unnecessary re-renders)
+export const ChatMessage = memo(function ChatMessage({
+  message,
+}: ChatMessageProps) {
   if (message.role === "user") {
     return <UserMessage message={message} />;
   }
   return <AssistantMessage message={message} />;
-}
+});

@@ -8,10 +8,9 @@
 
 import { generateText, streamText, generateObject } from "ai";
 import type { LanguageModel } from "ai";
-import type { ModelMessage } from "../space/message";
 import { getVibexPath } from "../utils/paths";
 import { AgentConfig } from "../config";
-import { ConversationHistory, XMessage } from "../space/message";
+import { XMessage } from "../types/message";
 import { getModelProvider } from "./llm";
 import { buildToolMap } from "./tool";
 import { generateShortId } from "../utils/id";
@@ -20,7 +19,7 @@ import { z } from "zod";
 export interface AgentContext {
   spaceId: string;
   taskId?: string;
-  conversationHistory: ConversationHistory;
+  conversationHistory: XMessage[];
   metadata?: Record<string, any>;
 }
 
@@ -157,34 +156,12 @@ export class Agent {
   }
 
   /**
-   * Convert XMessage[] to ModelMessage[] - extract text content only
+   * Convert XMessage[] to ModelMessage[]
    * AI SDK handles tool calls automatically when tools are provided
    */
-  private convertMessages(messages: XMessage[]): ModelMessage[] {
+  private convertMessages(messages: XMessage[]): any[] {
     return messages
-      .filter((m) => m.role !== "tool") // Skip tool role messages
-      .map((m) => {
-        let content: string = "";
-
-        if (typeof m.content === "string") {
-          content = m.content;
-        } else if (Array.isArray(m.content)) {
-          // Extract text parts only - AI SDK handles tool calls
-          const textParts = m.content
-            .filter((part: any) => part.type === "text")
-            .map((part: any) => part.text || "")
-            .filter((text: string) => text.length > 0);
-          content = textParts.join("\n");
-        } else {
-          content = String(m.content || "");
-        }
-
-        return {
-          role: m.role as "system" | "user" | "assistant",
-          content,
-        };
-      })
-      .filter((m) => m.content.trim().length > 0);
+      .filter((m) => ["system", "user", "assistant", "tool"].includes(m.role));
   }
 
   /**
@@ -280,7 +257,7 @@ export class Agent {
     // Build context for system prompt generation using XMessages
     const context: AgentContext = {
       spaceId: spaceId || "default",
-      conversationHistory: new ConversationHistory(),
+      conversationHistory: [],
       metadata: enrichedMetadata,
     };
 
@@ -370,7 +347,7 @@ export class Agent {
     // Build context for system prompt generation using XMessages
     const context: AgentContext = {
       spaceId: spaceId || "default",
-      conversationHistory: new ConversationHistory(),
+      conversationHistory: [],
       metadata: enrichedMetadata,
     };
 
@@ -459,7 +436,7 @@ export class Agent {
     // Build context for system prompt generation
     const context: AgentContext = {
       spaceId: spaceId || "default",
-      conversationHistory: new ConversationHistory(),
+      conversationHistory: [],
       metadata: enrichedMetadata,
     };
 
@@ -524,7 +501,7 @@ export class Agent {
     // Build context for system prompt generation
     const context: AgentContext = {
       spaceId: spaceId || "default",
-      conversationHistory: new ConversationHistory(),
+      conversationHistory: [],
       metadata: enrichedMetadata,
     };
 

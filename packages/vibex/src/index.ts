@@ -50,7 +50,8 @@ export type {
 // Runtime - Space subsystem
 export * from "./space";
 export * from "./space/context";
-export * from "./space/message";
+export * from "./types/message";
+export * from "./utils/message";
 export * from "./space/mission";
 export * from "./space/plan";
 export * from "./space/task";
@@ -67,7 +68,7 @@ export * from "./runtime/llm";
 export * from "./runtime/tool";
 export * from "./runtime/prompts";
 export * from "./runtime/factory";
-export * from "./runtime/orchestrator";
+export * from "./runtime/orchestration";
 
 // Workflow Engine
 export * from "./stream";

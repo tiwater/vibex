@@ -27,7 +27,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Agent } from "../runtime/agent";
 import type { AgentConfig } from "../config";
 import { buildToolMap } from "../runtime/tool";
-import type { XMessage } from "../space/message";
+import type { XMessage } from "../types/message";
 import jsonLogic from "json-logic-js";
 
 export class WorkflowEngine extends EventEmitter {

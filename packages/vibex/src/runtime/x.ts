@@ -27,15 +27,15 @@ import {
 import type { StreamTextResult } from "ai";
 type StreamTextResultType = StreamTextResult<Record<string, any>, any>;
 import { z } from "zod/v3";
-import type { XMessage } from "../space/message";
-import { getTextContent } from "../space/message";
+import type { XMessage } from "../types/message";
+import { getTextContent } from "../utils/message";
 import {
   analyzeRequest,
   createPlanFromAnalysis,
   executePlan,
   synthesizeResults,
   DelegationEvent,
-} from "./orchestrator";
+} from "./orchestration";
 
 export interface XOptions {
   model?: string; // AI model to use
@@ -840,7 +840,7 @@ export class XAgent extends Agent {
       "default";
     const task = this.space.getOrCreateTask(taskId);
 
-    const existingMessages = task.history.getMessages();
+    const existingMessages = task.history;
     const newMessages = messages.slice(existingMessages.length);
 
     if (newMessages.length > 0) {
@@ -854,7 +854,7 @@ export class XAgent extends Agent {
                 ? msg.content
                 : [{ type: "text", text: msg.content }],
         };
-        task.history.add(formattedMsg);
+        task.history.push(formattedMsg as XMessage);
       }
       console.log(
         `[XAgent] Updated task ${taskId} history with ${newMessages.length} new messages`
@@ -874,7 +874,7 @@ export class XAgent extends Agent {
    * Stop current operation
    */
   stop() {
-    this.space.messageQueue.clear();
+    // messageQueue removed
     if (this.abortController) {
       this.abortController.abort();
     }
@@ -883,8 +883,10 @@ export class XAgent extends Agent {
   /**
    * Add message to queue (soft interrupt)
    */
-  addMessage(message: string, metadata?: Record<string, unknown>): string {
-    return this.space.messageQueue.add(message, metadata);
+  addMessage(message: string, _metadata?: Record<string, unknown>): string {
+    // Message queue removed, this is now a no-op or direct log
+    console.log("[XAgent] addMessage called (queue removed):", message);
+    return "queued";
   }
 
   /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Sparkles,
   Users,
@@ -65,10 +65,11 @@ export default function PlaygroundPage() {
     setMounted(true);
   }, []);
 
-  // Auto-scroll
+  // Auto-scroll only when message count changes (not on every streaming update)
+  const messageCount = messages.length;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messageCount]);
 
   // Handle send - accept value from ChatInput to avoid stale state issues
   const handleSend = (value?: string) => {
@@ -348,11 +349,9 @@ export default function PlaygroundPage() {
               ) : (
                 <ScrollArea className="flex-1 px-4">
                   <div className="py-4 space-y-4">
-                    <AnimatePresence initial={false}>
-                      {messages.map((message) => (
-                        <ChatMessage key={message.id} message={message} />
-                      ))}
-                    </AnimatePresence>
+                    {messages.map((message) => (
+                      <ChatMessage key={message.id} message={message} />
+                    ))}
 
                     {isLoading && <TypingIndicator />}
 

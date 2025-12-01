@@ -16,7 +16,7 @@ import { XAgent } from "../runtime/x";
 import { getServerResourceAdapter } from "./factory";
 import { SpaceConfig, AgentConfig } from "../config";
 import { Agent } from "../runtime/agent";
-import { MessageQueue, ConversationHistory } from "./message";
+import { XMessage } from "../types/message";
 import type { SpaceType, PlanType } from "@vibex/core";
 import {
   AgentCollaborationManager,
@@ -56,7 +56,7 @@ export interface SpaceTask {
   id: string;
   spaceId: string;
   title: string;
-  history: ConversationHistory;
+  history: XMessage[];
   artifactIds: string[];
   status: "active" | "completed" | "archived";
   createdAt: Date;
@@ -67,9 +67,8 @@ export class Space {
   public spaceId: string;
   public userId?: string; // User ID of space owner
   public config: SpaceConfig;
-  public history: ConversationHistory; // Legacy: primary task history
+  public history: XMessage[]; // Legacy: primary task history
   public tasks: Map<string, SpaceTask>; // NEW: Multiple tasks
-  public messageQueue: MessageQueue;
   public agents: Map<string, Agent>;
   public goal: string;
   public name: string;
@@ -87,7 +86,6 @@ export class Space {
     userId,
     config,
     history,
-    messageQueue,
     agents,
     goal,
     name,
@@ -96,8 +94,7 @@ export class Space {
     spaceId: string;
     userId?: string;
     config: SpaceConfig;
-    history: ConversationHistory;
-    messageQueue: MessageQueue;
+    history: XMessage[];
     agents: Map<string, Agent>;
     goal: string;
     name?: string;
@@ -108,7 +105,6 @@ export class Space {
     this.config = config;
     this.history = history; // Legacy: default task history
     this.tasks = new Map(); // NEW: Task storage
-    this.messageQueue = messageQueue;
     this.agents = agents;
     this.goal = goal;
     this.name = name || `Space ${spaceId}`;
@@ -134,7 +130,7 @@ export class Space {
         id: taskId,
         spaceId: this.spaceId,
         title: title || `Task ${taskId}`,
-        history: new ConversationHistory(),
+        history: [],
         artifactIds: [],
         status: "active",
         createdAt: new Date(),
@@ -194,7 +190,7 @@ export class Space {
       spaceId: this.spaceId,
       goal: this.goal,
       agents: Array.from(this.agents.keys()),
-      historyLength: this.history.messages.length,
+      historyLength: this.history.length,
       createdAt: this.createdAt.toISOString(),
     };
 
@@ -457,9 +453,7 @@ export async function startSpace({
 
   console.log(`[Space] Space initialized (agents loaded on demand)`);
 
-  // Create message queue and history
-  const messageQueue = new MessageQueue();
-  const history = new ConversationHistory();
+  const history: XMessage[] = [];
 
   // Create the space
   const space = new Space({
@@ -467,7 +461,6 @@ export async function startSpace({
     userId,
     config: spaceConfig,
     history,
-    messageQueue,
     agents,
     goal,
     name: name || spaceConfig.name,

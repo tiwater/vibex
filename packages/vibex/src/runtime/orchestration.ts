@@ -12,10 +12,10 @@ import { Agent } from "./agent";
 import { Plan } from "../space/plan";
 import { Task, TaskStatus } from "../space/task";
 import { Space } from "../space";
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import type { LanguageModel } from "ai";
 import { z } from "zod/v3";
-import type { XMessage } from "../space/message";
+import type { XMessage } from "../types/message";
 
 export interface DelegationEvent {
   type: "delegation";
@@ -86,7 +86,9 @@ export async function analyzeRequest(
             .describe("Task titles that must complete before this one"),
         })
       )
-      .describe("Tasks to create if needsPlan is true, empty array if needsPlan is false"),
+      .describe(
+        "Tasks to create if needsPlan is true, empty array if needsPlan is false"
+      ),
   });
 
   console.log(
@@ -98,30 +100,52 @@ export async function analyzeRequest(
     }
   );
 
+  const systemPrompt = `You are a task planner that ALWAYS breaks down user requests into multiple tasks for specialized agents.
+
+Available specialized agents:
+${agentDescriptions}
+
+YOUR JOB: Break down the user's request into 2-4 distinct tasks, each assigned to a specialized agent.
+
+Rules:
+1. ALWAYS set needsPlan to true - every request benefits from multi-agent collaboration
+2. Create at least 2 tasks for every request
+3. Use the EXACT agent ID from the list above (e.g., "researcher", "developer", "content-writer")
+4. Set dependencies so tasks execute in the right order (use task titles)
+5. If the request mentions "research", assign a research task to "researcher" or "web-researcher"
+6. If the request mentions "write" or "document", assign a writing task to "content-writer"
+7. If the request mentions "code" or "implement", assign a coding task to "developer"
+
+Example breakdown for "Research AI frameworks and write a summary":
+- Task 1: "Research AI frameworks" → researcher (no dependencies)
+- Task 2: "Write summary document" → content-writer (depends on Task 1)
+
+IMPORTANT: You MUST respond with ONLY a valid JSON object matching this exact structure:
+{
+  "needsPlan": true,
+  "reasoning": "brief explanation of how tasks are divided",
+  "suggestedTasks": [
+    {
+      "title": "task title",
+      "description": "what this task should accomplish",
+      "assignedTo": "agent-id from list above",
+      "dependencies": ["titles of tasks that must complete first"]
+    }
+  ]
+}
+
+Do NOT include any text outside the JSON object. No markdown, no explanation.`;
+
   try {
     const result = await generateObject({
       model,
       schema,
       mode: "json",
-      system: `You determine whether a user request would benefit from multi-agent collaboration.
-
-Available specialized agents:
-${agentDescriptions}
-
-Multi-agent orchestration is valuable when:
-- The request involves multiple distinct phases (research then writing, etc.)
-- Different specialized skills are needed for different parts
-- The task would naturally be divided among team members
-
-When creating tasks:
-- Use the EXACT agent ID from the list above (e.g., "researcher", "developer")
-- Set dependencies so tasks execute in the right order (use task titles)
-- Keep tasks focused and actionable
-- If needsPlan is false, return suggestedTasks as an empty array []`,
+      system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
     });
 
-    console.log("[Orchestrator] Analysis result:", {
+    console.log("[Orchestrator] Analysis result (generateObject):", {
       needsPlan: result.object.needsPlan,
       reasoning: result.object.reasoning,
       taskCount: result.object.suggestedTasks?.length || 0,
@@ -129,16 +153,72 @@ When creating tasks:
 
     return result.object;
   } catch (error: any) {
-    // Log detailed error information
-    console.error("[Orchestrator] generateObject failed:", {
-      errorName: error?.name,
-      errorMessage: error?.message,
-      errorCause: error?.cause?.message || error?.cause,
-      responseBody: error?.responseBody,
-      statusCode: error?.statusCode,
-      fullError: error,
-    });
-    throw error;
+    // generateObject failed - try fallback with generateText
+    console.warn(
+      "[Orchestrator] generateObject failed, trying generateText fallback:",
+      {
+        errorName: error?.name,
+        errorMessage: error?.message,
+      }
+    );
+
+    try {
+      const textResult = await generateText({
+        model,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      });
+
+      // Try to extract JSON from the response
+      let jsonText = textResult.text.trim();
+
+      // Strip markdown code blocks if present
+      if (jsonText.startsWith("```")) {
+        jsonText = jsonText
+          .replace(/^```(?:json)?\s*\n?/, "")
+          .replace(/\n?```\s*$/, "");
+      }
+
+      console.log(
+        "[Orchestrator] generateText response (first 300 chars):",
+        jsonText.slice(0, 300)
+      );
+
+      const parsed = JSON.parse(jsonText);
+
+      // Validate the structure
+      const validated = {
+        needsPlan: Boolean(parsed.needsPlan),
+        reasoning: String(parsed.reasoning || ""),
+        suggestedTasks: Array.isArray(parsed.suggestedTasks)
+          ? parsed.suggestedTasks.map((t: any) => ({
+              title: String(t.title || ""),
+              description: String(t.description || ""),
+              assignedTo: String(t.assignedTo || t.assigned_agent || ""),
+              dependencies: Array.isArray(t.dependencies)
+                ? t.dependencies.map(String)
+                : [],
+            }))
+          : [],
+      };
+
+      console.log("[Orchestrator] Analysis result (generateText fallback):", {
+        needsPlan: validated.needsPlan,
+        reasoning: validated.reasoning,
+        taskCount: validated.suggestedTasks.length,
+      });
+
+      return validated;
+    } catch (fallbackError: any) {
+      console.error(
+        "[Orchestrator] Both generateObject and generateText failed:",
+        {
+          originalError: error?.message,
+          fallbackError: fallbackError?.message,
+        }
+      );
+      throw error; // Throw the original error
+    }
   }
 }
 
