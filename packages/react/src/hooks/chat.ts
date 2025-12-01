@@ -52,8 +52,8 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
   for (const part of msg.parts) {
     if (part.type === "text" && part.text) {
       xParts.push({ type: "text", text: part.text });
-    } else if (part.type.startsWith("tool-")) {
-      // Handle tool invocations (AI SDK v6 uses tool-* types)
+    } else if (part.type === "tool-call") {
+      // Handle tool call parts (AI SDK v6)
       const toolPart = part as {
         type: string;
         toolCallId?: string;
@@ -69,22 +69,43 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
           | "completed"
           | "failed"
           | "pending-approval"
-          | undefined = "pending";
+          | undefined = "running";
         if (toolPart.state === "result") status = "completed";
         else if (toolPart.state === "call") status = "running";
         else if (toolPart.state === "error") status = "failed";
 
         xParts.push({
           type: "tool-call",
-          toolCallId: toolPart.toolCallId || "unknown",
+          toolCallId:
+            toolPart.toolCallId || `tool-${Date.now()}-${Math.random()}`,
           toolName: toolPart.toolName,
           args: (toolPart.args as Record<string, unknown>) || {},
           status,
         });
       }
+    } else if (part.type === "tool-result") {
+      // Handle tool result parts (AI SDK v6)
+      const toolResultPart = part as {
+        type: string;
+        toolCallId?: string;
+        toolName?: string;
+        result?: unknown;
+        isError?: boolean;
+      };
+      if (toolResultPart.toolCallId) {
+        xParts.push({
+          type: "tool-result",
+          toolCallId: toolResultPart.toolCallId,
+          toolName: toolResultPart.toolName || "unknown",
+          result:
+            typeof toolResultPart.result === "string"
+              ? toolResultPart.result
+              : JSON.stringify(toolResultPart.result, null, 2),
+        });
+      }
     } else if (part.type.startsWith("data-")) {
-      // Handle custom data parts (e.g., delegation events)
-      // AI SDK v6 uses "data-${string}" format, e.g., "data-delegation"
+      // Handle custom data parts (e.g., delegation events, tool calls)
+      // AI SDK v6 uses "data-${string}" format, e.g., "data-delegation", "data-tool-call"
       const dataPart = part as { type: string; data?: unknown };
       if (dataPart.data && typeof dataPart.data === "object") {
         const data = dataPart.data as Record<string, unknown>;
@@ -95,6 +116,7 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
           const agentName = data.agentName as string;
           const artifactId = data.artifactId as string | undefined;
           const error = data.error as string | undefined;
+          const result = data.result as string | undefined;
 
           let delegationText = "";
           if (status === "started") {
@@ -104,6 +126,10 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
             if (artifactId) {
               delegationText += `   📄 Created artifact: ${artifactId}\n`;
             }
+            if (result) {
+              // Show the FULL result - no truncation
+              delegationText += `\n${result}\n`;
+            }
             delegationText += "\n";
           } else if (status === "failed") {
             delegationText = `❌ **${agentName}** failed on "${taskTitle}": ${error || "Unknown error"}\n\n`;
@@ -111,6 +137,61 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
 
           if (delegationText) {
             xParts.push({ type: "text", text: delegationText });
+          }
+        } else if (data.type === "tool-call") {
+          // Convert data-tool-call to tool-call part (result comes separately as data-tool-result)
+          const toolName = data.toolName as string;
+          const args = data.args as Record<string, unknown> | undefined;
+          const toolCallId =
+            (data.toolCallId as string) ||
+            `tool-${Date.now()}-${Math.random()}`;
+
+          console.log(
+            `[Chat] Parsed tool-call: ${toolName} (id: ${toolCallId})`
+          );
+
+          // Add tool-call part (without result - result comes as separate data-tool-result)
+          xParts.push({
+            type: "tool-call",
+            toolCallId,
+            toolName,
+            args: args || {},
+            status: "running", // Will be updated when tool-result arrives
+          });
+        } else if (data.type === "artifact") {
+          // Handle artifact parts from data-artifact
+          const artifactId = data.artifactId as string;
+          const title = data.title as string | undefined;
+          const version = data.version as number | undefined;
+
+          if (artifactId) {
+            xParts.push({
+              type: "artifact",
+              artifactId,
+              title: title || artifactId,
+              version: version || 1,
+            });
+          }
+        } else if (data.type === "tool-result") {
+          // Handle data-tool-result separately (in case it comes without tool-call)
+          const toolResultPart = data as {
+            toolCallId?: string;
+            toolName?: string;
+            result?: unknown;
+          };
+          if (toolResultPart.toolCallId) {
+            xParts.push({
+              type: "tool-result",
+              toolCallId: toolResultPart.toolCallId,
+              toolName: toolResultPart.toolName || "unknown",
+              result:
+                typeof toolResultPart.result === "string"
+                  ? toolResultPart.result
+                  : JSON.stringify(toolResultPart.result, null, 2),
+            });
+            console.log(
+              `[Chat] Parsed tool-result: ${toolResultPart.toolName} (id: ${toolResultPart.toolCallId})`
+            );
           }
         }
       }

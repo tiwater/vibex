@@ -131,9 +131,10 @@ export function createAgent(settings: XAgentSettings): XAgentInstance {
     : { provider: "openai", modelName: "gpt-4o" };
 
   // Create the agent config
+  // Use name as both id and name for consistency
   const agentConfig: AgentConfig = {
-    id: name,
-    name,
+    id: name, // Agent ID (used for registration)
+    name, // Display name
     description: description || `${name} agent`,
     provider: modelConfig.provider,
     model: modelConfig.modelName,
@@ -369,8 +370,10 @@ export function createAgentFromConfig(
     modelString = `${config.provider}:${config.model}`;
   }
 
+  // Use config.id for the agent ID and config.name for the display name
+  // This ensures we use English IDs/names from the YAML configs
   return createAgent({
-    name: config.name,
+    name: config.name, // Display name (e.g., "Researcher")
     description: config.description,
     model: options?.model || modelString,
     system: config.systemPrompt,

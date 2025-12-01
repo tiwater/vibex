@@ -20,10 +20,18 @@ import {
   Code,
   Search,
   Globe,
+  ArrowRight,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Markdown } from "@/components/Markdown";
 import type { XChatMessage, XChatPart } from "@vibex/react";
 
@@ -36,222 +44,401 @@ function formatTime(date: Date | undefined): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Agent colors for visual distinction
-const AGENT_COLORS: Record<
-  string,
-  { bg: string; border: string; text: string }
-> = {
-  x: {
-    bg: "bg-violet-500",
-    border: "border-violet-500",
-    text: "text-violet-600",
-  },
-  researcher: {
-    bg: "bg-blue-500",
-    border: "border-blue-500",
-    text: "text-blue-600",
-  },
-  writer: {
+// Predefined color palette for consistent agent colors
+const COLOR_PALETTE = [
+  { bg: "bg-violet-500", border: "border-violet-500", text: "text-violet-600" },
+  { bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-600" },
+  {
     bg: "bg-emerald-500",
     border: "border-emerald-500",
     text: "text-emerald-600",
   },
-  analyst: {
-    bg: "bg-amber-500",
-    border: "border-amber-500",
-    text: "text-amber-600",
-  },
-  default: {
-    bg: "bg-slate-500",
-    border: "border-slate-500",
-    text: "text-slate-600",
-  },
-};
+  { bg: "bg-amber-500", border: "border-amber-500", text: "text-amber-600" },
+  { bg: "bg-cyan-500", border: "border-cyan-500", text: "text-cyan-600" },
+  { bg: "bg-rose-500", border: "border-rose-500", text: "text-rose-600" },
+  { bg: "bg-indigo-500", border: "border-indigo-500", text: "text-indigo-600" },
+  { bg: "bg-teal-500", border: "border-teal-500", text: "text-teal-600" },
+  { bg: "bg-orange-500", border: "border-orange-500", text: "text-orange-600" },
+  { bg: "bg-pink-500", border: "border-pink-500", text: "text-pink-600" },
+  { bg: "bg-purple-500", border: "border-purple-500", text: "text-purple-600" },
+  { bg: "bg-slate-500", border: "border-slate-500", text: "text-slate-600" },
+];
 
+// Generate a deterministic color for an agent based on their name/id
 function getAgentColor(agentName: string) {
-  const name = agentName.toLowerCase();
-  if (name.includes("research") || name.includes("researcher"))
-    return AGENT_COLORS.researcher;
-  if (
-    name.includes("write") ||
-    name.includes("writer") ||
-    name.includes("content")
-  )
-    return AGENT_COLORS.writer;
-  if (name.includes("analyst") || name.includes("analyze"))
-    return AGENT_COLORS.analyst;
-  if (name === "x" || name === "assistant") return AGENT_COLORS.x;
-  return AGENT_COLORS.default;
+  // Simple hash function to convert agent name to a number
+  let hash = 0;
+  const name = agentName.toLowerCase().trim();
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  // Use absolute value and modulo to get index
+  const index = Math.abs(hash) % COLOR_PALETTE.length;
+  return COLOR_PALETTE[index];
 }
 
-// Parsed message segment for group chat display
-interface MessageSegment {
-  type: "agent-message" | "tool-call" | "content";
-  agent?: string;
+// Timeline item - represents one agent's contribution (message + tool calls)
+interface TimelineItem {
+  type: "agent-message" | "tool-call" | "tool-result" | "artifact";
+  agentName: string;
+  agentId?: string;
   content?: string;
+  toolCallId?: string;
   toolName?: string;
-  toolArgs?: Record<string, string>;
+  toolArgs?: Record<string, unknown>;
   toolResult?: string;
-  toolStatus?: "running" | "completed" | "failed";
+  toolStatus?: "running" | "completed" | "failed" | "pending";
+  artifactId?: string;
+  artifactTitle?: string;
+  artifactVersion?: number;
+  timestamp?: Date;
 }
 
-// Parse message into segments for group chat display
-function parseMessageIntoSegments(content: string): MessageSegment[] {
-  const segments: MessageSegment[] = [];
+// Parse message parts into timeline items (group chat style)
+function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
+  const items: TimelineItem[] = [];
 
-  // Remove XML function call blocks and extract tool info
-  const functionCallRegex = /<function_calls>([\s\S]*?)<\/function_calls>/g;
-  const resultRegex = /<function_result>([\s\S]*?)<\/function_result>/g;
-  const invokeRegex = /<invoke\s+name="([^"]+)">([\s\S]*?)<\/invoke>/g;
-  const paramRegex = /<parameter\s+name="([^"]+)">([^<]*)<\/parameter>/g;
+  if (!message.parts || message.parts.length === 0) {
+    // Fallback: if no parts, treat entire content as one message
+    if (message.content) {
+      items.push({
+        type: "agent-message",
+        agentName: message.agentName || "Assistant",
+        agentId: message.agentName?.toLowerCase() || "assistant",
+        content: message.content,
+        timestamp: message.createdAt,
+      });
+    }
+    return items;
+  }
 
-  // Extract tool calls
-  let match;
-  const toolCalls: MessageSegment[] = [];
+  // Track current agent context
+  let currentAgent = message.agentName || "Assistant";
+  let currentAgentId = currentAgent.toLowerCase();
 
-  while ((match = functionCallRegex.exec(content)) !== null) {
-    const block = match[1];
-    let invokeMatch;
-    while ((invokeMatch = invokeRegex.exec(block)) !== null) {
-      const toolName = invokeMatch[1];
-      const paramsBlock = invokeMatch[2];
-      const args: Record<string, string> = {};
+  // Track tool calls to match with results
+  const pendingToolCalls = new Map<
+    string,
+    { toolName: string; args: Record<string, unknown>; agentName: string }
+  >();
 
-      let paramMatch;
-      const paramRegexLocal =
-        /<parameter\s+name="([^"]+)">([^<]*)<\/parameter>/g;
-      while ((paramMatch = paramRegexLocal.exec(paramsBlock)) !== null) {
-        args[paramMatch[1]] = paramMatch[2];
-      }
+  // Process parts in order - tool calls and artifacts should come before completion text
+  // First, collect all parts
+  const allParts = [...(message.parts || [])];
 
-      toolCalls.push({
+  // Separate tool calls, tool results, and artifacts from text
+  const toolCallParts: typeof allParts = [];
+  const toolResultParts: typeof allParts = [];
+  const artifactParts: typeof allParts = [];
+  const textParts: typeof allParts = [];
+
+  for (const part of allParts) {
+    if (part.type === "tool-call") {
+      toolCallParts.push(part);
+    } else if (part.type === "tool-result") {
+      toolResultParts.push(part);
+    } else if (part.type === "artifact") {
+      artifactParts.push(part);
+    } else {
+      textParts.push(part);
+    }
+  }
+
+  // Process tool calls first (they should appear before completion messages)
+  for (const part of toolCallParts) {
+    const toolCall = part as {
+      toolCallId?: string;
+      toolName?: string;
+      args?: Record<string, unknown>;
+      status?: string;
+    };
+
+    if (toolCall.toolCallId && toolCall.toolName) {
+      // Store for matching with result
+      pendingToolCalls.set(toolCall.toolCallId, {
+        toolName: toolCall.toolName,
+        args: toolCall.args || {},
+        agentName: currentAgent,
+      });
+
+      items.push({
         type: "tool-call",
-        toolName,
-        toolArgs: args,
-        toolStatus: "running",
+        agentName: currentAgent,
+        agentId: currentAgentId,
+        toolCallId: toolCall.toolCallId,
+        toolName: toolCall.toolName,
+        toolArgs: toolCall.args || {},
+        toolStatus: (toolCall.status as any) || "running",
+        timestamp: message.createdAt,
       });
     }
   }
 
-  // Extract results
-  let resultIndex = 0;
-  while ((match = resultRegex.exec(content)) !== null) {
-    if (toolCalls[resultIndex]) {
-      toolCalls[resultIndex].toolResult = match[1].trim();
-      toolCalls[resultIndex].toolStatus = "completed";
+  // Process tool results
+  for (const part of toolResultParts) {
+    const toolResult = part as {
+      toolCallId?: string;
+      toolName?: string;
+      result?: unknown;
+    };
+
+    if (toolResult.toolCallId) {
+      const pending = pendingToolCalls.get(toolResult.toolCallId);
+      if (pending) {
+        items.push({
+          type: "tool-result",
+          agentName: pending.agentName,
+          agentId: pending.agentName.toLowerCase(),
+          toolCallId: toolResult.toolCallId,
+          toolName: toolResult.toolName || pending.toolName,
+          toolResult:
+            typeof toolResult.result === "string"
+              ? toolResult.result
+              : JSON.stringify(toolResult.result, null, 2),
+          toolStatus: "completed",
+          timestamp: message.createdAt,
+        });
+        pendingToolCalls.delete(toolResult.toolCallId);
+      }
     }
-    resultIndex++;
   }
 
-  // Clean content
-  let cleanContent = content
-    .replace(/<function_calls>[\s\S]*?<\/function_calls>/g, "")
-    .replace(/<function_result>[\s\S]*?<\/function_result>/g, "")
-    .replace(/<[\s\S]*?<\/antml:[^>]+>/g, "");
+  // Process artifacts
+  for (const part of artifactParts) {
+    const artifactPart = part as {
+      artifactId?: string;
+      title?: string;
+      version?: number;
+    };
+    if (artifactPart.artifactId) {
+      items.push({
+        type: "artifact",
+        agentName: currentAgent,
+        agentId: currentAgentId,
+        artifactId: artifactPart.artifactId,
+        artifactTitle: artifactPart.title || artifactPart.artifactId,
+        artifactVersion: artifactPart.version || 1,
+        timestamp: message.createdAt,
+      });
+    }
+  }
 
-  // Parse agent messages and task status
-  const lines = cleanContent.split("\n");
-  let currentContent: string[] = [];
-  let currentAgent: string | null = null;
+  // Now process text parts (completion messages, etc.)
+  for (const part of textParts) {
+    if (part.type === "text") {
+      const text = part.text.trim();
+      if (!text) continue;
 
-  const flushContent = () => {
-    if (currentContent.length > 0) {
-      const text = currentContent.join("\n").trim();
-      if (text) {
-        segments.push({
-          type: currentAgent ? "agent-message" : "content",
-          agent: currentAgent || undefined,
+      // Check if this is a delegation message (parsed from delegation events)
+      const delegationMatch = text.match(
+        /\*\*Delegated\*\* "([^"]+)" to \*\*([^*]+)\*\*/
+      );
+      if (delegationMatch) {
+        // This is a delegation - the next agent will be the delegatee
+        const taskTitle = delegationMatch[1];
+        const agentName = delegationMatch[2].trim();
+        items.push({
+          type: "agent-message",
+          agentName: currentAgent,
+          agentId: currentAgentId,
+          content: `Delegated "${taskTitle}" to ${agentName}`,
+          timestamp: message.createdAt,
+        });
+        // Update current agent for subsequent messages
+        currentAgent = agentName;
+        currentAgentId = agentName.toLowerCase();
+        continue;
+      }
+
+      // Check for completion messages (may include result)
+      // BUT: Don't consume if we have tool-call or artifact parts - those should be shown separately
+      // Only match if this is a simple completion without tool calls/artifacts
+      const hasToolCallsOrArtifacts = message.parts?.some(
+        (p) =>
+          p.type === "tool-call" ||
+          p.type === "tool-result" ||
+          p.type === "artifact"
+      );
+
+      if (!hasToolCallsOrArtifacts) {
+        const completedMatch = text.match(
+          /\*\*([^*]+)\*\* completed "([^"]+)"([\s\S]*?)(?:\n\n|$)/
+        );
+        if (completedMatch) {
+          const agentName = completedMatch[1].trim();
+          const taskTitle = completedMatch[2];
+          const result = completedMatch[3]?.trim();
+          const content = result
+            ? `Completed "${taskTitle}"\n\n${result}`
+            : `Completed "${taskTitle}"`;
+          items.push({
+            type: "agent-message",
+            agentName,
+            agentId: agentName.toLowerCase(),
+            content,
+            timestamp: message.createdAt,
+          });
+          continue;
+        }
+      }
+
+      // If we have tool calls/artifacts, just show the completion header without consuming the full text
+      // The tool calls and artifacts will be shown as separate items
+      const simpleCompletedMatch = text.match(
+        /✅ \*\*([^*]+)\*\* completed "([^"]+)"/
+      );
+      if (simpleCompletedMatch && hasToolCallsOrArtifacts) {
+        const agentName = simpleCompletedMatch[1].trim();
+        const taskTitle = simpleCompletedMatch[2];
+        items.push({
+          type: "agent-message",
+          agentName,
+          agentId: agentName.toLowerCase(),
+          content: `Completed "${taskTitle}"`,
+          timestamp: message.createdAt,
+        });
+        // Don't continue - let tool calls and artifacts be processed as separate parts
+        continue;
+      }
+
+      // Check for artifact IDs in text (pattern: artifact_* or explicit mentions)
+      // Artifact IDs typically look like: artifact_<taskId>_<timestamp>
+      const artifactIdPattern =
+        /(?:artifact[_\s:]+|artifact\s+id[:\s]+)?(artifact_[a-zA-Z0-9_]+)/gi;
+      const artifactMatches = [...text.matchAll(artifactIdPattern)];
+
+      if (artifactMatches.length > 0) {
+        // Split text by artifact IDs and create separate items
+        let lastIndex = 0;
+        for (const match of artifactMatches) {
+          // Add text before artifact ID
+          if (match.index !== undefined && match.index > lastIndex) {
+            const beforeText = text.slice(lastIndex, match.index).trim();
+            if (beforeText) {
+              items.push({
+                type: "agent-message",
+                agentName: currentAgent,
+                agentId: currentAgentId,
+                content: beforeText,
+                timestamp: message.createdAt,
+              });
+            }
+          }
+
+          // Add artifact item
+          const artifactId = match[1];
+          items.push({
+            type: "artifact",
+            agentName: currentAgent,
+            agentId: currentAgentId,
+            artifactId: artifactId,
+            artifactTitle: artifactId, // Will be updated if we have metadata
+            artifactVersion: 1,
+            timestamp: message.createdAt,
+          });
+
+          lastIndex = (match.index || 0) + match[0].length;
+        }
+
+        // Add remaining text after last artifact
+        if (lastIndex < text.length) {
+          const afterText = text.slice(lastIndex).trim();
+          if (afterText) {
+            items.push({
+              type: "agent-message",
+              agentName: currentAgent,
+              agentId: currentAgentId,
+              content: afterText,
+              timestamp: message.createdAt,
+            });
+          }
+        }
+      } else {
+        // Regular text content from current agent (no artifacts detected)
+        items.push({
+          type: "agent-message",
+          agentName: currentAgent,
+          agentId: currentAgentId,
           content: text,
+          timestamp: message.createdAt,
         });
       }
-      currentContent = [];
-    }
-  };
+    } else if (part.type === "tool-call") {
+      const toolCall = part as {
+        toolCallId?: string;
+        toolName?: string;
+        args?: Record<string, unknown>;
+        status?: string;
+      };
 
-  for (const line of lines) {
-    const trimmed = line.trim();
+      if (toolCall.toolCallId && toolCall.toolName) {
+        // Store for matching with result
+        pendingToolCalls.set(toolCall.toolCallId, {
+          toolName: toolCall.toolName,
+          args: toolCall.args || {},
+          agentName: currentAgent,
+        });
 
-    // Skip empty lines but preserve for formatting
-    if (!trimmed) {
-      currentContent.push(line);
-      continue;
-    }
+        items.push({
+          type: "tool-call",
+          agentName: currentAgent,
+          agentId: currentAgentId,
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          toolArgs: toolCall.args || {},
+          toolStatus: (toolCall.status as any) || "running",
+          timestamp: message.createdAt,
+        });
+      }
+    } else if (part.type === "tool-result") {
+      const toolResult = part as {
+        toolCallId?: string;
+        toolName?: string;
+        result?: unknown;
+      };
 
-    // Skip task execution headers
-    if (
-      trimmed.match(/^(Task Execution|Plan:|Summary)$/i) ||
-      trimmed.match(/^Plan:\s/i)
-    ) {
-      continue;
+      if (toolResult.toolCallId) {
+        const pending = pendingToolCalls.get(toolResult.toolCallId);
+        if (pending) {
+          items.push({
+            type: "tool-result",
+            agentName: pending.agentName,
+            agentId: pending.agentName.toLowerCase(),
+            toolCallId: toolResult.toolCallId,
+            toolName: toolResult.toolName || pending.toolName,
+            toolResult:
+              typeof toolResult.result === "string"
+                ? toolResult.result
+                : JSON.stringify(toolResult.result, null, 2),
+            toolStatus: "completed",
+            timestamp: message.createdAt,
+          });
+          pendingToolCalls.delete(toolResult.toolCallId);
+        }
+      }
+    } else if (part.type === "artifact") {
+      const artifactPart = part as {
+        artifactId?: string;
+        title?: string;
+        version?: number;
+      };
+      if (artifactPart.artifactId) {
+        items.push({
+          type: "artifact",
+          agentName: currentAgent,
+          agentId: currentAgentId,
+          artifactId: artifactPart.artifactId,
+          artifactTitle: artifactPart.title || artifactPart.artifactId,
+          artifactVersion: artifactPart.version || 1,
+          timestamp: message.createdAt,
+        });
+      }
     }
-
-    // Skip tool name lines
-    if (trimmed.match(/^[^\w]*\w+_\w+$/) && trimmed.length < 40) {
-      continue;
-    }
-    if (trimmed.match(/Used \d+ tool/i)) {
-      continue;
-    }
-
-    // Parse delegated tasks - these become agent messages
-    const delegatedMatch = trimmed.match(/Delegated\s*"([^"]+)"\s*to\s*(.+)$/i);
-    if (delegatedMatch) {
-      flushContent();
-      const agent = delegatedMatch[2]
-        .replace(/[^\w\u4e00-\u9fff\s]/g, "")
-        .trim();
-      segments.push({
-        type: "agent-message",
-        agent,
-        content: `Working on: ${delegatedMatch[1]}`,
-      });
-      continue;
-    }
-
-    // Parse completed tasks
-    const completedMatch = trimmed.match(/completed\s*"([^"]+)"/i);
-    if (completedMatch && trimmed.toLowerCase().includes("completed")) {
-      flushContent();
-      const beforeKeyword = trimmed
-        .split(/completed/i)[0]
-        .replace(/[^\w\u4e00-\u9fff\s]/g, "")
-        .trim();
-      const agent = beforeKeyword || "Agent";
-      segments.push({
-        type: "agent-message",
-        agent,
-        content: `Completed: ${completedMatch[1]}`,
-      });
-      continue;
-    }
-
-    // Parse failed tasks
-    const failedMatch = trimmed.match(/failed\s*"([^"]+)"/i);
-    if (failedMatch && trimmed.toLowerCase().includes("failed")) {
-      flushContent();
-      const beforeKeyword = trimmed
-        .split(/failed/i)[0]
-        .replace(/[^\w\u4e00-\u9fff\s]/g, "")
-        .trim();
-      const agent = beforeKeyword || "Agent";
-      segments.push({
-        type: "agent-message",
-        agent,
-        content: `Failed: ${failedMatch[1]}`,
-      });
-      continue;
-    }
-
-    // Regular content
-    currentContent.push(line);
   }
 
-  flushContent();
-
-  // Add tool calls
-  segments.push(...toolCalls);
-
-  return segments;
+  return items;
 }
 
 // Copy button
@@ -299,10 +486,11 @@ function getToolIcon(toolName: string) {
   return Wrench;
 }
 
-// Compact Tool Call Component
-function ToolCallBubble({ segment }: { segment: MessageSegment }) {
+// Tool Call Component - shown as a separate message from the agent
+function ToolCallMessage({ item }: { item: TimelineItem }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const Icon = getToolIcon(segment.toolName || "");
+  const Icon = getToolIcon(item.toolName || "");
+  const colors = getAgentColor(item.agentName);
 
   const statusConfig = {
     running: {
@@ -310,107 +498,296 @@ function ToolCallBubble({ segment }: { segment: MessageSegment }) {
       border: "border-blue-200 dark:border-blue-800",
       icon: Loader2,
       spin: true,
+      text: "text-blue-600 dark:text-blue-400",
     },
     completed: {
       bg: "bg-emerald-50 dark:bg-emerald-950/30",
       border: "border-emerald-200 dark:border-emerald-800",
       icon: CheckCircle,
       spin: false,
+      text: "text-emerald-600 dark:text-emerald-400",
     },
     failed: {
       bg: "bg-red-50 dark:bg-red-950/30",
       border: "border-red-200 dark:border-red-800",
       icon: XCircle,
       spin: false,
+      text: "text-red-600 dark:text-red-400",
+    },
+    pending: {
+      bg: "bg-amber-50 dark:bg-amber-950/30",
+      border: "border-amber-200 dark:border-amber-800",
+      icon: Clock,
+      spin: false,
+      text: "text-amber-600 dark:text-amber-400",
     },
   };
 
-  const status = statusConfig[segment.toolStatus || "running"];
+  const status = statusConfig[item.toolStatus || "running"];
   const StatusIcon = status.icon;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex gap-2 my-1"
+      className="flex gap-2 my-2"
     >
-      <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-        <Wrench className="w-3.5 h-3.5 text-slate-500" />
-      </div>
-      <div
-        className={`flex-1 rounded-xl border ${status.border} ${status.bg} overflow-hidden`}
-      >
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-black/5 dark:hover:bg-white/5"
-        >
-          <div className="flex items-center gap-2">
-            <Icon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-            <span className="font-mono text-xs font-medium">
-              {segment.toolName}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <StatusIcon
-              className={`w-3.5 h-3.5 ${status.spin ? "animate-spin text-blue-500" : segment.toolStatus === "completed" ? "text-emerald-500" : "text-red-500"}`}
-            />
-            {isExpanded ? (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            )}
-          </div>
-        </button>
+      {/* Agent Avatar */}
+      <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
+        <AvatarFallback className="text-[10px] font-medium text-white">
+          {item.agentName.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: "auto" }}
-              exit={{ height: 0 }}
-              className="overflow-hidden border-t border-inherit"
-            >
-              <div className="p-2 space-y-2 text-xs">
-                {segment.toolArgs &&
-                  Object.keys(segment.toolArgs).length > 0 && (
+      {/* Tool Call Bubble */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className={`text-xs font-medium ${colors.text}`}>
+            {item.agentName}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {formatTime(item.timestamp)}
+          </span>
+        </div>
+        <div
+          className={`inline-block rounded-2xl rounded-tl-md border ${status.border} ${status.bg} overflow-hidden max-w-full`}
+        >
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-black/5 dark:hover:bg-white/5"
+          >
+            <div className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              <span className="font-mono text-xs font-medium">
+                {item.toolName}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <StatusIcon
+                className={`w-3.5 h-3.5 ${status.spin ? "animate-spin" : ""} ${status.text}`}
+              />
+              {isExpanded ? (
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              )}
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: "auto" }}
+                exit={{ height: 0 }}
+                className="overflow-hidden border-t border-inherit"
+              >
+                <div className="p-2 space-y-2 text-xs">
+                  {item.toolArgs && Object.keys(item.toolArgs).length > 0 && (
                     <div>
                       <div className="text-[10px] text-slate-500 uppercase mb-1">
                         Input
                       </div>
                       <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto">
-                        {JSON.stringify(segment.toolArgs, null, 2)}
+                        {JSON.stringify(item.toolArgs, null, 2)}
                       </pre>
                     </div>
                   )}
-                {segment.toolResult && (
-                  <div>
-                    <div className="text-[10px] text-slate-500 uppercase mb-1">
-                      Output
+                  {item.toolResult && (
+                    <div>
+                      <div className="text-[10px] text-slate-500 uppercase mb-1">
+                        Output
+                      </div>
+                      <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto max-h-96 overflow-y-auto">
+                        {item.toolResult}
+                      </pre>
                     </div>
-                    <pre className="p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto max-h-32">
-                      {segment.toolResult.slice(0, 300)}
-                      {segment.toolResult.length > 300 ? "..." : ""}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </motion.div>
   );
 }
 
-// Agent Message Bubble - looks like a chat message from that agent
-function AgentMessageBubble({
-  segment,
-  isLast,
+// Tool Result Component - shown as a separate message
+function ToolResultMessage({ item }: { item: TimelineItem }) {
+  const colors = getAgentColor(item.agentName);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex gap-2 my-2"
+    >
+      <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
+        <AvatarFallback className="text-[10px] font-medium text-white">
+          {item.agentName.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className={`text-xs font-medium ${colors.text}`}>
+            {item.agentName}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {formatTime(item.timestamp)}
+          </span>
+        </div>
+        <div className="inline-block bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl rounded-tl-md px-3 py-2 max-w-full">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full text-left flex items-center justify-between"
+          >
+            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              ✓ {item.toolName} completed
+            </span>
+            {isExpanded ? (
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-slate-400" />
+            )}
+          </button>
+          {isExpanded && item.toolResult && (
+            <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+              <pre className="text-xs p-2 rounded bg-white dark:bg-slate-900 overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap">
+                {item.toolResult}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Artifact Message Component
+function ArtifactMessage({
+  item,
+  spaceId = "playground",
 }: {
-  segment: MessageSegment;
-  isLast: boolean;
+  item: TimelineItem;
+  spaceId?: string;
 }) {
-  const agentName = segment.agent || "Agent";
+  const colors = getAgentColor(item.agentName);
+  const artifactId = item.artifactId || "";
+  const artifactTitle = item.artifactTitle || artifactId;
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [artifactContent, setArtifactContent] = React.useState<string | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleViewArtifact = async () => {
+    setIsDialogOpen(true);
+    setIsLoading(true);
+    setError(null);
+    setArtifactContent(null);
+
+    try {
+      const response = await fetch(
+        `/api/spaces/${spaceId}/artifacts/${artifactId}`
+      );
+      if (response.ok) {
+        const blob = await response.blob();
+        const text = await blob.text();
+        setArtifactContent(text);
+      } else {
+        const errorText = await response.text();
+        setError(
+          `Failed to load artifact: ${errorText || response.statusText}`
+        );
+      }
+    } catch (err) {
+      console.error("Failed to fetch artifact:", err);
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex gap-2 my-2"
+      >
+        <Avatar className={`w-7 h-7 shrink-0 ${colors.bg}`}>
+          <AvatarFallback className="text-[10px] font-medium text-white">
+            {item.agentName.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`text-xs font-medium ${colors.text}`}>
+              {item.agentName}
+            </span>
+            <span className="text-[10px] text-muted-foreground">
+              {formatTime(item.timestamp)}
+            </span>
+          </div>
+          <div className="inline-block bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl rounded-tl-md px-3 py-2 max-w-full">
+            <button
+              onClick={handleViewArtifact}
+              className="w-full text-left flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                  📄 {artifactTitle}
+                </div>
+                <div className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5">
+                  Click to view artifact
+                </div>
+              </div>
+              <ArrowRight className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Artifact Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{artifactTitle}</DialogTitle>
+            <DialogDescription>Artifact ID: {artifactId}</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto min-h-0">
+            {isLoading && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Loading artifact...
+                </span>
+              </div>
+            )}
+            {error && (
+              <div className="py-4 text-sm text-destructive">{error}</div>
+            )}
+            {artifactContent !== null && (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <pre className="whitespace-pre-wrap text-xs bg-slate-50 dark:bg-slate-900 p-4 rounded border overflow-auto">
+                  {artifactContent}
+                </pre>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// Agent Message Bubble - group chat style
+function AgentMessageBubble({ item }: { item: TimelineItem }) {
+  const agentName = item.agentName || "Agent";
   const colors = getAgentColor(agentName);
 
   return (
@@ -432,27 +809,15 @@ function AgentMessageBubble({
           <span className={`text-xs font-medium ${colors.text}`}>
             {agentName}
           </span>
+          <span className="text-[10px] text-muted-foreground">
+            {formatTime(item.timestamp)}
+          </span>
         </div>
         <div className="inline-block bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-md px-3 py-2 max-w-full">
-          <p className="text-sm">{segment.content}</p>
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <Markdown>{item.content || ""}</Markdown>
+          </div>
         </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// Main content bubble from the orchestrator
-function ContentBubble({ content }: { content: string }) {
-  if (!content.trim()) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-2"
-    >
-      <div className="prose prose-sm dark:prose-invert max-w-none">
-        <Markdown>{content}</Markdown>
       </div>
     </motion.div>
   );
@@ -494,94 +859,58 @@ function UserMessage({ message }: { message: XChatMessage }) {
   );
 }
 
-// Assistant Message Component - Group Chat Style
+// Assistant Message Component - TRUE GROUP CHAT TIMELINE
 function AssistantMessage({ message }: { message: XChatMessage }) {
-  const rawContent = useMemo(() => {
-    if (message.parts && message.parts.length > 0) {
-      return message.parts
-        .filter(
-          (part): part is XChatPart & { type: "text"; text: string } =>
-            part.type === "text" && "text" in part
-        )
-        .map((part) => part.text)
-        .join("");
-    }
-    return message.content || "";
-  }, [message]);
+  // Extract spaceId from message metadata for artifact access
+  const spaceId = (message.metadata?.spaceId as string) || "playground";
 
-  const segments = useMemo(
-    () => parseMessageIntoSegments(rawContent),
-    [rawContent]
+  const timelineItems = useMemo(
+    () => parseMessageToTimeline(message),
+    [message]
   );
 
-  // Separate segments by type
-  const agentMessages = segments.filter((s) => s.type === "agent-message");
-  const toolCalls = segments.filter((s) => s.type === "tool-call");
-  const contentSegments = segments.filter((s) => s.type === "content");
-  const mainContent = contentSegments
-    .map((s) => s.content)
-    .join("\n")
-    .trim();
-
-  const hasAgentActivity = agentMessages.length > 0 || toolCalls.length > 0;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-1"
-    >
-      {/* Orchestrator Header */}
-      <div className="flex items-center gap-2 mb-2">
-        <Avatar className="w-8 h-8 shrink-0 bg-linear-to-br from-violet-500 to-purple-600">
+  // If no timeline items, show loading state
+  if (timelineItems.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex gap-2 my-2"
+      >
+        <Avatar className="w-7 h-7 shrink-0 bg-violet-500">
           <AvatarFallback>
             <Bot className="w-4 h-4 text-white" />
           </AvatarFallback>
         </Avatar>
-        <div>
-          <span className="text-sm font-medium">
-            {message.agentName || "X"}
-          </span>
-          <span className="text-xs text-muted-foreground ml-2">
-            {formatTime(message.createdAt)}
-          </span>
-        </div>
-      </div>
-
-      {/* Agent Activity - Group Chat Style */}
-      {hasAgentActivity && (
-        <div className="ml-10 space-y-1 border-l-2 border-slate-200 dark:border-slate-700 pl-3">
-          {/* Tool Calls */}
-          {toolCalls.map((segment, idx) => (
-            <ToolCallBubble key={`tool-${idx}`} segment={segment} />
-          ))}
-
-          {/* Agent Messages */}
-          {agentMessages.map((segment, idx) => (
-            <AgentMessageBubble
-              key={`agent-${idx}`}
-              segment={segment}
-              isLast={idx === agentMessages.length - 1}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Main Content */}
-      {mainContent && (
-        <div className="ml-10 bg-muted/40 rounded-2xl rounded-tl-md px-4 py-3">
-          <ContentBubble content={mainContent} />
-        </div>
-      )}
-
-      {/* Loading state */}
-      {!mainContent && !hasAgentActivity && (
-        <div className="ml-10 flex items-center gap-2 text-muted-foreground">
+        <div className="flex-1 flex items-center gap-2 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-sm">Thinking...</span>
         </div>
-      )}
-    </motion.div>
+      </motion.div>
+    );
+  }
+
+  // Render each timeline item as a separate chat bubble
+  return (
+    <div className="space-y-0">
+      {timelineItems.map((item, idx) => {
+        if (item.type === "tool-call") {
+          return <ToolCallMessage key={`tool-call-${idx}`} item={item} />;
+        } else if (item.type === "tool-result") {
+          return <ToolResultMessage key={`tool-result-${idx}`} item={item} />;
+        } else if (item.type === "artifact") {
+          return (
+            <ArtifactMessage
+              key={`artifact-${idx}`}
+              item={item}
+              spaceId={spaceId}
+            />
+          );
+        } else {
+          return <AgentMessageBubble key={`agent-${idx}`} item={item} />;
+        }
+      })}
+    </div>
   );
 }
 

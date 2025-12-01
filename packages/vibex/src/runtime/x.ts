@@ -27,8 +27,6 @@ import {
 import type { StreamTextResult } from "ai";
 type StreamTextResultType = StreamTextResult<Record<string, any>, any>;
 import { z } from "zod/v3";
-import { WorkflowEngine } from "../workflow/engine";
-import { ExecutionGraph } from "../workflow/types";
 import type { XMessage } from "../space/message";
 import { getTextContent } from "../space/message";
 import {
@@ -92,107 +90,20 @@ export class XAgent extends Agent {
   public readonly spaceId: string;
   private abortController?: AbortController;
   public singleAgentId?: string; // If set, bypass planning
-  private workflowEngine: WorkflowEngine;
-
   constructor(config: AgentConfig, space: Space, options?: XOptions) {
-    // Enhance the config for XAgent
     const xConfig: AgentConfig = {
       ...config,
       name: "X",
-      description: `I am X, the conversational representative for this space. I help accomplish tasks using available tools and coordinate with the space's resources.`,
+      description: `I am X, the conversational representative for this space.`,
     };
-
     super(xConfig);
     this.space = space;
     this.spaceId = space.spaceId;
     this.singleAgentId = options?.singleAgentId;
-
-    this.workflowEngine = new WorkflowEngine();
-    this.initializeWorkflowEngine();
-  }
-
-  private initializeWorkflowEngine() {
-    this.workflowEngine.on("stepStart", (data) => {
-      this.addMessage(`[Workflow] Starting step: ${data.step.name}`, {
-        type: "system",
-        stepId: data.step.id,
-      });
-    });
-
-    this.workflowEngine.on("workflowPaused", (data) => {
-      this.addMessage(`[Workflow] Paused: ${data.reason}`, {
-        type: "system",
-        status: "paused",
-      });
-    });
-
-    this.workflowEngine.on("workflowComplete", (data) => {
-      this.addMessage(`[Workflow] Completed successfully.`, {
-        type: "system",
-        status: "completed",
-        output: data.output,
-      });
-    });
-
-    this.workflowEngine.on("workflowFailed", (data) => {
-      this.addMessage(`[Workflow] Failed: ${data.error}`, {
-        type: "system",
-        status: "failed",
-        error: data.error,
-      });
-    });
   }
 
   /**
-   * Execute a complex task using the Workflow Engine
-   */
-  async executeWorkflow(goal: string): Promise<string> {
-    // 1. Plan
-    const workflow = await this.planWorkflow(goal);
-
-    // 2. Register
-    this.workflowEngine.registerWorkflow(workflow);
-
-    // 3. Start
-    return await this.workflowEngine.startWorkflow(workflow.id, { goal });
-  }
-
-  private async planWorkflow(goal: string): Promise<ExecutionGraph> {
-    const agentsList = Array.from(this.space.agents.keys()).join(", ");
-
-    const workflowSchema = z.object({
-      name: z.string(),
-      description: z.string(),
-      nodes: z.array(
-        z.object({
-          id: z.string(),
-          type: z.enum(["agent", "tool", "human_input", "condition"]),
-          name: z.string(),
-          next: z.string().optional(),
-          config: z.record(z.any()),
-        })
-      ),
-    });
-
-    const result = await generateObject({
-      model: this.getModel(),
-      system: `You are an expert workflow planner.
-Available Agents: ${agentsList}
-Generate a workflow to achieve the user's goal: "${goal}"
-Use "human_input" if you need clarification or approval.
-Use "condition" for decision points.`,
-      prompt: goal,
-      schema: workflowSchema,
-    });
-
-    return {
-      id: `wf-${Date.now()}`,
-      ...result.object,
-    } as ExecutionGraph;
-  }
-
-  /**
-   * Getter for space (needed for external access)
+   * Getter for space
    */
   getSpace(): Space {
     return this.space;
@@ -346,11 +257,23 @@ Use "condition" for decision points.`,
     const availableAgents = await this.getAvailableAgents();
 
     // Analyze and create plan
-    const analysis = await analyzeRequest(
-      this.getModel({ spaceId }),
-      userContent,
-      availableAgents
-    );
+    let analysis;
+    try {
+      analysis = await analyzeRequest(
+        this.getModel({ spaceId }),
+        userContent,
+        availableAgents
+      );
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[XAgent] analyzeRequest failed:`, error);
+      return this.createTextStreamResponse(
+        `❌ **Error analyzing request**\n\n` +
+          `The AI failed to analyze your request for planning.\n\n` +
+          `**Error:** ${errorMsg}\n\n` +
+          `**Tip:** Try using "ask" mode for a direct response.`
+      );
+    }
 
     if (!analysis.needsPlan || !analysis.suggestedTasks) {
       // Simple request - return a message saying no plan needed
@@ -428,11 +351,23 @@ Use "condition" for decision points.`,
       );
     }
 
-    const analysis = await analyzeRequest(
-      this.getModel({ spaceId }),
-      userContent,
-      availableAgents
-    );
+    let analysis;
+    try {
+      analysis = await analyzeRequest(
+        this.getModel({ spaceId }),
+        userContent,
+        availableAgents
+      );
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[XAgent] analyzeRequest failed:`, error);
+      return this.createTextStreamResponse(
+        `❌ **Error analyzing request**\n\n` +
+          `The AI failed to analyze your request for multi-agent orchestration.\n\n` +
+          `**Error:** ${errorMsg}\n\n` +
+          `**Tip:** Try using "ask" mode for a direct response, or simplify your request.`
+      );
+    }
 
     console.log(`[XAgent] Agent mode analysis:`, {
       needsPlan: analysis.needsPlan,
@@ -479,8 +414,8 @@ Use "condition" for decision points.`,
       ...restOptions,
     });
 
-    // Wrap the stream to include analysis visualization
-    return this.wrapStreamWithAnalysis(directStream, analysis);
+    // Return stream directly - AI SDK handles tool calls
+    return directStream;
   }
 
   /**
@@ -501,7 +436,7 @@ Use "condition" for decision points.`,
     const events: DelegationEvent[] = [];
 
     // Execute the plan
-    const { results, artifacts } = await executePlan(
+    const { results } = await executePlan(
       plan,
       this.space,
       this.getModel({ spaceId }),
@@ -519,13 +454,8 @@ Use "condition" for decision points.`,
       plan.goal
     );
 
-    // Build response
-    const streamContent = this.buildOrchestrationResponse(
-      plan,
-      events,
-      artifacts,
-      finalResponse
-    );
+    // Build simple text summary
+    const streamContent = `## Plan: ${plan.goal}\n\n${finalResponse || ""}`;
 
     return this.createTextStreamResponse(streamContent);
   }
@@ -628,118 +558,8 @@ Use "condition" for decision points.`,
   /**
    * Wrap a stream to include analysis visualization
    */
-  private wrapStreamWithAnalysis(
-    stream: StreamTextResultType,
-    analysis: {
-      needsPlan: boolean;
-      reasoning: string;
-      suggestedTasks?: Array<{
-        title: string;
-        description: string;
-        assignedTo: string;
-        dependencies: string[];
-      }>;
-    }
-  ): StreamTextResultType {
-    return {
-      ...stream,
-      toUIMessageStreamResponse: async () => {
-        const uiStream = createUIMessageStream({
-          async execute({ writer }) {
-            const textId = "direct-response-text";
-
-            // Write analysis as a data part first
-            writer.write({
-              type: "data-analysis",
-              id: "analysis-result",
-              data: {
-                type: "analysis",
-                needsPlan: analysis.needsPlan,
-                reasoning: analysis.reasoning,
-                suggestedTasks: analysis.suggestedTasks || [],
-                timestamp: Date.now(),
-              },
-            });
-
-            // Stream the original response - let the AI SDK handle tool calls properly
-            // We just need to forward the stream, not manually reconstruct it
-            try {
-              // Get the original stream response and pipe it through
-              const originalResponse = stream.toUIMessageStreamResponse();
-              const reader = originalResponse.body?.getReader();
-
-              if (reader) {
-                const decoder = new TextDecoder();
-                let buffer = "";
-
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-
-                  buffer += decoder.decode(value, { stream: true });
-                  // Process complete SSE messages
-                  const lines = buffer.split("\n\n");
-                  buffer = lines.pop() || "";
-
-                  for (const line of lines) {
-                    if (line.startsWith("data: ")) {
-                      try {
-                        const data = JSON.parse(line.slice(6));
-                        // Forward all parts from the original stream
-                        // The AI SDK will handle tool-call/tool-result types correctly
-                        if (data.type) {
-                          writer.write(data);
-                        }
-                      } catch (e) {
-                        // Ignore parse errors for non-JSON lines
-                      }
-                    }
-                  }
-                }
-
-                // Process remaining buffer
-                if (buffer) {
-                  const lines = buffer.split("\n\n");
-                  for (const line of lines) {
-                    if (line.startsWith("data: ")) {
-                      try {
-                        const data = JSON.parse(line.slice(6));
-                        if (data.type) {
-                          writer.write(data);
-                        }
-                      } catch (e) {
-                        // Ignore
-                      }
-                    }
-                  }
-                }
-              } else {
-                // Fallback: just get text (but this loses tool calls)
-                const text = await stream.text;
-                writer.write({
-                  type: "text-delta",
-                  id: textId,
-                  delta: text,
-                });
-                writer.write({
-                  type: "text-end",
-                  id: textId,
-                });
-              }
-            } catch (error) {
-              writer.write({
-                type: "error",
-                errorText:
-                  error instanceof Error ? error.message : "Unknown error",
-              });
-            }
-          },
-        });
-
-        return createUIMessageStreamResponse({ stream: uiStream });
-      },
-    } as unknown as StreamTextResultType;
-  }
+  // Removed wrapStreamWithAnalysis - unnecessary complexity
+  // Just return the stream directly, AI SDK handles tool calls
 
   private createTextStreamResponse(text: string): StreamTextResultType {
     return {
@@ -786,6 +606,8 @@ Use "condition" for decision points.`,
     }
 
     // Also try to get agents from database (if available)
+    // But prioritize in-memory agents (from config) over database agents
+    // Database agents may have old names, so we only add them if they don't exist in memory
     try {
       const resourceAdapter = await getServerResourceAdapter();
       if (
@@ -797,13 +619,17 @@ Use "condition" for decision points.`,
       const dbAgents = await resourceAdapter.getAgents();
 
       // Merge database agents (avoid duplicates)
+      // Only add database agents that aren't already in the in-memory list
+      // This ensures config values (English) take precedence over database values
       for (const dbAgent of dbAgents) {
+        const dbAgentId = dbAgent.id || dbAgent.name;
         const existing = agentList.find(
-          (a) => (a.id || a.name) === (dbAgent.id || dbAgent.name)
+          (a) => a.id === dbAgentId || a.name === dbAgent.name
         );
         if (!existing) {
+          // Only add if not already in memory (which has the correct English names)
           agentList.push({
-            id: dbAgent.id || dbAgent.name,
+            id: dbAgentId,
             name: dbAgent.name,
             description: dbAgent.description || "",
           });
@@ -825,8 +651,7 @@ Use "condition" for decision points.`,
   }
 
   /**
-   * Execute a request using plan-based multi-agent orchestration
-   * Streams delegation events as they happen
+   * Execute with plan - streams delegation events as they happen
    */
   private async executeWithPlan(
     userRequest: string,
@@ -837,351 +662,168 @@ Use "condition" for decision points.`,
       dependencies: string[];
     }>,
     spaceId: string | undefined,
-    _metadata: Record<string, unknown> // Reserved for future use
+    _metadata: Record<string, unknown>
   ): Promise<StreamTextResultType> {
-    console.log(`[XAgent] Executing with plan: ${suggestedTasks.length} tasks`);
-
-    // Create the plan
     const plan = createPlanFromAnalysis(userRequest, suggestedTasks);
     this.space.plan = plan;
 
-    // Stream delegation events as they happen
-    const events: DelegationEvent[] = [];
     const eventQueue: DelegationEvent[] = [];
-    let planExecutionComplete = false;
-    let finalResponse: string | null = null;
+    let planComplete = false;
+    let finalResponse = "";
     let artifacts: string[] = [];
+    let executionError: string | null = null;
 
-    // Start plan execution in background
-    const planExecutionPromise = (async () => {
-      const { results, artifacts: planArtifacts } = await executePlan(
-        plan,
-        this.space,
-        this.getModel({ spaceId }),
-        (event) => {
-          events.push(event);
-          eventQueue.push(event);
-          console.log(`[XAgent] Delegation event:`, event);
+    // Execute plan in background, collecting events
+    const executionPromise = (async () => {
+      try {
+        const { results, artifacts: a } = await executePlan(
+          plan,
+          this.space,
+          this.getModel({ spaceId }),
+          (event) => eventQueue.push(event)
+        );
+        artifacts = a;
+        try {
+          finalResponse = await synthesizeResults(
+            this.getModel({ spaceId }),
+            plan,
+            results,
+            userRequest
+          );
+        } catch (synthError) {
+          console.error(`[XAgent] synthesizeResults failed:`, synthError);
+          finalResponse = `⚠️ Results synthesis failed: ${synthError instanceof Error ? synthError.message : String(synthError)}\n\nTask results are still available above.`;
         }
-      );
-
-      artifacts = planArtifacts;
-
-      // Synthesize final response
-      finalResponse = await synthesizeResults(
-        this.getModel({ spaceId }),
-        plan,
-        results,
-        userRequest
-      );
-
-      planExecutionComplete = true;
+      } catch (error) {
+        console.error(`[XAgent] Plan execution failed:`, error);
+        executionError = error instanceof Error ? error.message : String(error);
+      }
+      planComplete = true;
     })();
 
-    // Create the streaming generator function
-    const createStreamGenerator = async function* () {
-      // Stream plan overview first
-      yield {
-        type: "text-delta" as const,
-        textDelta: `## Plan: ${plan.goal}\n\n### Task Execution\n\n`,
-      };
-
-      // Stream delegation events as they happen
-      while (!planExecutionComplete || eventQueue.length > 0) {
-        if (eventQueue.length > 0) {
-          const event = eventQueue.shift()!;
-          let eventText = "";
-
-          if (event.status === "started") {
-            eventText = `🔄 **Delegated** "${event.taskTitle}" to **${event.agentName}**\n\n`;
-          } else if (event.status === "completed") {
-            eventText = `✅ **${event.agentName}** completed "${event.taskTitle}"\n`;
-            if (event.artifactId) {
-              eventText += `   📄 Created artifact: ${event.artifactId}\n`;
-            }
-            eventText += "\n";
-          } else if (event.status === "failed") {
-            eventText = `❌ **${event.agentName}** failed on "${event.taskTitle}": ${event.error}\n\n`;
-          }
-
-          if (eventText) {
-            yield { type: "text-delta" as const, textDelta: eventText };
-          }
-        } else {
-          // Wait a bit before checking again
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      }
-
-      // Wait for plan execution to complete
-      await planExecutionPromise;
-
-      // Stream artifacts if any
-      if (artifacts.length > 0) {
-        yield {
-          type: "text-delta" as const,
-          textDelta: `\n### Artifacts Created\n\n${artifacts.map((a) => `- ${a}`).join("\n")}\n\n`,
-        };
-      }
-
-      // Stream final response
-      if (finalResponse) {
-        yield {
-          type: "text-delta" as const,
-          textDelta: `### Summary\n\n${finalResponse}`,
-        };
-      }
-    };
-
-    // Create streaming response that yields events as they happen
-    const streamContent = this.buildOrchestrationResponse(
-      plan,
-      events,
-      artifacts,
-      finalResponse || ""
-    );
-
-    // Return as a StreamTextResult with streaming delegation events
+    // Stream events via createUIMessageStream
     return {
-      textStream: createStreamGenerator,
-      fullStream: async function* () {
-        for await (const chunk of createStreamGenerator()) {
-          yield chunk;
-        }
-        yield { type: "finish" as const, finishReason: "stop" as const };
-      },
-      text: streamContent,
+      text: `## Plan: ${plan.goal}`,
       toUIMessageStreamResponse: async () => {
-        // Use createUIMessageStream to properly stream delegation events
         const stream = createUIMessageStream({
           async execute({ writer }) {
-            const textId = "orchestration-text";
-
-            // Start text block
-            writer.write({
-              type: "text-start",
-              id: textId,
-            });
-
-            // Write initial plan text
+            const id = "text";
+            writer.write({ type: "text-start", id });
             writer.write({
               type: "text-delta",
-              id: textId,
-              delta: `## Plan: ${plan.goal}\n\n### Task Execution\n\n`,
+              id,
+              delta: `## Plan: ${plan.goal}\n\n`,
             });
 
-            // Stream delegation events as custom data parts and text
-            while (!planExecutionComplete || eventQueue.length > 0) {
+            while (!planComplete || eventQueue.length > 0) {
               if (eventQueue.length > 0) {
-                const event = eventQueue.shift()!;
+                const e = eventQueue.shift()!;
+                // Send data part (e already has type: "delegation")
+                writer.write({
+                  type: `data-delegation`,
+                  id: `del-${e.taskId}`,
+                  data: e,
+                });
 
-                // Emit delegation as custom data part
-                if (event.status === "started") {
-                  writer.write({
-                    type: "data-delegation",
-                    id: `delegation-${event.taskId}`,
-                    data: {
-                      type: "delegation",
-                      status: "started",
-                      taskId: event.taskId,
-                      taskTitle: event.taskTitle,
-                      agentId: event.agentId,
-                      agentName: event.agentName,
-                      timestamp: event.timestamp,
-                    },
-                  });
-
-                  // Also write text for visibility
+                // Send text
+                if (e.status === "started") {
                   writer.write({
                     type: "text-delta",
-                    id: textId,
-                    delta: `🔄 **Delegated** "${event.taskTitle}" to **${event.agentName}**\n\n`,
+                    id,
+                    delta: `🔄 **${e.agentName}** → "${e.taskTitle}"\n`,
                   });
-                } else if (event.status === "completed") {
-                  writer.write({
-                    type: "data-delegation",
-                    id: `delegation-${event.taskId}`,
-                    data: {
-                      type: "delegation",
-                      status: "completed",
-                      taskId: event.taskId,
-                      taskTitle: event.taskTitle,
-                      agentName: event.agentName,
-                      result: event.result,
-                      artifactId: event.artifactId,
-                      timestamp: event.timestamp,
-                    },
-                  });
-
-                  // Stream tool calls as data parts (AI SDK v6 doesn't support tool-call/tool-result directly in writer)
-                  if (event.toolCalls && event.toolCalls.length > 0) {
-                    for (const toolCall of event.toolCalls) {
+                } else if (e.status === "completed") {
+                  // Stream tool calls
+                  for (const tc of e.toolCalls || []) {
+                    const tcId = tc.toolCallId || `tc-${Date.now()}`;
+                    writer.write({
+                      type: "data-tool-call",
+                      id: tcId,
+                      data: {
+                        type: "tool-call",
+                        toolCallId: tcId,
+                        toolName: tc.name,
+                        args: tc.args,
+                      },
+                    });
+                    if (tc.result !== undefined) {
                       writer.write({
-                        type: "data-tool-call",
-                        id: `tool-${event.taskId}-${toolCall.name}`,
+                        type: "data-tool-result",
+                        id: `${tcId}-r`,
                         data: {
-                          type: "tool-call",
-                          toolName: toolCall.name,
-                          args: toolCall.args,
-                          result: toolCall.result,
+                          type: "tool-result",
+                          toolCallId: tcId,
+                          toolName: tc.name,
+                          result: tc.result,
                         },
-                      });
-                      // Also include in text for visibility
-                      writer.write({
-                        type: "text-delta",
-                        id: textId,
-                        delta: `   🔧 **${toolCall.name}**${toolCall.result !== undefined ? " ✓" : ""}\n`,
                       });
                     }
                   }
-
-                  // Stream artifact as data part if available
-                  if (event.artifactId) {
+                  // Stream artifact
+                  if (e.artifactId) {
                     writer.write({
                       type: "data-artifact",
-                      id: `artifact-${event.artifactId}`,
+                      id: `art-${e.artifactId}`,
                       data: {
                         type: "artifact",
-                        artifactId: event.artifactId,
-                        title: event.taskTitle,
-                        version: 1,
+                        artifactId: e.artifactId,
+                        title: e.taskTitle,
                       },
                     });
                   }
-
-                  // Also write text for visibility
-                  let text = `✅ **${event.agentName}** completed "${event.taskTitle}"\n`;
-                  if (event.toolCalls && event.toolCalls.length > 0) {
-                    text += `   🔧 Used ${event.toolCalls.length} tool(s)\n`;
-                  }
-                  if (event.artifactId) {
-                    text += `   📄 Created artifact: ${event.artifactId}\n`;
-                  }
-                  text += "\n";
+                  let txt = `✅ **${e.agentName}** completed "${e.taskTitle}"\n`;
+                  if (e.result) txt += `\n${e.result}\n`;
+                  if (e.toolCalls?.length)
+                    txt += `   🔧 ${e.toolCalls.length} tool(s)\n`;
+                  if (e.artifactId) txt += `   📄 ${e.artifactId}\n`;
+                  writer.write({ type: "text-delta", id, delta: txt + "\n" });
+                } else if (e.status === "failed") {
                   writer.write({
                     type: "text-delta",
-                    id: textId,
-                    delta: text,
-                  });
-                } else if (event.status === "failed") {
-                  writer.write({
-                    type: "data-delegation",
-                    id: `delegation-${event.taskId}`,
-                    data: {
-                      type: "delegation",
-                      status: "failed",
-                      taskId: event.taskId,
-                      taskTitle: event.taskTitle,
-                      agentName: event.agentName,
-                      error: event.error,
-                      timestamp: event.timestamp,
-                    },
-                  });
-
-                  // Also write text for visibility
-                  writer.write({
-                    type: "text-delta",
-                    id: textId,
-                    delta: `❌ **${event.agentName}** failed on "${event.taskTitle}": ${event.error}\n\n`,
+                    id,
+                    delta: `❌ **${e.agentName}** failed: ${e.error}\n\n`,
                   });
                 }
               } else {
-                // Wait a bit before checking again
-                await new Promise((resolve) => setTimeout(resolve, 100));
+                await new Promise((r) => setTimeout(r, 100));
               }
             }
 
-            // Wait for plan execution to complete
-            await planExecutionPromise;
+            await executionPromise;
 
-            // Stream artifacts if any
-            if (artifacts.length > 0) {
+            // Show execution error if any
+            if (executionError) {
               writer.write({
                 type: "text-delta",
-                id: textId,
-                delta: `\n### Artifacts Created\n\n${artifacts.map((a) => `- ${a}`).join("\n")}\n\n`,
+                id,
+                delta: `\n❌ **Plan Execution Error**\n\n${executionError}\n\n`,
               });
             }
 
-            // Stream final response
+            if (artifacts.length) {
+              writer.write({
+                type: "text-delta",
+                id,
+                delta: `\n### Artifacts\n${artifacts.join("\n")}\n\n`,
+              });
+            }
             if (finalResponse) {
               writer.write({
                 type: "text-delta",
-                id: textId,
+                id,
                 delta: `### Summary\n\n${finalResponse}`,
               });
             }
-
-            // End text block
-            writer.write({
-              type: "text-end",
-              id: textId,
-            });
+            writer.write({ type: "text-end", id });
           },
-          onError: (error) => {
-            return error instanceof Error ? error.message : "Unknown error";
-          },
+          onError: (e) => (e instanceof Error ? e.message : "Error"),
         });
-
-        return createUIMessageStreamResponse({
-          stream,
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-          },
-        });
+        return createUIMessageStreamResponse({ stream });
       },
     } as any as StreamTextResultType;
   }
 
-  /**
-   * Build a formatted response showing orchestration details
-   */
-  private buildOrchestrationResponse(
-    plan: Plan,
-    events: DelegationEvent[],
-    artifacts: string[],
-    finalResponse: string
-  ): string {
-    const sections: string[] = [];
-
-    // Plan overview
-    sections.push(`## Plan: ${plan.goal}\n`);
-
-    // Task execution log
-    sections.push(`### Task Execution\n`);
-    for (const event of events) {
-      if (event.status === "started") {
-        sections.push(
-          `🔄 **Delegated** "${event.taskTitle}" to **${event.agentName}**`
-        );
-      } else if (event.status === "completed") {
-        sections.push(
-          `✅ **${event.agentName}** completed "${event.taskTitle}"`
-        );
-        if (event.artifactId) {
-          sections.push(`   📄 Created artifact: ${event.artifactId}`);
-        }
-      } else if (event.status === "failed") {
-        sections.push(
-          `❌ **${event.agentName}** failed on "${event.taskTitle}": ${event.error}`
-        );
-      }
-    }
-
-    // Artifacts created
-    if (artifacts.length > 0) {
-      sections.push(`\n### Artifacts Created\n`);
-      for (const artifactId of artifacts) {
-        sections.push(`- ${artifactId}`);
-      }
-    }
-
-    // Final synthesized response
-    sections.push(`\n### Summary\n`);
-    sections.push(finalResponse);
-
-    return sections.join("\n");
-  }
+  // Removed buildOrchestrationResponse - not needed, streaming handles this
 
   /**
    * Update space history with new messages

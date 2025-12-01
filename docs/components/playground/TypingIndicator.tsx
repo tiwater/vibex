@@ -19,19 +19,19 @@ export function TypingIndicator() {
       <div className="bg-muted p-4 rounded-2xl rounded-bl-sm">
         <div className="flex gap-1">
           <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
+            animate={{ scale: [1, 1.4, 1] }}
             transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-            className="w-2 h-2 bg-muted-foreground/50 rounded-full"
+            className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full"
           />
           <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-            className="w-2 h-2 bg-muted-foreground/50 rounded-full"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
+            animate={{ scale: [1, 1.4, 1] }}
             transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-            className="w-2 h-2 bg-muted-foreground/50 rounded-full"
+            className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.4, 1] }}
+            transition={{ repeat: Infinity, duration: 0.6, delay: 0.6 }}
+            className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full"
           />
         </div>
       </div>

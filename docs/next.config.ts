@@ -17,10 +17,7 @@ export default withNextra({
   images: {
     unoptimized: true,
   },
-  eslint: {
-    // Ignore ESLint errors during builds for now
-    ignoreDuringBuilds: true,
-  },
+  // Note: eslint.ignoreDuringBuilds moved to next lint CLI options
   webpack(config, { isServer }) {
     // rule.exclude doesn't work starting from Next.js 15
     const imageRule = config.module.rules.find((rule) =>
@@ -42,7 +39,7 @@ export default withNextra({
   },
   // serverExternalPackages works with both webpack and Turbopack
   // These packages should not be bundled - they're server-only dependencies
-  serverExternalPackages: ["vibex", "@vibex/local", "better-sqlite3"],
+  serverExternalPackages: ["vibex", "@vibex/local", "shiki", "better-sqlite3"],
   experimental: {
     optimizePackageImports: ["nextra-theme-docs"],
   },

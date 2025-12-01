@@ -562,13 +562,20 @@ async function initializeDefaultAgents(
     for (const agentInstance of defaultAgents) {
       const agentConfig = agentInstance.toAgentConfig();
 
+      // Always use config values (English) - never use database values
+      // The config is the source of truth
+      const agentId = agentConfig.id || agentConfig.name;
+      const agentName = agentConfig.name;
+      const agentDescription = agentConfig.description || "";
+
       // Register agent in resource adapter (persistent storage) if available
+      // This will update any existing agents with old names to use the new English names
       if (adapter && adapterAvailable) {
         try {
           await adapter.saveAgent({
-            id: agentConfig.id || agentConfig.name,
-            name: agentConfig.name,
-            description: agentConfig.description || "",
+            id: agentId,
+            name: agentName,
+            description: agentDescription,
             systemPrompt: agentConfig.systemPrompt,
             tools: agentConfig.tools || [],
             llm:
@@ -583,23 +590,23 @@ async function initializeDefaultAgents(
                   }
                 : undefined,
           });
-          console.log(`[Space] Registered default agent: ${agentConfig.name}`);
+          console.log(
+            `[Space] Registered default agent: ${agentName} (id: ${agentId})`
+          );
         } catch (e) {
           // Agent might already exist or database unavailable - that's okay
           console.warn(
-            `[Space] Agent ${agentConfig.name} persistence failed (non-critical):`,
+            `[Space] Agent ${agentName} persistence failed (non-critical):`,
             e instanceof Error ? e.message : String(e)
           );
         }
       }
 
       // Always register in space's agent map for immediate use (in-memory)
+      // Use config values, not database values
       const agent = new Agent(agentConfig);
-      const agentKey = agentConfig.id || agentConfig.name;
-      space.registerAgent(agentKey, agent);
-      console.log(
-        `[Space] Registered ${agentConfig.name} (key: ${agentKey}) in memory`
-      );
+      space.registerAgent(agentId, agent);
+      console.log(`[Space] Registered ${agentName} (id: ${agentId}) in memory`);
     }
 
     console.log(

@@ -9,8 +9,9 @@ import type { XChatMessage } from "@vibex/react";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Default model - uses OpenRouter format to use OPENROUTER_API_KEY
-const DEFAULT_MODEL = "anthropic/claude-sonnet-4";
+// Default model - OpenAI gpt-4o is most reliable for JSON structured output
+// Note: Claude sometimes ignores JSON mode via OpenRouter
+const DEFAULT_MODEL = "openai/gpt-4o";
 
 // Valid chat modes
 const VALID_MODES: XChatMode[] = ["ask", "plan", "agent"];

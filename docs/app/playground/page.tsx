@@ -11,6 +11,8 @@ import {
   MessageSquare,
   ListTodo,
   Zap,
+  RotateCcw,
+  BrushCleaning,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,6 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Button } from "@/components/ui/button";
 
 import {
   usePlayground,
@@ -54,6 +57,7 @@ export default function PlaygroundPage() {
     clearError,
     chatMode,
     setChatMode,
+    resetSpace,
   } = usePlayground();
 
   // Initialize after mount
@@ -66,11 +70,27 @@ export default function PlaygroundPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Handle send
-  const handleSend = () => {
-    if (!input.trim() || isLoading) return;
-    sendMessage(input);
+  // Handle send - accept value from ChatInput to avoid stale state issues
+  const handleSend = (value?: string) => {
+    const messageContent = value || input;
+    if (!messageContent.trim() || isLoading) return;
+    sendMessage(messageContent);
     setInput("");
+  };
+
+  // Handle reset - extract spaceId from messages or use "playground"
+  const handleReset = async () => {
+    // Try to get spaceId from any message metadata, or use "playground"
+    const messageWithSpaceId = messages.find((msg) => msg.metadata?.spaceId);
+    const spaceId = messageWithSpaceId?.metadata?.spaceId || "playground";
+
+    if (
+      confirm(
+        "Are you sure you want to reset this space? This will delete all conversations, artifacts, and reset agents to defaults."
+      )
+    ) {
+      await resetSpace(spaceId as string);
+    }
   };
 
   // Loading state
@@ -124,8 +144,55 @@ export default function PlaygroundPage() {
                       X Playground
                     </CardTitle>
                   </div>
+                  {/* Status badges - moved to left side */}
+                  <div className="flex items-center gap-2">
+                    {status === "streaming" && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs flex items-center gap-1"
+                      >
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Streaming
+                      </Badge>
+                    )}
+                    {status === "submitted" && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs flex items-center gap-1"
+                      >
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Processing
+                      </Badge>
+                    )}
+                    {status === "idle" && messages.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {messages.length} message
+                        {messages.length !== 1 ? "s" : ""}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  {/* Reset Button */}
+                  {messages.length > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={handleReset}
+                          disabled={isLoading}
+                        >
+                          <BrushCleaning className="w-4 h-4 shrink-0" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        Reset space (clear all content and restore defaults)
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
                   {/* Chat Mode Switcher */}
                   <ToggleGroup
                     type="single"
@@ -177,32 +244,6 @@ export default function PlaygroundPage() {
                       </Tooltip>
                     ))}
                   </ToggleGroup>
-
-                  {/* Status badges */}
-                  {status === "streaming" && (
-                    <Badge
-                      variant="secondary"
-                      className="text-xs flex items-center gap-1"
-                    >
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Streaming
-                    </Badge>
-                  )}
-                  {status === "submitted" && (
-                    <Badge
-                      variant="secondary"
-                      className="text-xs flex items-center gap-1"
-                    >
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Processing
-                    </Badge>
-                  )}
-                  {status === "idle" && messages.length > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {messages.length} message
-                      {messages.length !== 1 ? "s" : ""}
-                    </Badge>
-                  )}
                 </div>
               </div>
             </CardHeader>
@@ -251,7 +292,7 @@ export default function PlaygroundPage() {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.1 * idx }}
-                              onClick={() => setInput(prompt)}
+                              onClick={() => sendMessage(prompt)}
                               className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
                             >
                               <span className="flex items-center justify-between">
@@ -271,7 +312,7 @@ export default function PlaygroundPage() {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.1 * idx }}
-                              onClick={() => setInput(prompt)}
+                              onClick={() => sendMessage(prompt)}
                               className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
                             >
                               <span className="flex items-center justify-between">
@@ -291,7 +332,7 @@ export default function PlaygroundPage() {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.1 * idx }}
-                              onClick={() => setInput(prompt)}
+                              onClick={() => sendMessage(prompt)}
                               className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
                             >
                               <span className="flex items-center justify-between">

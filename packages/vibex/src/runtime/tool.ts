@@ -523,24 +523,46 @@ export async function buildToolMap(
 
   // Load external tools from @vibex/tools
   if (externalToolIds.length > 0) {
+    console.log(
+      `[Tools] Loading ${externalToolIds.length} external tools:`,
+      externalToolIds
+    );
     try {
       // Try async version first (supports MCP)
       if (buildExternalToolMapAsync) {
+        console.log(`[Tools] Using buildExternalToolMapAsync`);
         const externalTools = await buildExternalToolMapAsync(
           externalToolIds,
           context
         );
+        console.log(
+          `[Tools] Loaded external tools:`,
+          Object.keys(externalTools || {})
+        );
+        Object.assign(tools, externalTools);
+      } else if (buildExternalToolMap) {
+        console.log(`[Tools] Using buildExternalToolMap (sync)`);
+        const externalTools = buildExternalToolMap(externalToolIds, context);
+        console.log(
+          `[Tools] Loaded external tools:`,
+          Object.keys(externalTools || {})
+        );
         Object.assign(tools, externalTools);
       } else {
-        // Fall back to sync version
-        const externalTools = buildExternalToolMap(externalToolIds, context);
-        Object.assign(tools, externalTools);
+        console.warn(`[Tools] No external tool loader available!`);
       }
     } catch (error) {
       console.error(`[Tools] Failed to load tools from @vibex/tools:`, error);
     }
+  } else {
+    console.log(
+      `[Tools] No external tools to load (orchestration only:`,
+      Object.keys(tools),
+      `)`
+    );
   }
 
+  console.log(`[Tools] Final tool map:`, Object.keys(tools));
   return tools;
 }
 

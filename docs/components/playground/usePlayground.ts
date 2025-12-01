@@ -19,7 +19,8 @@ export type ChatMode = "ask" | "plan" | "agent";
  */
 export function usePlayground() {
   const [error, setError] = useState<string | null>(null);
-  const [chatMode, setChatMode] = useState<ChatMode>("agent");
+  // Default to "ask" mode - "agent" mode requires LLM orchestration which may fail
+  const [chatMode, setChatMode] = useState<ChatMode>("ask");
 
   // Stable error handler
   const onError = useCallback((err: Error) => {
@@ -80,6 +81,39 @@ export function usePlayground() {
     [chat]
   );
 
+  // Reset space function
+  const resetSpace = useCallback(
+    async (spaceId: string) => {
+      try {
+        const response = await fetch(`/api/spaces/${spaceId}/reset`, {
+          method: "POST",
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to reset space");
+        }
+
+        // Clear local chat state regardless of server result
+        chat.setMessages([]);
+        chat.setInput("");
+
+        // Show warning if partial reset
+        if (data.partial) {
+          console.warn("[Playground] Partial reset:", data.message, data.note);
+          setError(`⚠️ ${data.message}${data.note ? `\n\n${data.note}` : ""}`);
+        } else {
+          console.log("[Playground] Space reset successfully");
+        }
+      } catch (err) {
+        console.error("[Playground] Failed to reset space:", err);
+        setError(err instanceof Error ? err.message : "Failed to reset space");
+      }
+    },
+    [chat]
+  );
+
   return {
     // Chat state from real backend
     messages: chat.messages,
@@ -96,6 +130,7 @@ export function usePlayground() {
     sendMessage,
     stop: chat.stop,
     reload: chat.reload,
+    resetSpace,
 
     // Error state
     error,

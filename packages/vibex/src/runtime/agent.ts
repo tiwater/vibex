@@ -127,29 +127,6 @@ export class Agent {
       segments.push(`\nPersonality: ${this.personality}`);
     }
 
-    // Tool usage instructions - especially important for DeepSeek
-    if (this.tools && this.tools.length > 0) {
-      segments.push("\nIMPORTANT - TOOL USAGE:");
-      segments.push("You have tools available. To use a tool, you MUST:");
-      segments.push("1. Use the tool calling mechanism provided by the system");
-      segments.push(
-        "2. NEVER output tool calls as JSON, XML, code blocks, or plain text"
-      );
-      segments.push(
-        "3. NEVER use XML tags like <function_calls>, <invoke>, <parameter>, or <function_result>"
-      );
-      segments.push(
-        "4. NEVER describe tool calls in your response - the system handles them automatically"
-      );
-      segments.push("5. The system will automatically handle tool execution");
-      segments.push(
-        "6. When you need to call a tool, simply invoke it directly through the system's tool calling API - do NOT format it as text"
-      );
-      segments.push(
-        "7. Your response should ONLY contain natural language text for the user - no tool call descriptions"
-      );
-    }
-
     // Custom system prompt
     if (this.systemPrompt) {
       segments.push(`\n${this.systemPrompt}`);
@@ -157,98 +134,57 @@ export class Agent {
 
     // Context information
     if (context) {
-      segments.push("\nCurrent Context:");
-      segments.push(`- Space ID: ${context.spaceId}`);
-      if (context.taskId) {
-        segments.push(`- Task ID: ${context.taskId}`);
+      if (context.spaceId) {
+        segments.push(`\nSpace ID: ${context.spaceId}`);
       }
-      if (context.metadata) {
-        // Add artifact context specifically if artifactId is present
-        if (context.metadata.artifactId) {
-          // Use the path from artifact metadata if available, otherwise construct it
-          let fullPath = context.metadata.artifactPath;
-
-          if (!fullPath) {
-            // Fallback: construct path if not provided
-            fullPath = getVibexPath(
-              "spaces",
-              context.spaceId,
-              "artifacts",
-              context.metadata.artifactId
-            );
-          }
-
-          // Get original filename from metadata
-          const displayName =
-            context.metadata.artifactName || context.metadata.artifactId;
-
-          // Determine if this is a document that office tools can handle
-          const isOfficeDocument = fullPath.match(/\.(docx?|xlsx?|pptx?)$/i);
-          const isPdf = fullPath.match(/\.pdf$/i);
-          const isImage = fullPath.match(/\.(png|jpe?g|gif|bmp|svg)$/i);
-
-          if (isOfficeDocument) {
-            segments.push(`\nCURRENT DOCUMENT:`);
-            segments.push(
-              `You have an active Office document that the user has already uploaded and selected.`
-            );
-            segments.push(`Document filepath: "${fullPath}"`);
-            segments.push(
-              `(This is the complete path you need to use when calling document tools)`
-            );
-            segments.push(
-              `To read or process this document, use your available tools with filepath: ${fullPath}`
-            );
-            segments.push(
-              `The user expects you to work directly with this document - do not ask them to upload it again.`
-            );
-          } else {
-            segments.push(`\nCURRENT FILE:`);
-            segments.push(
-              `You have an active file that the user has already uploaded and selected.`
-            );
-            segments.push(`File: "${displayName}" (${fullPath})`);
-            if (isPdf) {
-              segments.push(
-                `This is a PDF file. Use appropriate PDF processing tools if available.`
-              );
-            } else if (isImage) {
-              segments.push(
-                `This is an image file. You can reference it in your responses or use image processing tools if available.`
-              );
-            } else {
-              segments.push(
-                `This is a ${
-                  fullPath.split(".").pop()?.toUpperCase() || "unknown"
-                } file.`
-              );
-            }
-            segments.push(
-              `The user expects you to work with this file directly when relevant to their request.`
-            );
-          }
-        }
-        // Add other metadata (skip artifact-related fields to avoid confusion)
-        const artifactFields = ["artifactId", "artifactName", "artifactPath"];
-        for (const [key, value] of Object.entries(context.metadata)) {
-          if (!artifactFields.includes(key)) {
-            // Skip all artifact-related fields
-            segments.push(`- ${key}: ${value}`);
-          }
-        }
+      if (context.taskId) {
+        segments.push(`Task ID: ${context.taskId}`);
+      }
+      if (context.metadata?.artifactId) {
+        const path =
+          context.metadata.artifactPath ||
+          getVibexPath(
+            "spaces",
+            context.spaceId,
+            "artifacts",
+            context.metadata.artifactId
+          );
+        segments.push(`\nActive file: ${path}`);
       }
     }
 
-    // Add current date and time context
-    const now = new Date();
-    segments.push("\nDate/Time Information:");
-    segments.push(`- Current Date: ${now.toISOString().split("T")[0]}`);
-    segments.push(`- Current Time: ${now.toTimeString().split(" ")[0]}`);
-    segments.push(
-      `- Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`
-    );
-
     return segments.join("\n");
+  }
+
+  /**
+   * Convert XMessage[] to ModelMessage[] - extract text content only
+   * AI SDK handles tool calls automatically when tools are provided
+   */
+  private convertMessages(messages: XMessage[]): ModelMessage[] {
+    return messages
+      .filter((m) => m.role !== "tool") // Skip tool role messages
+      .map((m) => {
+        let content: string = "";
+
+        if (typeof m.content === "string") {
+          content = m.content;
+        } else if (Array.isArray(m.content)) {
+          // Extract text parts only - AI SDK handles tool calls
+          const textParts = m.content
+            .filter((part: any) => part.type === "text")
+            .map((part: any) => part.text || "")
+            .filter((text: string) => text.length > 0);
+          content = textParts.join("\n");
+        } else {
+          content = String(m.content || "");
+        }
+
+        return {
+          role: m.role as "system" | "user" | "assistant",
+          content,
+        };
+      })
+      .filter((m) => m.content.trim().length > 0);
   }
 
   /**
@@ -283,17 +219,35 @@ export class Agent {
 
     // Add configured tools (from config)
     if (this.tools && this.tools.length > 0) {
+      console.log(
+        `[Agent:${this.name}] Loading ${this.tools.length} configured tools:`,
+        this.tools
+      );
       try {
         const configuredTools = await buildToolMap(this.tools, context);
         if (configuredTools) {
           Object.assign(toolsMap, configuredTools);
+          console.log(
+            `[Agent:${this.name}] Loaded tools:`,
+            Object.keys(configuredTools)
+          );
+        } else {
+          console.warn(
+            `[Agent:${this.name}] buildToolMap returned null/undefined`
+          );
         }
       } catch (error) {
-        console.error(`Failed to load tools for agent ${this.name}:`, error);
+        console.error(`[Agent:${this.name}] Failed to load tools:`, error);
       }
+    } else {
+      console.log(
+        `[Agent:${this.name}] No tools configured (this.tools=${JSON.stringify(this.tools)})`
+      );
     }
 
-    return Object.keys(toolsMap).length > 0 ? toolsMap : undefined;
+    const toolCount = Object.keys(toolsMap).length;
+    console.log(`[Agent:${this.name}] Final tool count: ${toolCount}`);
+    return toolCount > 0 ? toolsMap : undefined;
   }
 
   /**
@@ -430,153 +384,38 @@ export class Agent {
       this.getModel({ spaceId, userId: enrichedMetadata.userId });
     const tools = await this.getTools({ spaceId });
 
-    // Generate a message ID that includes the agent name
+    // Convert messages and call AI SDK
+    const modelMessages = this.convertMessages(vibexMessages);
     const agentPrefix = this.name.toLowerCase().replace(/\s+/g, "-");
 
-    // Convert XMessage[] to ModelMessage[] ONLY here, right before AI SDK call
-    // CRITICAL: Preserve tool-call and tool-result parts - don't strip them!
-    const modelMessages: any[] = vibexMessages
-      .filter((m) => {
-        // Keep tool messages if they have proper structure
-        // Skip standalone tool messages without proper tool-call context
-        if (m.role === "tool") {
-          // Only skip if it's a malformed tool message
-          return false;
-        }
-        return true;
-      })
-      .map((m) => {
-        // Preserve the content structure - AI SDK v6 supports parts arrays
-        let content: any = m.content;
+    // Diagnostic: Log what we're sending to AI SDK
+    console.log(`[Agent:${this.name}] Calling streamText:`, {
+      hasTools: !!tools,
+      toolNames: tools ? Object.keys(tools) : [],
+      toolChoice: "auto",
+      messageCount: modelMessages.length,
+      lastMessage: modelMessages[modelMessages.length - 1]?.content?.slice(
+        0,
+        100
+      ),
+    });
 
-        // If content is an array, preserve all parts (text, tool-call, tool-result, etc.)
-        if (Array.isArray(m.content)) {
-          // Convert to AI SDK format while preserving structure
-          const parts = m.content.map((part: any) => {
-            if (part.type === "text") {
-              return { type: "text", text: part.text || "" };
-            } else if (part.type === "tool-call") {
-              return {
-                type: "tool-call",
-                toolCallId: part.toolCallId,
-                toolName: part.toolName,
-                args: part.args || {},
-              };
-            } else if (part.type === "tool-result") {
-              return {
-                type: "tool-result",
-                toolCallId: part.toolCallId,
-                toolName: part.toolName,
-                result: part.result,
-              };
-            }
-            // For other part types, try to preserve them
-            return part;
-          });
-
-          // If we have parts, use them; otherwise fall back to string
-          if (parts.length > 0) {
-            content = parts;
-          } else {
-            content = "";
-          }
-        } else if (typeof m.content === "string") {
-          // String content is fine as-is
-          content = m.content;
-        } else {
-          // Unknown format, try to convert to string
-          content = String(m.content || "");
-        }
-
-        return {
-          role: m.role as "system" | "user" | "assistant" | "tool",
-          content,
-        };
-      })
-      .filter((m) => {
-        // Only filter out messages with completely empty content
-        if (typeof m.content === "string") {
-          return m.content.trim().length > 0;
-        }
-        if (Array.isArray(m.content)) {
-          return m.content.length > 0;
-        }
-        return !!m.content;
-      });
-
-    // Pass through to AI SDK's streamText with agent defaults
     const result = streamText({
       model,
       system: systemPrompt,
       messages: modelMessages as any,
       tools,
-      toolChoice: "auto", // Explicitly set tool choice mode
-      // stopWhen removed - stepCountIs not available in this AI SDK version
+      toolChoice: "auto",
       temperature: this.temperature,
       maxOutputTokens: this.maxOutputTokens,
       topP: this.topP,
       frequencyPenalty: this.frequencyPenalty,
       presencePenalty: this.presencePenalty,
       maxRetries: 3,
-      // Add callback to monitor tool calls
-      onStepFinish: ({ text, toolCalls, toolResults, finishReason }) => {
-        console.log(`[${this.name}] Step finished:`, {
-          finishReason,
-          hasText: !!text,
-          toolCallsCount: toolCalls?.length || 0,
-          toolResultsCount: toolResults?.length || 0,
-        });
-
-        if (toolCalls && toolCalls.length > 0) {
-          toolCalls.forEach((toolCall) => {
-            const toolCallAny = toolCall as any;
-            console.log(`[${this.name}] Tool Call:`, {
-              toolName: toolCall.toolName,
-              input: toolCallAny.input,
-              // Focus on filepath-related arguments
-              hasFilePath:
-                toolCallAny.input &&
-                typeof toolCallAny.input === "object" &&
-                ("filepath" in toolCallAny.input ||
-                  "file_path" in toolCallAny.input ||
-                  "path" in toolCallAny.input),
-              pathValues:
-                (toolCall as any).input &&
-                typeof (toolCall as any).input === "object"
-                  ? Object.entries((toolCall as any).input)
-                      .filter(
-                        ([key]) =>
-                          key.toLowerCase().includes("path") ||
-                          key.toLowerCase().includes("file")
-                      )
-                      .reduce(
-                        (acc, [key, value]) => ({ ...acc, [key]: value }),
-                        {}
-                      )
-                  : {},
-            });
-          });
-        }
-
-        if (toolResults && toolResults.length > 0) {
-          toolResults.forEach((result, index) => {
-            const resultAny = result as any;
-            console.log(`[${this.name}] Tool Result [${index}]:`, {
-              toolName: result.toolName,
-              hasOutput: resultAny.output !== undefined,
-              output: resultAny.output,
-              providerExecuted: resultAny.providerExecuted,
-            });
-          });
-        }
-      },
-      // Override with any provided options
       ...aiSdkOptions,
-      // Use experimental_generateMessageId to include agent name in message ID
-      // @ts-ignore - experimental feature may not be in types yet
-      experimental_generateMessageId: () => {
-        return `${agentPrefix}_${generateShortId()}`;
-      },
+      // @ts-ignore - experimental feature
+      experimental_generateMessageId: () =>
+        `${agentPrefix}_${generateShortId()}`,
     });
 
     // Attach agent metadata to the result for immediate access
@@ -634,22 +473,7 @@ export class Agent {
       this.getModel({ spaceId, userId: enrichedMetadata.userId });
     const tools = await this.getTools({ spaceId });
 
-    // Convert XMessage[] to ModelMessage[] ONLY here, right before AI SDK call
-    const modelMessages: ModelMessage[] = vibexMessages
-      .filter((m) => m.role !== "tool") // Skip tool messages
-      .map((m) => ({
-        role: m.role as "system" | "user" | "assistant",
-        content:
-          typeof m.content === "string"
-            ? m.content
-            : Array.isArray(m.content)
-              ? (m.content as Array<{ type: string; text?: string }>)
-                  .filter((p) => p.type === "text" && p.text)
-                  .map((p) => p.text as string)
-                  .join("\n")
-              : "",
-      }))
-      .filter((m) => m.content);
+    const modelMessages = this.convertMessages(vibexMessages);
 
     // Pass through to AI SDK's generateText with proper options
     return generateText({
@@ -710,22 +534,7 @@ export class Agent {
 
     const model = this.getModel({ spaceId, userId: enrichedMetadata.userId });
 
-    // Convert XMessage[] to ModelMessage[]
-    const modelMessages: ModelMessage[] = vibexMessages
-      .filter((m) => m.role !== "tool") // Skip tool messages
-      .map((m) => ({
-        role: m.role as "system" | "user" | "assistant",
-        content:
-          typeof m.content === "string"
-            ? m.content
-            : Array.isArray(m.content)
-              ? (m.content as Array<{ type: string; text?: string }>)
-                  .filter((p) => p.type === "text" && p.text)
-                  .map((p) => p.text as string)
-                  .join("\n")
-              : "",
-      }))
-      .filter((m) => m.content);
+    const modelMessages = this.convertMessages(vibexMessages);
 
     return generateObject({
       model,

@@ -92,6 +92,9 @@ importers:
       '@vibex/react':
         specifier: workspace:*
         version: link:../packages/react
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -137,6 +140,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
+      shiki:
+        specifier: ^3.17.0
+        version: 3.17.0
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -307,19 +313,19 @@ importers:
 
   packages/local:
     dependencies:
-      '@types/better-sqlite3':
-        specifier: ^7.6.13
-        version: 7.6.13
       '@vibex/core':
         specifier: workspace:*
         version: link:../core
       better-sqlite3:
-        specifier: ^12.4.6
-        version: 12.4.6
+        specifier: ^11.0.0
+        version: 11.10.0
       nanoid:
         specifier: ^5.0.0
         version: 5.1.6
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.13
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.25
@@ -334,13 +340,13 @@ importers:
     dependencies:
       '@ai-sdk/react':
         specifier: ^3.0.0-beta.122
-        version: 3.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@3.25.76)
+        version: 3.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@4.0.0-beta.20250424T163858)
       '@vibex/core':
         specifier: workspace:*
         version: link:../core
       ai:
         specifier: ^6.0.0-beta.122
-        version: 6.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
+        version: 6.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
       react:
         specifier: ^18.0.0 || ^19.0.0
         version: 19.2.0
@@ -2536,17 +2542,20 @@ packages:
   '@shikijs/core@3.15.0':
     resolution: {integrity: sha512-8TOG6yG557q+fMsSVa8nkEDOZNTSxjbbR8l6lF2gyr6Np+jrPlslqDxQkN6rMXCECQ3isNPZAGszAfYoJOPGlg==}
 
-  '@shikijs/engine-javascript@3.15.0':
-    resolution: {integrity: sha512-ZedbOFpopibdLmvTz2sJPJgns8Xvyabe2QbmqMTz07kt1pTzfEvKZc5IqPVO/XFiEbbNyaOpjPBkkr1vlwS+qg==}
+  '@shikijs/core@3.17.0':
+    resolution: {integrity: sha512-/HjeOnbc62C+n33QFNFrAhUlIADKwfuoS50Ht0pxujxP4QjZAlFp5Q+OkDo531SCTzivx5T18khwyBdKoPdkuw==}
 
-  '@shikijs/engine-oniguruma@3.15.0':
-    resolution: {integrity: sha512-HnqFsV11skAHvOArMZdLBZZApRSYS4LSztk2K3016Y9VCyZISnlYUYsL2hzlS7tPqKHvNqmI5JSUJZprXloMvA==}
+  '@shikijs/engine-javascript@3.17.0':
+    resolution: {integrity: sha512-WwF99xdP8KfuDrIbT4wxyypfhoIxMeeOCp1AiuvzzZ6JT5B3vIuoclL8xOuuydA6LBeeNXUF/XV5zlwwex1jlA==}
 
-  '@shikijs/langs@3.15.0':
-    resolution: {integrity: sha512-WpRvEFvkVvO65uKYW4Rzxs+IG0gToyM8SARQMtGGsH4GDMNZrr60qdggXrFOsdfOVssG/QQGEl3FnJ3EZ+8w8A==}
+  '@shikijs/engine-oniguruma@3.17.0':
+    resolution: {integrity: sha512-flSbHZAiOZDNTrEbULY8DLWavu/TyVu/E7RChpLB4WvKX4iHMfj80C6Hi3TjIWaQtHOW0KC6kzMcuB5TO1hZ8Q==}
 
-  '@shikijs/themes@3.15.0':
-    resolution: {integrity: sha512-8ow2zWb1IDvCKjYb0KiLNrK4offFdkfNVPXb1OZykpLCzRU6j+efkY+Y7VQjNlNFXonSw+4AOdGYtmqykDbRiQ==}
+  '@shikijs/langs@3.17.0':
+    resolution: {integrity: sha512-icmur2n5Ojb+HAiQu6NEcIIJ8oWDFGGEpiqSCe43539Sabpx7Y829WR3QuUW2zjTM4l6V8Sazgb3rrHO2orEAw==}
+
+  '@shikijs/themes@3.17.0':
+    resolution: {integrity: sha512-/xEizMHLBmMHwtx4JuOkRf3zwhWD2bmG5BRr0IPjpcWpaq4C3mYEuTk/USAEglN0qPrTwEHwKVpSu/y2jhferA==}
 
   '@shikijs/twoslash@3.15.0':
     resolution: {integrity: sha512-3GoJvYMm2oj4Mq+yJyXt9vmMFfih34FBlLMYLRAIXNmBrj3/6jsuHKakGHMVza5jui6TmmjbS5bmJI29UHftQQ==}
@@ -2555,6 +2564,9 @@ packages:
 
   '@shikijs/types@3.15.0':
     resolution: {integrity: sha512-BnP+y/EQnhihgHy4oIAN+6FFtmfTekwOLsQbRw9hOKwqgNy8Bdsjq8B05oAt/ZgvIWWFrshV71ytOrlPfYjIJw==}
+
+  '@shikijs/types@3.17.0':
+    resolution: {integrity: sha512-wjLVfutYWVUnxAjsWEob98xgyaGv0dTEnMZDruU5mRjVN7szcGOfgO+997W2yR6odp+1PtSBNeSITRRTfUzK/g==}
 
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
@@ -3116,9 +3128,8 @@ packages:
     peerDependencies:
       react: '>=16.8'
 
-  better-sqlite3@12.4.6:
-    resolution: {integrity: sha512-gaYt9yqTbQ1iOxLpJA8FPR5PiaHP+jlg8I5EX0Rs2KFwNzhBsF40KzMZS5FwelY7RG0wzaucWdqSAJM3uNCPCg==}
-    engines: {node: 20.x || 22.x || 23.x || 24.x || 25.x}
+  better-sqlite3@11.10.0:
+    resolution: {integrity: sha512-EwhOpyXiOEL/lKzHz9AW1msWFNzGc/z+LzeB3/jnFJpxu+th2yqvzsSWas1v9jgs9+xiXJcD5A8CJxAG2TaghQ==}
 
   bindings@1.5.0:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
@@ -5156,8 +5167,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shiki@3.15.0:
-    resolution: {integrity: sha512-kLdkY6iV3dYbtPwS9KXU7mjfmDm25f5m0IPNFnaXO7TBPcvbUOY72PYXSuSqDzwp+vlH/d7MXpHlKO/x+QoLXw==}
+  shiki@3.17.0:
+    resolution: {integrity: sha512-lUZfWsyW7czITYTdo/Tb6ZM4VfyXlzmKYBQBjTz+pBzPPkP08RgIt00Ls1Z50Cl3SfwJsue6WbJeF3UgqLVI9Q==}
 
   side-channel-list@1.0.0:
     resolution: {integrity: sha512-FCLHtRD/gnpCiCHEiJLOwdmFP+wzCmDEkc9y7NsYxeF4u7Btsn1ZuwgwJGxImImHicJArLP4R0yX4c2KCrMrTA==}
@@ -5845,12 +5856,12 @@ snapshots:
       - arktype
       - effect
 
-  '@ai-sdk/gateway@2.0.0-beta.66(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)':
+  '@ai-sdk/gateway@2.0.0-beta.66(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)':
     dependencies:
       '@ai-sdk/provider': 3.0.0-beta.20
-      '@ai-sdk/provider-utils': 4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
       '@vercel/oidc': 3.0.5
-      zod: 3.25.76
+      zod: 4.0.0-beta.20250424T163858
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -5885,12 +5896,12 @@ snapshots:
       '@valibot/to-json-schema': 1.3.0(valibot@1.2.0(typescript@5.8.3))
       effect: 3.19.8
 
-  '@ai-sdk/provider-utils@4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)':
+  '@ai-sdk/provider-utils@4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)':
     dependencies:
       '@ai-sdk/provider': 3.0.0-beta.20
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
-      zod: 3.25.76
+      zod: 4.0.0-beta.20250424T163858
     optionalDependencies:
       '@valibot/to-json-schema': 1.3.0(valibot@1.2.0(typescript@5.9.3))
       effect: 3.19.8
@@ -5903,10 +5914,10 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@3.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@3.25.76)':
+  '@ai-sdk/react@3.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@4.0.0-beta.20250424T163858)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
-      ai: 6.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
+      ai: 6.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
       react: 19.2.0
       swr: 2.3.6(react@19.2.0)
       throttleit: 2.1.0
@@ -7821,24 +7832,31 @@ snapshots:
       '@types/hast': 3.0.4
       hast-util-to-html: 9.0.5
 
-  '@shikijs/engine-javascript@3.15.0':
+  '@shikijs/core@3.17.0':
     dependencies:
-      '@shikijs/types': 3.15.0
+      '@shikijs/types': 3.17.0
+      '@shikijs/vscode-textmate': 10.0.2
+      '@types/hast': 3.0.4
+      hast-util-to-html: 9.0.5
+
+  '@shikijs/engine-javascript@3.17.0':
+    dependencies:
+      '@shikijs/types': 3.17.0
       '@shikijs/vscode-textmate': 10.0.2
       oniguruma-to-es: 4.3.4
 
-  '@shikijs/engine-oniguruma@3.15.0':
+  '@shikijs/engine-oniguruma@3.17.0':
     dependencies:
-      '@shikijs/types': 3.15.0
+      '@shikijs/types': 3.17.0
       '@shikijs/vscode-textmate': 10.0.2
 
-  '@shikijs/langs@3.15.0':
+  '@shikijs/langs@3.17.0':
     dependencies:
-      '@shikijs/types': 3.15.0
+      '@shikijs/types': 3.17.0
 
-  '@shikijs/themes@3.15.0':
+  '@shikijs/themes@3.17.0':
     dependencies:
-      '@shikijs/types': 3.15.0
+      '@shikijs/types': 3.17.0
 
   '@shikijs/twoslash@3.15.0(typescript@5.8.3)':
     dependencies:
@@ -7850,6 +7868,11 @@ snapshots:
       - supports-color
 
   '@shikijs/types@3.15.0':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.2
+      '@types/hast': 3.0.4
+
+  '@shikijs/types@3.17.0':
     dependencies:
       '@shikijs/vscode-textmate': 10.0.2
       '@types/hast': 3.0.4
@@ -8397,13 +8420,13 @@ snapshots:
       - arktype
       - effect
 
-  ai@6.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76):
+  ai@6.0.0-beta.122(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858):
     dependencies:
-      '@ai-sdk/gateway': 2.0.0-beta.66(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
+      '@ai-sdk/gateway': 2.0.0-beta.66(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
       '@ai-sdk/provider': 3.0.0-beta.20
-      '@ai-sdk/provider-utils': 4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
+      '@ai-sdk/provider-utils': 4.0.0-beta.38(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
       '@opentelemetry/api': 1.9.0
-      zod: 3.25.76
+      zod: 4.0.0-beta.20250424T163858
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -8483,7 +8506,7 @@ snapshots:
       mathjax-full: 3.2.2
       react: 19.2.0
 
-  better-sqlite3@12.4.6:
+  better-sqlite3@11.10.0:
     dependencies:
       bindings: 1.5.0
       prebuild-install: 7.1.3
@@ -10458,7 +10481,7 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
       react-medium-image-zoom: 5.4.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       rehype-katex: 7.0.1
-      rehype-pretty-code: 0.14.1(shiki@3.15.0)
+      rehype-pretty-code: 0.14.1(shiki@3.17.0)
       rehype-raw: 7.0.0
       remark-frontmatter: 5.0.0
       remark-gfm: 4.0.1
@@ -10466,7 +10489,7 @@ snapshots:
       remark-reading-time: 2.0.2
       remark-smartypants: 3.0.2
       server-only: 0.0.1
-      shiki: 3.15.0
+      shiki: 3.17.0
       slash: 5.1.0
       title: 4.0.1
       ts-morph: 27.0.2
@@ -10896,13 +10919,13 @@ snapshots:
       hast-util-from-html: 2.0.3
       unified: 11.0.5
 
-  rehype-pretty-code@0.14.1(shiki@3.15.0):
+  rehype-pretty-code@0.14.1(shiki@3.17.0):
     dependencies:
       '@types/hast': 3.0.4
       hast-util-to-string: 3.0.1
       parse-numeric-range: 1.3.0
       rehype-parse: 9.0.1
-      shiki: 3.15.0
+      shiki: 3.17.0
       unified: 11.0.5
       unist-util-visit: 5.0.0
 
@@ -11184,14 +11207,14 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shiki@3.15.0:
+  shiki@3.17.0:
     dependencies:
-      '@shikijs/core': 3.15.0
-      '@shikijs/engine-javascript': 3.15.0
-      '@shikijs/engine-oniguruma': 3.15.0
-      '@shikijs/langs': 3.15.0
-      '@shikijs/themes': 3.15.0
-      '@shikijs/types': 3.15.0
+      '@shikijs/core': 3.17.0
+      '@shikijs/engine-javascript': 3.17.0
+      '@shikijs/engine-oniguruma': 3.17.0
+      '@shikijs/langs': 3.17.0
+      '@shikijs/themes': 3.17.0
+      '@shikijs/types': 3.17.0
       '@shikijs/vscode-textmate': 10.0.2
       '@types/hast': 3.0.4
 

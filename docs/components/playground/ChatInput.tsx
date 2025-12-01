@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSend: () => void;
+  onSend: (value: string) => void;  // Pass the value to ensure it's not stale
   isLoading: boolean;
 }
 
@@ -69,8 +69,9 @@ export function ChatInput({
       console.log("[ChatInput] handleSend aborted - empty or loading");
       return;
     }
-    console.log("[ChatInput] Calling onSend()");
-    onSend();
+    console.log("[ChatInput] Calling onSend() with value:", currentValue);
+    // Pass the value directly - don't rely on React state which may be stale
+    onSend(currentValue);
   };
 
   return (

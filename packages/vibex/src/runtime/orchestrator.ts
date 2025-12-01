@@ -28,6 +28,7 @@ export interface DelegationEvent {
   artifactId?: string;
   error?: string;
   toolCalls?: Array<{
+    toolCallId?: string;
     name: string;
     args: unknown;
     result?: unknown;
@@ -87,7 +88,6 @@ export async function analyzeRequest(
       .describe("Tasks to create if needsPlan is true"),
   });
 
-  // Try generateObject first, fall back to generateText with JSON parsing
   console.log(
     "[Orchestrator] Analyzing request for multi-agent collaboration:",
     {
@@ -96,109 +96,34 @@ export async function analyzeRequest(
     }
   );
 
-  try {
-    const result = await generateObject({
-      model,
-      schema,
-      mode: "json", // Force JSON mode
-      system: `You determine whether a user request would benefit from multi-agent collaboration.
-Return ONLY a valid JSON object matching the required schema. No explanatory text.
+  const result = await generateObject({
+    model,
+    schema,
+    mode: "json",
+    system: `You determine whether a user request would benefit from multi-agent collaboration.
 
 Available specialized agents:
 ${agentDescriptions}
 
 Multi-agent orchestration is valuable when:
-- The request involves multiple distinct phases (e.g., gathering information then producing output)
-- Different specialized skills are needed for different parts of the work
-- The task would naturally be divided among team members in a real workplace
+- The request involves multiple distinct phases (research then writing, etc.)
+- Different specialized skills are needed for different parts
+- The task would naturally be divided among team members
 
 When creating tasks:
-- Assign each task to the agent best suited for that work
-- IMPORTANT: Use the EXACT agent ID from the list above (e.g., "Researcher", "Writer", "Developer")
-- Set dependencies so tasks execute in the right order (dependencies are task titles, not IDs)
+- Use the EXACT agent ID from the list above (e.g., "researcher", "developer")
+- Set dependencies so tasks execute in the right order (use task titles)
 - Keep tasks focused and actionable`,
-      messages: [
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
-    });
+    messages: [{ role: "user", content: userMessage }],
+  });
 
-    console.log("[Orchestrator] Analysis result:", {
-      needsPlan: result.object.needsPlan,
-      reasoning: result.object.reasoning,
-      taskCount: result.object.suggestedTasks?.length || 0,
-    });
+  console.log("[Orchestrator] Analysis result:", {
+    needsPlan: result.object.needsPlan,
+    reasoning: result.object.reasoning,
+    taskCount: result.object.suggestedTasks?.length || 0,
+  });
 
-    return result.object;
-  } catch (error) {
-    // Fallback: use generateText and parse JSON manually
-    console.log(
-      "[Orchestrator] generateObject failed, falling back to text parsing:",
-      error
-    );
-
-    const { generateText } = await import("ai");
-    const result = await generateText({
-      model,
-      system: `Analyze whether this request needs multi-agent collaboration.
-Available agents: ${agentDescriptions}
-
-IMPORTANT: When assigning tasks, use the EXACT agent ID from the list (e.g., "Researcher", "Writer", "Developer").
-
-Respond with ONLY a JSON object (no markdown, no explanation):
-{
-  "needsPlan": boolean,
-  "reasoning": "brief explanation",
-  "suggestedTasks": [{"title": "...", "description": "...", "assignedTo": "AgentId", "dependencies": []}]
-}`,
-      messages: [
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
-    });
-
-    // Parse JSON from response
-    const text = result.text.trim();
-    console.log(
-      "[Orchestrator] generateText response (first 500 chars):",
-      text.slice(0, 500)
-    );
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.log(
-        "[Orchestrator] No JSON found in response, defaulting to no plan. Full response:",
-        text
-      );
-      return { needsPlan: false, reasoning: "Could not parse response" };
-    }
-
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
-      console.log("[Orchestrator] Parsed analysis result:", {
-        needsPlan: parsed.needsPlan,
-        reasoning: parsed.reasoning,
-        taskCount: parsed.suggestedTasks?.length || 0,
-      });
-      return {
-        needsPlan: Boolean(parsed.needsPlan),
-        reasoning: String(parsed.reasoning || ""),
-        suggestedTasks: parsed.suggestedTasks || undefined,
-      };
-    } catch (parseError) {
-      console.log(
-        "[Orchestrator] JSON parse failed:",
-        parseError,
-        "JSON string:",
-        jsonMatch[0]
-      );
-      return { needsPlan: false, reasoning: "Could not parse JSON response" };
-    }
-  }
+  return result.object;
 }
 
 /**
@@ -387,6 +312,11 @@ async function executeTask(
       const adapter = await getServerResourceAdapter();
       const agentConfig = await adapter.getAgent(agentId);
       if (agentConfig) {
+        console.log(`[Orchestrator] Loaded agent config from DB:`, {
+          id: agentConfig.id,
+          name: agentConfig.name,
+          tools: agentConfig.tools,
+        });
         agent = new Agent(agentConfig as any);
         space.registerAgent(agentId, agent);
       }
@@ -402,6 +332,12 @@ async function executeTask(
     );
     return { task, error: `Agent '${agentId}' not found` };
   }
+
+  // Log agent's tool configuration
+  console.log(`[Orchestrator] Using agent:`, {
+    name: agent.name,
+    toolConfig: (agent as any).tools,
+  });
 
   // Build context from previous task results
   let context = "";
@@ -434,47 +370,63 @@ async function executeTask(
 
     // Collect text and tool calls
     let result = "";
-    const toolCalls: Array<{ name: string; args: unknown; result?: unknown }> =
-      [];
+    const toolCalls: Array<{
+      toolCallId?: string;
+      name: string;
+      args: unknown;
+      result?: unknown;
+    }> = [];
 
     // Stream the response and collect text
+    let chunkCount = 0;
+    const chunkTypes: Record<string, number> = {};
+
     for await (const chunk of stream.fullStream) {
+      chunkCount++;
+      chunkTypes[chunk.type] = (chunkTypes[chunk.type] || 0) + 1;
+
       if (chunk.type === "text-delta") {
-        // AI SDK v6 uses 'delta' property, but we also support 'textDelta' for compatibility
-        const textChunk =
-          (chunk as any).delta || (chunk as any).textDelta || "";
-        result += textChunk;
+        result += chunk.delta;
       } else if (chunk.type === "tool-call") {
+        const toolCallId =
+          chunk.toolCallId || `tool-${Date.now()}-${Math.random()}`;
         toolCalls.push({
+          toolCallId,
           name: chunk.toolName,
-          args: chunk.args,
+          args: chunk.input,
         });
         console.log(
-          `[Orchestrator] Agent ${agentId} called tool: ${chunk.toolName}`,
-          chunk.args
+          `[Orchestrator] 🔧 Agent ${agentId} TOOL CALL: ${chunk.toolName}`,
+          { toolCallId, args: chunk.input }
         );
       } else if (chunk.type === "tool-result") {
-        const toolCall = toolCalls.find((tc) => tc.name === chunk.toolName);
-        if (toolCall) {
-          toolCall.result = chunk.result;
-        }
-        console.log(
-          `[Orchestrator] Agent ${agentId} tool result: ${chunk.toolName}`,
-          chunk.result
+        const toolCall = toolCalls.find(
+          (tc) => tc.toolCallId === chunk.toolCallId
         );
+        if (toolCall) {
+          toolCall.result = chunk.output;
+          console.log(
+            `[Orchestrator] ✅ Agent ${agentId} TOOL RESULT: ${chunk.toolName}`,
+            { toolCallId: toolCall.toolCallId, hasResult: !!chunk.output }
+          );
+        }
+      } else {
+        // Log other chunk types we might be missing
+        console.log(`[Orchestrator] Chunk type: ${chunk.type}`, chunk);
       }
     }
 
-    // Fallback: if no text was collected from stream, try to get it from stream.text
+    // Summary of what we received
+    console.log(`[Orchestrator] Agent ${agentId} stream summary:`, {
+      totalChunks: chunkCount,
+      chunkTypes,
+      toolCallCount: toolCalls.length,
+      resultLength: result.length,
+    });
+
+    // Get final text if stream didn't produce any
     if (!result || result.trim().length === 0) {
-      try {
-        const finalText = await stream.text;
-        if (finalText) {
-          result = finalText;
-        }
-      } catch (e) {
-        console.warn(`[Orchestrator] Could not get final text from stream:`, e);
-      }
+      result = await stream.text;
     }
 
     // Create artifact if result is substantial
@@ -516,6 +468,7 @@ async function executeTask(
     const agentName = agent.name || agentId;
 
     // Emit completion event with tool calls and artifact info
+    // NO TRUNCATION - stream EVERY BIT of data
     onEvent({
       type: "delegation",
       taskId: task.id,
@@ -523,13 +476,13 @@ async function executeTask(
       agentId,
       agentName,
       status: "completed",
-      result: result.slice(0, 200), // Include preview in event
+      result: result, // FULL result - no truncation
       artifactId,
       toolCalls: toolCalls.map((tc) => ({
+        toolCallId: tc.toolCallId, // Preserve toolCallId for proper matching
         name: tc.name,
         args: tc.args,
-        result:
-          typeof tc.result === "string" ? tc.result.slice(0, 100) : tc.result,
+        result: tc.result, // FULL result - no truncation
       })),
       timestamp: Date.now(),
     });
@@ -602,30 +555,13 @@ ${resultsSummary}
 
 Synthesize these results into a final response for the user.`;
 
-  try {
-    // Try structured output first
-    const result = await generateObject({
-      model,
-      schema: z.object({
-        text: z.string().describe("The final synthesized response"),
-      }),
-      system: systemPrompt,
-      prompt: userPrompt,
-    });
-    return result.object.text;
-  } catch (error) {
-    // Fallback to plain text generation if structured output fails
-    console.warn(
-      "[synthesizeResults] Structured output failed, falling back to text generation:",
-      error instanceof Error ? error.message : error
-    );
-
-    const { generateText } = await import("ai");
-    const textResult = await generateText({
-      model,
-      system: systemPrompt,
-      prompt: userPrompt,
-    });
-    return textResult.text;
-  }
+  const result = await generateObject({
+    model,
+    schema: z.object({
+      text: z.string().describe("The final synthesized response"),
+    }),
+    system: systemPrompt,
+    prompt: userPrompt,
+  });
+  return result.object.text;
 }
