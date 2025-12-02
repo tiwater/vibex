@@ -346,13 +346,13 @@ importers:
     dependencies:
       '@ai-sdk/react':
         specifier: ^3.0.0-beta.128
-        version: 3.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@4.0.0-beta.20250424T163858)
+        version: 3.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@3.25.76)
       '@vibex/core':
         specifier: workspace:*
         version: link:../core
       ai:
         specifier: ^6.0.0-beta.128
-        version: 6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
+        version: 6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
       react:
         specifier: ^18.0.0 || ^19.0.0
         version: 19.2.0
@@ -398,8 +398,8 @@ importers:
   packages/tools:
     dependencies:
       '@modelcontextprotocol/sdk':
-        specifier: ^1.0.0
-        version: 1.23.0(zod@3.25.76)
+        specifier: ^1.24.0
+        version: 1.24.0(zod@3.25.76)
       '@vibex/core':
         specifier: workspace:*
         version: link:../core
@@ -438,8 +438,8 @@ importers:
         specifier: ^2.0.75
         version: 2.0.75(zod@3.25.76)
       '@modelcontextprotocol/sdk':
-        specifier: ^1.23.0
-        version: 1.23.0(zod@3.25.76)
+        specifier: ^1.24.0
+        version: 1.24.0(zod@3.25.76)
       '@openrouter/ai-sdk-provider':
         specifier: ^1.2.8
         version: 1.2.8(ai@6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.8.3)))(effect@3.19.8)(zod@3.25.76))(zod@3.25.76)
@@ -1700,8 +1700,8 @@ packages:
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
 
-  '@modelcontextprotocol/sdk@1.23.0':
-    resolution: {integrity: sha512-MCGd4K9aZKvuSqdoBkdMvZNcYXCkZRYVs/Gh92mdV5IHbctX9H9uIvd4X93+9g8tBbXv08sxc/QHXTzf8y65bA==}
+  '@modelcontextprotocol/sdk@1.24.0':
+    resolution: {integrity: sha512-D8h5KXY2vHFW8zTuxn2vuZGN0HGrQ5No6LkHwlEA9trVgNdPL3TF1dSqKA7Dny6BbBYKSW/rOBDXdC8KJAjUCg==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -3791,8 +3791,8 @@ packages:
     peerDependencies:
       express: '>= 4.11'
 
-  express@5.1.0:
-    resolution: {integrity: sha512-DT9ck5YIRU+8GYzzU5kT3eHGA5iL+1Zd0EutOmTE9Dtk+Tvuzd23VBU+ec7HPNSTxXYO55gPV/hq4pSBJDjFpA==}
+  express@5.2.1:
+    resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
     engines: {node: '>= 18'}
 
   exsolve@1.0.8:
@@ -3843,9 +3843,9 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  finalhandler@2.1.0:
-    resolution: {integrity: sha512-/t88Ty3d5JWQbWYgaOGCCYfXRwV1+be02WqYYlL6h0lEiUAMPM8o8qKGO01YIkOHzka2up08wvgYD0mDiI+q3Q==}
-    engines: {node: '>= 0.8'}
+  finalhandler@2.1.1:
+    resolution: {integrity: sha512-S8KoZgRZN+a5rNwqTxlZZePjT/4cnm0ROV70LedRHZ0p8u9fRID0hJUZQpkKLzro8LfmC8sx23bY6tVNxv8pQA==}
+    engines: {node: '>= 18.0.0'}
 
   fix-dts-default-cjs-exports@1.0.1:
     resolution: {integrity: sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==}
@@ -4155,6 +4155,9 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
+
+  jose@6.1.3:
+    resolution: {integrity: sha512-0TpaTfihd4QMNwrz/ob2Bp7X04yuxJkjRGi4aKmOqwhov54i6u79oCv7T+C7lo70MKH6BesI3vscD1yb/yzKXQ==}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -5894,12 +5897,12 @@ snapshots:
       - arktype
       - effect
 
-  '@ai-sdk/gateway@2.0.0-beta.69(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)':
+  '@ai-sdk/gateway@2.0.0-beta.69(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.0-beta.22
-      '@ai-sdk/provider-utils': 4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
+      '@ai-sdk/provider-utils': 4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
       '@vercel/oidc': 3.0.5
-      zod: 4.0.0-beta.20250424T163858
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -5934,12 +5937,12 @@ snapshots:
       '@valibot/to-json-schema': 1.3.0(valibot@1.2.0(typescript@5.8.3))
       effect: 3.19.8
 
-  '@ai-sdk/provider-utils@4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)':
+  '@ai-sdk/provider-utils@4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.0-beta.22
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
-      zod: 4.0.0-beta.20250424T163858
+      zod: 3.25.76
     optionalDependencies:
       '@valibot/to-json-schema': 1.3.0(valibot@1.2.0(typescript@5.9.3))
       effect: 3.19.8
@@ -5952,10 +5955,10 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@3.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@4.0.0-beta.20250424T163858)':
+  '@ai-sdk/react@3.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(react@19.2.0)(zod@3.25.76)':
     dependencies:
-      '@ai-sdk/provider-utils': 4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
-      ai: 6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
+      '@ai-sdk/provider-utils': 4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
+      ai: 6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
       react: 19.2.0
       swr: 2.3.6(react@19.2.0)
       throttleit: 2.1.0
@@ -7126,7 +7129,7 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@modelcontextprotocol/sdk@1.23.0(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.24.0(zod@3.25.76)':
     dependencies:
       ajv: 8.17.1
       ajv-formats: 3.0.1(ajv@8.17.1)
@@ -7135,8 +7138,9 @@ snapshots:
       cross-spawn: 7.0.6
       eventsource: 3.0.7
       eventsource-parser: 3.0.6
-      express: 5.1.0
-      express-rate-limit: 7.5.1(express@5.1.0)
+      express: 5.2.1
+      express-rate-limit: 7.5.1(express@5.2.1)
+      jose: 6.1.3
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
       zod: 3.25.76
@@ -8499,13 +8503,13 @@ snapshots:
       - arktype
       - effect
 
-  ai@6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858):
+  ai@6.0.0-beta.128(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76):
     dependencies:
-      '@ai-sdk/gateway': 2.0.0-beta.69(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
+      '@ai-sdk/gateway': 2.0.0-beta.69(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
       '@ai-sdk/provider': 3.0.0-beta.22
-      '@ai-sdk/provider-utils': 4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@4.0.0-beta.20250424T163858)
+      '@ai-sdk/provider-utils': 4.0.0-beta.40(@valibot/to-json-schema@1.3.0(valibot@1.2.0(typescript@5.9.3)))(effect@3.19.8)(zod@3.25.76)
       '@opentelemetry/api': 1.9.0
-      zod: 4.0.0-beta.20250424T163858
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@valibot/to-json-schema'
       - arktype
@@ -9267,11 +9271,11 @@ snapshots:
 
   expect-type@1.2.2: {}
 
-  express-rate-limit@7.5.1(express@5.1.0):
+  express-rate-limit@7.5.1(express@5.2.1):
     dependencies:
-      express: 5.1.0
+      express: 5.2.1
 
-  express@5.1.0:
+  express@5.2.1:
     dependencies:
       accepts: 2.0.0
       body-parser: 2.2.1
@@ -9280,10 +9284,11 @@ snapshots:
       cookie: 0.7.2
       cookie-signature: 1.2.2
       debug: 4.4.3
+      depd: 2.0.0
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
-      finalhandler: 2.1.0
+      finalhandler: 2.1.1
       fresh: 2.0.0
       http-errors: 2.0.1
       merge-descriptors: 2.0.0
@@ -9347,7 +9352,7 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  finalhandler@2.1.0:
+  finalhandler@2.1.1:
     dependencies:
       debug: 4.4.3
       encodeurl: 2.0.0
@@ -9731,6 +9736,8 @@ snapshots:
   isexe@2.0.0: {}
 
   jiti@2.6.1: {}
+
+  jose@6.1.3: {}
 
   joycon@3.1.1: {}
 
