@@ -149,7 +149,7 @@ export function ChatInput({
                   size="sm"
                   className="h-6 px-2 text-xs gap-1 rounded-md data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm hover:bg-muted/50 transition-all"
                 >
-                  <ModeIcon className="w-2.5 h-2.5" />
+                  <ModeIcon className="w-2 h-2" />
                   <span className="capitalize">{mode}</span>
                 </ToggleGroupItem>
               );
