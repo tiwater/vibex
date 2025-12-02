@@ -498,7 +498,7 @@ export default function HomePage() {
               variants={itemVariants}
               className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-white mb-8 leading-tight"
             >
-              Evolve with Dedicated <br />
+              Evolve with <br />
               <span className="bg-clip-text text-transparent bg-linear-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 animate-gradient bg-300%">
                 Agentic Teams
               </span>
@@ -527,13 +527,13 @@ export default function HomePage() {
               </Link>
 
               <StyledLink
-                href="/docs/design/vibe-x"
+                href="/playground"
                 lightColor="#374151"
                 darkColor="#d1d5db"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium transition-all duration-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
               >
                 <Play className="w-5 h-5 mr-2 text-slate-500 dark:text-slate-400" />
-                Watch Demo
+                Playground
               </StyledLink>
             </motion.div>
 

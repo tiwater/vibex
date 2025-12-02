@@ -21,5 +21,11 @@
     "valibot": "^1.2.0",
     "vitest": "^4.0.13"
   },
+  "pnpm": {
+    "overrides": {
+    },
+    "patchedDependencies": {
+    }
+  },
   "packageManager": "pnpm@9.0.0"
 }

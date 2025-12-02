@@ -471,7 +471,7 @@ export async function startSpace({
     name: "X",
     description: "I manage this space and coordinate all work.",
     provider: "openrouter",
-    model: model || "openai/gpt-4o",
+    model: model || "openrouter:anthropic/claude-sonnet-4.5",
     temperature: 0.7,
     promptFile: "", // XAgent doesn't use prompt files
   };

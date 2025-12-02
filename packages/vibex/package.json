@@ -18,27 +18,29 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.49",
-    "@ai-sdk/deepseek": "^1.0.29",
-    "@ai-sdk/openai": "^2.0.73",
+    "@ai-sdk/anthropic": "^2.0.53",
+    "@ai-sdk/deepseek": "^1.0.30",
+    "@ai-sdk/openai": "^2.0.75",
     "@modelcontextprotocol/sdk": "^1.23.0",
-    "@openrouter/ai-sdk-provider": "^1.2.7",
+    "@openrouter/ai-sdk-provider": "^1.2.8",
     "@vibex/core": "workspace:*",
     "@vibex/defaults": "workspace:*",
     "@vibex/local": "workspace:*",
     "@vibex/tools": "workspace:*",
-    "ai": "^6.0.0-beta.122",
+    "ai": "^6.0.0-beta.128",
     "json-logic-js": "^2.0.5",
     "nanoid": "^5.0.0",
     "uuid": "^13.0.0",
     "yaml": "^2.8.1",
-    "zod": "^3.22.0",
+    "zod": "^3.25.76",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/uuid": "^11.0.0",
+    "dotenv": "^16.3.1",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "zod-to-json-schema": "^3.25.0"
   }
 }

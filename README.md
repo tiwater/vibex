@@ -5,7 +5,7 @@
 <h1 align="center">VibeX</h1>
 
 <p align="center">
-  <strong>Evolve with Dedicated Agentic Teams</strong>
+  <strong>Evolve with Agentic Teams</strong>
 </p>
 
 <p align="center">

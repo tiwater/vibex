@@ -4,17 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Sparkles,
-  Users,
   AlertCircle,
   ArrowRight,
   Loader2,
-  MessageSquare,
-  ListTodo,
-  Zap,
-  RotateCcw,
   BrushCleaning,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -24,7 +18,6 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -53,6 +46,8 @@ export default function PlaygroundPage() {
     isLoading,
     status,
     sendMessage,
+    agentId,
+    setAgentId,
     error,
     clearError,
     chatMode,
@@ -135,239 +130,174 @@ export default function PlaygroundPage() {
             </Alert>
           )}
 
-          {/* Chat Card */}
-          <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <CardHeader className="py-2.5 px-4 border-b">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div>
-                    <CardTitle className="text-sm font-semibold">
-                      X Playground
-                    </CardTitle>
-                  </div>
-                  {/* Status badges - moved to left side */}
-                  <div className="flex items-center gap-2">
-                    {status === "streaming" && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs flex items-center gap-1"
-                      >
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Streaming
-                      </Badge>
-                    )}
-                    {status === "submitted" && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs flex items-center gap-1"
-                      >
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Processing
-                      </Badge>
-                    )}
-                    {status === "idle" && messages.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {messages.length} message
-                        {messages.length !== 1 ? "s" : ""}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {/* Reset Button */}
-                  {messages.length > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={handleReset}
-                          disabled={isLoading}
-                        >
-                          <BrushCleaning className="w-4 h-4 shrink-0" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs">
-                        Reset space (clear all content and restore defaults)
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  {/* Chat Mode Switcher */}
-                  <ToggleGroup
-                    type="single"
-                    value={chatMode}
-                    onValueChange={(value) =>
-                      value && setChatMode(value as ChatMode)
-                    }
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg p-0.5 border-0"
+          <div className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+              {status === "streaming" && (
+                <Badge
+                  variant="outline"
+                  className="h-6 gap-1.5 pl-1.5 pr-2.5 bg-background border-border shadow-sm text-foreground"
+                >
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span className="text-xs font-medium">
+                    {messages.length > 0 &&
+                    messages[messages.length - 1].role === "assistant" &&
+                    messages[messages.length - 1].content
+                      ? "Generating..."
+                      : "Thinking..."}
+                  </span>
+                </Badge>
+              )}
+              {status === "submitted" && (
+                <Badge
+                  variant="secondary"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                </Badge>
+              )}
+              {status === "idle" && messages.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {messages.length}
+                </Badge>
+              )}
+              {messages.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={handleReset}
+                      disabled={isLoading}
+                    >
+                      <BrushCleaning className="w-4 h-4 shrink-0" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    Reset space (clear all content and restore defaults)
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            {messages.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center overflow-auto p-6">
+                <div className="text-center max-w-md">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
                   >
-                    {[
-                      {
-                        label: "Ask",
-                        value: "ask",
-                        icon: MessageSquare,
-                        description: "Direct response, no multi-agent",
-                      },
-                      {
-                        label: "Plan",
-                        value: "plan",
-                        icon: ListTodo,
-                        description: "Create plan for approval first",
-                      },
-                      {
-                        label: "Agent",
-                        value: "agent",
-                        icon: Zap,
-                        description: "Auto-execute with multi-agent",
-                      },
-                    ].map(({ label, value, icon: Icon, description }) => (
-                      <Tooltip key={value}>
-                        <TooltipTrigger asChild>
-                          <ToggleGroupItem
-                            value={value}
-                            className={`h-7 px-2 text-xs transition-all ${
-                              (value as ChatMode) === chatMode
-                                ? "bg-muted text-foreground border-border shadow-sm font-semibold"
-                                : "bg-transparent shadow-none text-muted-foreground border-transparent hover:bg-muted/50 hover:text-foreground"
-                            }`}
+                    <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-violet-500/20">
+                      <Sparkles className="w-10 h-10 shrink-0 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">
+                        X Playground
+                      </h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        {chatMode === "ask" &&
+                          "Ask mode: Direct responses from X without multi-agent orchestration."}
+                        {chatMode === "plan" &&
+                          "Plan mode: X creates a detailed plan for your approval before execution."}
+                        {chatMode === "agent" &&
+                          "Agent mode: X automatically orchestrates multiple agents to complete complex tasks."}
+                      </p>
+                    </div>
+
+                    {/* Example prompts based on mode */}
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Try {chatMode === "agent" ? "a complex task" : "asking"}
+                      </p>
+                      {chatMode === "ask" &&
+                        [
+                          "What is the X framework?",
+                          "Explain multi-agent systems",
+                          "How does task planning work?",
+                        ].map((prompt, idx) => (
+                          <motion.button
+                            key={idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * idx }}
+                            onClick={() => sendMessage(prompt)}
+                            className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
                           >
-                            <Icon className="w-3 h-3 shrink-0" />
-                            {label}
-                          </ToggleGroupItem>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs">
-                          {description}
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </ToggleGroup>
+                            <span className="flex items-center justify-between">
+                              {prompt}
+                              <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
+                            </span>
+                          </motion.button>
+                        ))}
+                      {chatMode === "plan" &&
+                        [
+                          "Create a plan to research AI trends and write a report",
+                          "Plan a website redesign with multiple components",
+                          "Design a data pipeline architecture",
+                        ].map((prompt, idx) => (
+                          <motion.button
+                            key={idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * idx }}
+                            onClick={() => sendMessage(prompt)}
+                            className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
+                          >
+                            <span className="flex items-center justify-between">
+                              {prompt}
+                              <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
+                            </span>
+                          </motion.button>
+                        ))}
+                      {chatMode === "agent" &&
+                        [
+                          "Research the latest AI agent frameworks and write a summary",
+                          "Analyze competitor products and create a comparison report",
+                          "Build a project plan with research, design, and implementation",
+                        ].map((prompt, idx) => (
+                          <motion.button
+                            key={idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 * idx }}
+                            onClick={() => sendMessage(prompt)}
+                            className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
+                          >
+                            <span className="flex items-center justify-between">
+                              {prompt}
+                              <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
+                            </span>
+                          </motion.button>
+                        ))}
+                    </div>
+                  </motion.div>
                 </div>
               </div>
-            </CardHeader>
+            ) : (
+              <ScrollArea className="flex-1 px-4">
+                <div className="py-4 space-y-4">
+                  {messages.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))}
 
-            <CardContent className="flex-1 flex flex-col p-0 overflow-hidden min-h-0">
-              {/* Messages */}
-              {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center overflow-auto pt-8">
-                  <div className="text-center max-w-md px-8">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-6"
-                    >
-                      <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-violet-500/20">
-                        <Sparkles className="w-10 h-10 shrink-0 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-foreground mb-2">
-                          X Playground
-                        </h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {chatMode === "ask" &&
-                            "Ask mode: Direct responses from X without multi-agent orchestration."}
-                          {chatMode === "plan" &&
-                            "Plan mode: X creates a detailed plan for your approval before execution."}
-                          {chatMode === "agent" &&
-                            "Agent mode: X automatically orchestrates multiple agents to complete complex tasks."}
-                        </p>
-                      </div>
+                  {isLoading && <TypingIndicator />}
 
-                      {/* Example prompts based on mode */}
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                          Try{" "}
-                          {chatMode === "agent" ? "a complex task" : "asking"}
-                        </p>
-                        {chatMode === "ask" &&
-                          [
-                            "What is the X framework?",
-                            "Explain multi-agent systems",
-                            "How does task planning work?",
-                          ].map((prompt, idx) => (
-                            <motion.button
-                              key={idx}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.1 * idx }}
-                              onClick={() => sendMessage(prompt)}
-                              className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
-                            >
-                              <span className="flex items-center justify-between">
-                                {prompt}
-                                <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
-                              </span>
-                            </motion.button>
-                          ))}
-                        {chatMode === "plan" &&
-                          [
-                            "Create a plan to research AI trends and write a report",
-                            "Plan a website redesign with multiple components",
-                            "Design a data pipeline architecture",
-                          ].map((prompt, idx) => (
-                            <motion.button
-                              key={idx}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.1 * idx }}
-                              onClick={() => sendMessage(prompt)}
-                              className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
-                            >
-                              <span className="flex items-center justify-between">
-                                {prompt}
-                                <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
-                              </span>
-                            </motion.button>
-                          ))}
-                        {chatMode === "agent" &&
-                          [
-                            "Research the latest AI agent frameworks and write a summary",
-                            "Analyze competitor products and create a comparison report",
-                            "Build a project plan with research, design, and implementation",
-                          ].map((prompt, idx) => (
-                            <motion.button
-                              key={idx}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.1 * idx }}
-                              onClick={() => sendMessage(prompt)}
-                              className="w-full text-left px-4 py-3 rounded-lg bg-muted/50 hover:bg-muted border border-border hover:border-violet-500/30 text-sm text-foreground transition-all group"
-                            >
-                              <span className="flex items-center justify-between">
-                                {prompt}
-                                <ArrowRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-violet-500" />
-                              </span>
-                            </motion.button>
-                          ))}
-                      </div>
-                    </motion.div>
-                  </div>
+                  <div ref={messagesEndRef} />
                 </div>
-              ) : (
-                <ScrollArea className="flex-1 px-4">
-                  <div className="py-4 space-y-4">
-                    {messages.map((message) => (
-                      <ChatMessage key={message.id} message={message} />
-                    ))}
+              </ScrollArea>
+            )}
 
-                    {isLoading && <TypingIndicator />}
-
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-              )}
-
-              <ChatInput
-                value={input}
-                onChange={setInput}
-                onSend={handleSend}
-                isLoading={isLoading}
-              />
-            </CardContent>
-          </Card>
+            <ChatInput
+              value={input}
+              onChange={setInput}
+              onSend={handleSend}
+              isLoading={isLoading}
+              agentId={agentId}
+              onAgentChange={setAgentId}
+              chatMode={chatMode}
+              onChatModeChange={setChatMode}
+            />
+          </div>
         </div>
       </div>
     </TooltipProvider>

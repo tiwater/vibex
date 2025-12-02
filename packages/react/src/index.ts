@@ -65,6 +65,7 @@ export {
 
 export { useXChat } from "./hooks/chat";
 export type { UseXChatOptions } from "./hooks/chat";
+export { XChatTransport } from "./transport/x";
 
 // ============================================================================
 // Provider

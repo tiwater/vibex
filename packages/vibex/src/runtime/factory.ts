@@ -128,7 +128,7 @@ export function createAgent(settings: XAgentSettings): XAgentInstance {
   // Parse model string (e.g., "openai:gpt-4o" -> { provider: "openai", model: "gpt-4o" })
   const modelConfig = modelString
     ? parseModelString(modelString)
-    : { provider: "openai", modelName: "gpt-4o" };
+    : { provider: "openrouter", modelName: "anthropic/claude-sonnet-4.5" };
 
   // Create the agent config
   // Use name as both id and name for consistency
@@ -240,7 +240,7 @@ export function createOrchestratorAgent(
     name: "X",
     description:
       "The conversational representative that manages spaces and coordinates with other agents",
-    model: options?.model || "openai:gpt-4o",
+    model: options?.model || "openrouter:anthropic/claude-sonnet-4.5",
     tools: ["plan_create", "plan_update", "task_assign", "agent_delegate"],
     autoToolContinue: true,
     system: (context) => `

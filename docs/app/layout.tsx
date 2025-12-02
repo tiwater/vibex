@@ -31,7 +31,7 @@ const navbar = (
 export const metadata = {
   metadataBase: new URL("https://vibex.supen.ai/"),
   title: {
-    default: "VibeX - Evolve with Dedicated Agentic Teams",
+    default: "VibeX - Evolve with Agentic Teams",
     template: "%s | VibeX",
   },
   description:

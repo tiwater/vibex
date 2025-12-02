@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useXChat, type XChatMessage } from "@vibex/react";
+import { useXChat, XChatTransport, type XChatMessage } from "@vibex/react";
 
 /**
  * Chat modes supported by X
@@ -21,6 +21,7 @@ export function usePlayground() {
   const [error, setError] = useState<string | null>(null);
   // Default to "ask" mode - "agent" mode requires LLM orchestration which may fail
   const [chatMode, setChatMode] = useState<ChatMode>("ask");
+  const [agentId, setAgentId] = useState<string | undefined>(undefined);
 
   // Stable error handler
   const onError = useCallback((err: Error) => {
@@ -42,10 +43,15 @@ export function usePlayground() {
     [chatMode]
   );
 
+  // Stable transport for richer multi-agent/tool streaming
+  const transport = useMemo(() => new XChatTransport({ api: "/api/chat" }), []);
+
   // Use VibeX chat hook - connects to real /api/chat endpoint
   const chat = useXChat({
     spaceId: "playground",
+    agentId,
     metadata,
+    transport,
     onError,
     onFinish,
   });
@@ -125,6 +131,8 @@ export function usePlayground() {
     // Chat mode
     chatMode,
     setChatMode,
+    agentId,
+    setAgentId,
 
     // Actions
     sendMessage,

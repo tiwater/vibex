@@ -171,6 +171,12 @@ export class Agent {
     spaceId?: string;
     userId?: string;
   }): LanguageModel {
+    console.log(`[Agent:${this.name}] getModel`, {
+      spaceId: context?.spaceId,
+      userId: context?.userId,
+      provider: this.provider,
+      model: this.model,
+    });
     const modelProvider = getModelProvider({
       provider: this.provider as any,
       modelName: this.model,
@@ -375,6 +381,8 @@ export class Agent {
         0,
         100
       ),
+      overrideTools: !!aiSdkOptions.tools,
+      overrideToolNames: aiSdkOptions.tools ? Object.keys(aiSdkOptions.tools) : []
     });
 
     const result = streamText({

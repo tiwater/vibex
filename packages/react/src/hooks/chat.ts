@@ -7,6 +7,7 @@ import type {
   CreateXMessage,
   XChatStatus,
 } from "../types";
+import type { ChatTransport } from "ai";
 
 export interface UseXChatOptions {
   /** The space ID to associate messages with */
@@ -17,6 +18,8 @@ export interface UseXChatOptions {
   metadata?: Record<string, unknown>;
   /** API endpoint (defaults to /api/chat) */
   api?: string;
+  /** Optional custom transport (defaults to DefaultChatTransport) */
+  transport?: ChatTransport<UIMessage>;
   /** Initial messages to populate the chat */
   initialMessages?: XChatMessage[];
   /** Callback when an error occurs */
@@ -61,6 +64,13 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
         args?: unknown;
         state?: string;
       };
+      
+      console.log("[uiMessageToX] Processing tool-call part:", {
+        toolName: toolPart.toolName,
+        toolCallId: toolPart.toolCallId,
+        state: toolPart.state
+      });
+
       if (toolPart.toolName) {
         // Map AI SDK states to our status
         let status:
@@ -103,6 +113,13 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
               : JSON.stringify(toolResultPart.result, null, 2),
         });
       }
+    } else if (part.type === "reasoning") {
+      // Handle reasoning parts (AI SDK v6)
+      const reasoningPart = part as { type: "reasoning"; text: string; details?: unknown };
+      xParts.push({
+        type: "reasoning",
+        text: reasoningPart.text,
+      });
     } else if (part.type.startsWith("data-")) {
       // Handle custom data parts (e.g., delegation events, tool calls)
       // AI SDK v6 uses "data-${string}" format, e.g., "data-delegation", "data-tool-call"
@@ -222,7 +239,22 @@ function xToUiMessage(msg: XChatMessage): UIMessage {
       ? msg.parts.map((part) => {
           if (part.type === "text") {
             return { type: "text" as const, text: part.text };
+          } else if (part.type === "tool-call") {
+            return {
+              type: "tool-call",
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              args: part.args,
+            } as any;
+          } else if (part.type === "tool-result") {
+            return {
+              type: "tool-result",
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              result: part.result,
+            } as any;
           }
+          // Fallback for unknown parts
           return { type: "text" as const, text: "" };
         })
       : [{ type: "text" as const, text: msg.content }],
@@ -253,6 +285,7 @@ export function useXChat({
   agentId,
   metadata,
   api = "/api/chat",
+  transport: customTransport,
   initialMessages,
   onError,
   onFinish,
@@ -268,6 +301,17 @@ export function useXChat({
 
   // Create transport with custom body for spaceId, agentId, metadata
   const transport = useMemo(() => {
+    const finalChatMode = metadata?.chatMode || (agentId ? "agent" : "ask");
+    console.log("[useXChat] Creating transport with:", {
+      spaceId,
+      agentId,
+      metadataChatMode: metadata?.chatMode,
+      finalChatMode,
+      fullMetadata: metadata,
+    });
+    // Use the default transport; the API returns a JSON event stream.
+    if (customTransport) return customTransport;
+
     return new DefaultChatTransport({
       api,
       body: {
@@ -275,12 +319,12 @@ export function useXChat({
         agentId,
         metadata: {
           ...metadata,
-          chatMode: metadata?.chatMode || (agentId ? "agent" : "ask"), // Use chatMode from metadata
+          chatMode: finalChatMode,
           requestedAgent: agentId,
         },
       },
     });
-  }, [api, spaceId, agentId, metadata]);
+  }, [api, spaceId, agentId, metadata, customTransport]);
 
   // Use the AI SDK's useChat hook
   const chat = useChat({
@@ -311,17 +355,39 @@ export function useXChat({
     return "idle";
   }, [chat.status]);
 
-  // Wrap sendMessage to use X types
+  // Wrap sendMessage to use X types and include latest metadata
   const append = useCallback(
     async (message: CreateXMessage) => {
-      // v6 uses sendMessage with parts
-      await chat.sendMessage({
-        role: message.role,
-        parts: [{ type: "text" as const, text: message.content }],
+      // Create metadata with the LATEST chatMode (not the one from transport creation)
+      const currentMetadata = {
+        ...metadata,
+        chatMode: metadata?.chatMode, // Use current chatMode from state
+      };
+      
+      console.log("[useXChat] Sending message with metadata:", {
+        chatMode: currentMetadata.chatMode,
+        spaceId,
+        agentId,
       });
+
+      // v6 uses sendMessage with parts and optional request options
+      await chat.sendMessage(
+        {
+          role: message.role,
+          parts: [{ type: "text" as const, text: message.content }],
+        },
+        {
+          // Pass current metadata in request body
+          body: {
+            spaceId,
+            agentId,
+            metadata: currentMetadata,
+          },
+        }
+      );
       setInput(""); // Clear input after sending
     },
-    [chat]
+    [chat, metadata, spaceId, agentId] // Include metadata in dependencies
   );
 
   // Wrap setMessages to use X types

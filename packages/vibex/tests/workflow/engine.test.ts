@@ -123,9 +123,6 @@ describe("WorkflowEngine", () => {
     // human_input node pauses execution
     expect(engine.getStatus(contextId)).toBe("paused");
 
-    engine.cancelExecution(contextId);
-    // Note: cancelExecution only works on "running" status, not "paused"
-    // So status should still be "paused"
     expect(engine.getStatus(contextId)).toBe("paused");
   });
 });

@@ -128,10 +128,11 @@ function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
   // First, collect all parts
   const allParts = [...(message.parts || [])];
 
-  // Separate tool calls, tool results, and artifacts from text
+  // Separate tool calls, tool results, artifacts, and reasoning from text
   const toolCallParts: typeof allParts = [];
   const toolResultParts: typeof allParts = [];
   const artifactParts: typeof allParts = [];
+  const reasoningParts: typeof allParts = [];
   const textParts: typeof allParts = [];
 
   for (const part of allParts) {
@@ -141,8 +142,25 @@ function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
       toolResultParts.push(part);
     } else if (part.type === "artifact") {
       artifactParts.push(part);
+    } else if (part.type === "reasoning") {
+      reasoningParts.push(part);
     } else {
       textParts.push(part);
+    }
+  }
+
+  // Process reasoning parts first
+  for (const part of reasoningParts) {
+    const reasoningPart = part as { type: "reasoning"; text: string };
+    if (reasoningPart.text) {
+      items.push({
+        type: "agent-message", // Reuse agent-message for now, but style it differently or add new type
+        agentName: currentAgent,
+        agentId: currentAgentId,
+        content: `Thinking: ${reasoningPart.text}`, // Prefix to distinguish
+        timestamp: message.createdAt,
+        // Add a flag or specific type if we want custom rendering
+      });
     }
   }
 
@@ -869,9 +887,9 @@ const AssistantMessage = memo(function AssistantMessage({
   if (timelineItems.length === 0) {
     return (
       <div className="flex gap-2 my-2">
-        <Avatar className="w-7 h-7 shrink-0 bg-violet-500">
+        <Avatar className="w-7 h-7 shrink-0 bg-purple-500">
           <AvatarFallback>
-            <Bot className="w-4 h-4 text-white" />
+            <Bot className="w-4 h-4" />
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 flex items-center gap-2 text-muted-foreground">

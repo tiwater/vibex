@@ -1,9 +1,5 @@
-import {
-  XAgent,
-  XChatMode,
-  fromXChatMessage,
-  getTextFromXChatMessage,
-} from "vibex";
+import { XAgent, fromXChatMessage, getTextFromXChatMessage } from "vibex";
+type ChatMode = "ask" | "plan" | "agent";
 import type { XChatMessage } from "@vibex/react";
 
 export const runtime = "nodejs";
@@ -13,7 +9,7 @@ export const dynamic = "force-dynamic";
 const DEFAULT_MODEL = "openai/gpt-5.1-codex";
 
 // Valid chat modes
-const VALID_MODES: XChatMode[] = ["ask", "plan", "agent"];
+const VALID_MODES: ChatMode[] = ["ask", "plan", "agent"];
 
 export async function POST(req: Request) {
   try {
@@ -41,7 +37,7 @@ export async function POST(req: Request) {
     console.log("[Chat API] Processing:", lastContent.slice(0, 100));
 
     // Initialize or resume XAgent with the space
-    let xAgent: XAgent;
+    let xAgent: InstanceType<typeof XAgent>;
 
     // Try to resume existing space, or create new one
     if (spaceId && spaceId !== "playground") {
@@ -65,7 +61,7 @@ export async function POST(req: Request) {
     const space = xAgent.getSpace();
 
     // Extract chatMode from metadata (default to "agent")
-    const chatMode = (metadata?.chatMode as XChatMode) || "agent";
+    const chatMode = (metadata?.chatMode as ChatMode) || "agent";
     if (!VALID_MODES.includes(chatMode)) {
       return new Response(`Invalid chat mode: ${chatMode}`, { status: 400 });
     }
@@ -73,46 +69,178 @@ export async function POST(req: Request) {
     // Convert XChatMessages to XMessages format
     const xMessages = (messages as XChatMessage[]).map(fromXChatMessage);
 
-    console.log(
-      "[Chat API] Streaming with",
-      xMessages.length,
-      "messages",
-      "mode:",
-      chatMode
-    );
+    console.log("[Chat API] Streaming with", {
+      messages: xMessages.length,
+      mode: chatMode,
+      spaceId: space?.spaceId,
+      agentId,
+      metadata,
+    });
+    console.log("[Chat API] Space agents:", Array.from(space?.agents?.keys?.() || []));
 
     // Stream the response
     // Only set requestedAgent if explicitly provided - otherwise let X decide
-    const stream = await xAgent.streamText({
+    const streamOptions = {
       messages: xMessages,
       metadata: {
         ...metadata,
         chatMode,
         ...(agentId ? { requestedAgent: agentId } : {}),
       },
+    };
+    console.log("[Chat API] Calling xAgent.streamText with:", {
+      mode: chatMode,
+      requestedAgent: agentId,
+      messageCount: xMessages.length,
+      metadata: streamOptions.metadata,
     });
 
-    // Return UIMessageStream response with agent metadata
+    const stream = await xAgent.streamText(streamOptions);
+    console.log("[Chat API] xAgent.streamText returned", {
+      hasFullStream: typeof stream.fullStream === "object",
+      hasTextStream: typeof stream.textStream === "object",
+      keys: Object.keys(stream || {}),
+    });
+
+    // Manual UI-message SSE to ensure consistent chunks for multi-agent/tool streaming.
     const displayAgent = agentId || "x";
-    return stream.toUIMessageStreamResponse({
-      messageMetadata: ({ part }) => {
-        // Send metadata when streaming starts
-        if (part.type === "start") {
-          return {
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        const emit = (obj: unknown) =>
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        const messageId = `msg_${Date.now()}`;
+        let sawTextEnd = false;
+        let chunkCount = 0;
+        const seenTypes = new Set<string>();
+
+        // Emit initial start + metadata
+        emit({
+          type: "text-start",
+          id: messageId,
+          metadata: {
             agentName: displayAgent === "x" ? "X (Orchestrator)" : displayAgent,
             agentId: displayAgent,
             spaceId: space?.spaceId || "playground",
-            delegationType: agentId ? "direct" : "orchestrator",
-            startedAt: Date.now(),
-          };
+          },
+        });
+
+        try {
+          const iterable =
+            (stream.fullStream as AsyncIterable<any>) ||
+            (stream.textStream as AsyncIterable<any>);
+
+          for await (const chunk of iterable) {
+            chunkCount++;
+            if (chunk?.type) seenTypes.add(chunk.type);
+            if (chunk?.type) {
+              console.log("[Chat API] Stream chunk", {
+                type: chunk.type,
+                agentName: chunk.agentName || chunk.metadata?.agentName,
+                agentId: chunk.agentId || chunk.metadata?.agentId,
+                tool: chunk.toolName,
+                toolCallId: chunk.toolCallId,
+                text: chunk.textDelta
+                  ? String(chunk.textDelta).slice(0, 120)
+                  : undefined,
+                state: chunk.state,
+              });
+            }
+
+            // If chunk has agent identity (worker), emit metadata so UI can label it
+            const chunkAgentName =
+              chunk?.agentName || chunk?.metadata?.agentName || undefined;
+            const chunkAgentId =
+              chunk?.agentId || chunk?.metadata?.agentId || undefined;
+            if (chunkAgentName || chunkAgentId) {
+              emit({
+                type: "message-metadata",
+                metadata: {
+                  agentName: chunkAgentName || chunkAgentId,
+                  agentId: chunkAgentId || chunkAgentName,
+                  spaceId: space?.spaceId || "playground",
+                },
+              });
+            }
+
+            if (chunk?.type === "text-delta" && chunk.textDelta) {
+              emit({ type: "text-delta", id: messageId, delta: chunk.textDelta });
+            }
+            if (chunk?.type === "tool-call") {
+              emit({
+                type: "tool-call",
+                id: messageId,
+                toolCallId: chunk.toolCallId || chunk.id,
+                toolName: chunk.toolName,
+                args: chunk.args,
+                state: chunk.state || "call",
+                metadata: {
+                  agentName: chunkAgentName || chunkAgentId,
+                  agentId: chunkAgentId || chunkAgentName,
+                },
+              });
+            }
+            if (chunk?.type === "tool-result") {
+              emit({
+                type: "tool-result",
+                id: messageId,
+                toolCallId: chunk.toolCallId || chunk.id,
+                toolName: chunk.toolName,
+                result: chunk.result,
+                metadata: {
+                  agentName: chunkAgentName || chunkAgentId,
+                  agentId: chunkAgentId || chunkAgentName,
+                },
+              });
+            }
+            if (chunk?.type === "delegation") {
+              const delegationPayload = {
+                status: chunk.status,
+                taskId: chunk.taskId,
+                taskTitle: chunk.taskTitle,
+                agentName: chunk.agentName,
+                agentId: chunk.agentId,
+                result: chunk.result,
+                error: chunk.error,
+              };
+              emit({
+                type: "message-metadata",
+                metadata: {
+                  agentName: chunk.agentName || chunk.agentId,
+                  agentId: chunk.agentId || chunk.agentName,
+                  delegation: delegationPayload,
+                  spaceId: space?.spaceId || "playground",
+                },
+              });
+            }
+            if (chunk?.type === "finish") {
+              emit({ type: "text-end", id: messageId });
+              sawTextEnd = true;
+            }
+          }
+        } catch (err) {
+          controller.error(err);
+          return;
         }
-        // Send additional metadata when streaming completes
-        if (part.type === "finish") {
-          return {
-            finishedAt: Date.now(),
-            finishReason: part.finishReason,
-          };
+
+        if (!sawTextEnd) {
+          emit({ type: "text-end", id: messageId });
         }
+        console.log("[Chat API] Stream finished", {
+          messageId,
+          chunkCount,
+          types: Array.from(seenTypes),
+          mode: chatMode,
+        });
+        controller.close();
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        Connection: "keep-alive",
+        "Cache-Control": "no-cache, no-transform",
       },
     });
   } catch (error) {

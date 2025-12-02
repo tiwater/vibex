@@ -1,0 +1,18 @@
+diff --git a/v3/external.js b/v3/external.js
+index f0a4be4c7aa63b363b654384b103396050a06e29..28352518cbcd50e3cb8209a4434691ef1d498716 100644
+--- a/v3/external.js
++++ b/v3/external.js
+@@ -4,3 +4,13 @@ export * from "./helpers/typeAliases.js";
+ export * from "./helpers/util.js";
+ export * from "./types.js";
+ export * from "./ZodError.js";
++
++// Add legacy .meta() helper expected by some downstream callers
++import { ZodType } from "./types.js";
++if (!ZodType.prototype.meta) {
++  ZodType.prototype.meta = function meta(value) {
++    if (value === undefined) return this;
++    this._def = { ...this._def, meta: value };
++    return this;
++  };
++}

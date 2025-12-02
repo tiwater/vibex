@@ -23,7 +23,7 @@ export interface DelegationEvent {
   taskTitle: string;
   agentId: string;
   agentName: string;
-  status: "started" | "completed" | "failed";
+  status: "started" | "streaming" | "completed" | "failed";
   result?: string;
   artifactId?: string;
   error?: string;
@@ -387,14 +387,18 @@ async function executeTask(
   let agent = space.getAgent(agentId);
   if (!agent) {
     // Try to find by name (case-insensitive) as fallback
+    // Try to find by name (case-insensitive and normalized) as fallback
+    const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, " ").trim();
+    
     for (const [id, candidateAgent] of space.agents.entries()) {
-      if (
-        candidateAgent.name?.toLowerCase() === agentId.toLowerCase() ||
-        id.toLowerCase() === agentId.toLowerCase()
-      ) {
+      const normalizedId = normalize(id);
+      const normalizedName = normalize(candidateAgent.name || "");
+      const normalizedTarget = normalize(agentId);
+
+      if (normalizedName === normalizedTarget || normalizedId === normalizedTarget) {
         agent = candidateAgent;
         console.log(
-          `[Orchestrator] Found agent by name match: ${agentId} -> ${id}`
+          `[Orchestrator] Found agent by fuzzy match: ${agentId} -> ${id} (${candidateAgent.name})`
         );
         break;
       }
@@ -434,6 +438,9 @@ async function executeTask(
     name: agent.name,
     toolConfig: (agent as any).tools,
   });
+
+  // Update agentName to ensure it's correct for the try block
+  agentName = agent.name || agentId;
 
   // Build context from previous task results
   let context = "";
@@ -483,6 +490,17 @@ async function executeTask(
 
       if (chunk.type === "text-delta") {
         result += chunk.delta;
+        // Emit streaming event
+        onEvent({
+          type: "delegation",
+          taskId: task.id,
+          taskTitle: task.title,
+          agentId,
+          agentName,
+          status: "streaming",
+          result: chunk.delta, // Send just the delta for streaming events
+          timestamp: Date.now(),
+        });
       } else if (chunk.type === "tool-call") {
         const toolCallId =
           chunk.toolCallId || `tool-${Date.now()}-${Math.random()}`;
@@ -559,9 +577,6 @@ async function executeTask(
 
     // Mark task as completed
     task.complete(result);
-
-    // Get agent name for better visibility
-    const agentName = agent.name || agentId;
 
     // Emit completion event with tool calls and artifact info
     // NO TRUNCATION - stream EVERY BIT of data

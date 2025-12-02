@@ -21,12 +21,10 @@ import { Plan } from "../space/plan";
 import { Task } from "../space/task";
 import {
   generateObject,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
 } from "ai";
 import type { StreamTextResult } from "ai";
 type StreamTextResultType = StreamTextResult<Record<string, any>, any>;
-import { z } from "zod/v3";
+import { z } from "zod";
 import type { XMessage } from "../types/message";
 import { getTextContent } from "../utils/message";
 import {
@@ -161,6 +159,14 @@ export class XAgent extends Agent {
       ...restOptions
     } = options;
 
+    console.log("[XAgent.streamText] start", {
+      mode: metadata?.chatMode,
+      requestedAgent: metadata?.requestedAgent,
+      messageCount: messages.length,
+      spaceId,
+      metadataKeys: Object.keys(metadata || {}),
+    });
+
     // Determine chat mode (default to "agent" for backward compatibility)
     const chatMode =
       (metadata?.chatMode as XChatMode) ||
@@ -186,7 +192,7 @@ export class XAgent extends Agent {
         return this.handlePlanMode(messages, systemMessage, spaceId, metadata);
 
       case "agent":
-        return this.handleAgentModeWithOrchestration(
+        return this.handleAgentMode(
           messages,
           systemMessage,
           spaceId,
@@ -255,15 +261,18 @@ export class XAgent extends Agent {
 
     // Get available agents
     const availableAgents = await this.getAvailableAgents();
+    console.log("[XAgent] Available agents for planning:", availableAgents);
 
     // Analyze and create plan
     let analysis;
     try {
+      console.log("[XAgent] Analyzing request:", userContent);
       analysis = await analyzeRequest(
         this.getModel({ spaceId }),
         userContent,
         availableAgents
       );
+      console.log("[XAgent] Analysis result:", analysis);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(`[XAgent] analyzeRequest failed:`, error);
@@ -295,14 +304,18 @@ export class XAgent extends Agent {
   /**
    * Agent Mode with Orchestration - Create and auto-execute plan
    */
-  private async handleAgentModeWithOrchestration(
+  private async handleAgentMode(
     messages: XMessage[],
     systemMessage: string | undefined,
     spaceId: string | undefined,
     metadata: Record<string, unknown>,
     restOptions: Record<string, unknown>
   ): Promise<StreamTextResultType> {
-    console.log("[XAgent] Entering handleAgentModeWithOrchestration");
+    console.log("[XAgent] Entering handleAgentMode", {
+      spaceId,
+      requestedAgent: metadata?.requestedAgent,
+      metadataKeys: Object.keys(metadata || {}),
+    });
 
     // Check for explicit agent delegation
     const requestedAgent = metadata.requestedAgent as string | undefined;
@@ -324,98 +337,79 @@ export class XAgent extends Agent {
       return this.executePendingPlan(spaceId, metadata);
     }
 
-    // Analyze request for multi-agent orchestration
+    // Get the last user message
     const lastUserMessage = messages.filter((m) => m.role === "user").pop();
     const userContent = lastUserMessage ? getTextContent(lastUserMessage) : "";
 
     if (!userContent || userContent.trim().length === 0) {
-      console.warn(
-        "[XAgent] Empty user content, cannot analyze for multi-agent collaboration"
-      );
+      console.warn("[XAgent] Empty user content in agent mode");
       return this.createTextStreamResponse(
-        "I didn't receive any message content. Please provide a request or question."
+        "I didn't receive any message content. Please provide a request."
       );
     }
 
-    console.log("[XAgent] Getting available agents...");
+    // Get available agents
     const availableAgents = await this.getAvailableAgents();
-    console.log(
-      `[XAgent] Available agents count: ${availableAgents.length}`,
-      availableAgents
-    );
+    console.log("[XAgent] Available agents for orchestration:", availableAgents);
 
-    if (availableAgents.length === 0) {
-      console.warn(
-        `[XAgent] No agents available for delegation! Space agents:`,
-        Array.from(this.space.agents.keys())
-      );
-    }
-
+    // Analyze the request
     let analysis;
     try {
+      console.log("[XAgent] Analyzing request:", userContent);
       analysis = await analyzeRequest(
         this.getModel({ spaceId }),
         userContent,
         availableAgents
       );
+      console.log("[XAgent] Analysis result:", analysis);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(`[XAgent] analyzeRequest failed:`, error);
       return this.createTextStreamResponse(
         `❌ **Error analyzing request**\n\n` +
-          `The AI failed to analyze your request for multi-agent orchestration.\n\n` +
+          `The AI failed to analyze your request.\n\n` +
           `**Error:** ${errorMsg}\n\n` +
-          `**Tip:** Try using "ask" mode for a direct response, or simplify your request.`
+          `**Tip:** Try using "ask" mode for a direct response.`
       );
     }
 
-    console.log(`[XAgent] Agent mode analysis:`, {
-      needsPlan: analysis.needsPlan,
-      reasoning: analysis.reasoning,
-      taskCount: analysis.suggestedTasks?.length || 0,
-      suggestedTasks: analysis.suggestedTasks?.map((t) => ({
-        title: t.title,
-        assignedTo: t.assignedTo,
-      })),
-    });
-
-    // If multi-agent orchestration is needed, execute via plan
-    if (
-      analysis.needsPlan &&
-      analysis.suggestedTasks &&
-      analysis.suggestedTasks.length > 0
-    ) {
-      console.log(
-        `[XAgent] Creating plan with ${analysis.suggestedTasks.length} tasks`
-      );
-      return await this.executeWithPlan(
-        userContent,
-        analysis.suggestedTasks,
+    // If simple request, use ask mode
+    if (!analysis.needsPlan || !analysis.suggestedTasks || analysis.suggestedTasks.length === 0) {
+      console.log("[XAgent] Simple request detected, using ask mode");
+      return this.handleAskMode(
+        messages,
+        systemMessage,
         spaceId,
-        metadata
+        metadata,
+        restOptions
       );
     }
 
-    // Otherwise, handle directly
-    console.log(
-      "[XAgent] Agent mode: handling directly (no multi-agent needed)"
-    );
-    const optimizedMessages = this.optimizeContextForAgent(messages);
-    const directStream = await super.streamText({
-      messages: optimizedMessages,
-      system: systemMessage,
+    // Execute the plan with streaming delegation events
+    const response = await this.executeWithStreamingPlan(
+      userContent,
+      analysis.suggestedTasks,
+      analysis.reasoning,
       spaceId,
-      metadata: {
-        ...metadata,
-        chatMode: "agent",
-        delegationType: "self",
-        userId: this.space.userId,
-      },
-      ...restOptions,
-    });
+      metadata
+    );
 
-    // Return stream directly - AI SDK handles tool calls
-    return directStream;
+    // Trace chunk types for worker agents
+    if (response && response.fullStream) {
+      (async () => {
+        let idx = 0;
+        for await (const chunk of response.fullStream as AsyncIterable<any>) {
+          console.log("[XAgent] fullStream chunk", {
+            idx: idx++,
+            type: chunk?.type,
+            agentName: chunk?.agentName || chunk?.metadata?.agentName,
+            tool: chunk?.toolName,
+            toolCallId: chunk?.toolCallId,
+          });
+        }
+      })();
+    }
+    return response;
   }
 
   /**
@@ -582,7 +576,7 @@ export class XAgent extends Agent {
   /**
    * Get list of available agents for orchestration
    */
-  private async getAvailableAgents(): Promise<
+  protected async getAvailableAgents(): Promise<
     Array<{ id: string; name: string; description: string }>
   > {
     // First, get agents from in-memory space (these are always available)
@@ -651,10 +645,257 @@ export class XAgent extends Agent {
   }
 
   /**
-   * Execute with plan - streams delegation events as they happen
+   * Execute with streaming plan - streams delegation events as they happen
+   * Returns a StreamTextResult that yields delegation events and final text
    */
-  private async executeWithPlan(
-    userRequest: string,
+  protected async executeWithStreamingPlan(
+    userContent: string,
+    suggestedTasks: Array<{
+      title: string;
+      description: string;
+      assignedTo: string;
+      dependencies: string[];
+    }>,
+    reasoning: string,
+    spaceId: string | undefined,
+    _metadata: Record<string, unknown>
+  ): Promise<StreamTextResultType> {
+    const plan = createPlanFromAnalysis(userContent, suggestedTasks);
+    this.space.plan = plan;
+
+    // Create a custom stream that yields delegation events
+    const self = this;
+
+    // Helper to emit text chunks
+    function* emitText(text: string) {
+      for (const char of text) {
+        yield {
+          type: "text-delta" as const,
+          textDelta: char
+        };
+      }
+    }
+
+    // Create async generator for fullStream that actually streams events
+    async function* generateFullStream() {
+      // Yield initial text explaining the plan
+      const planSummary = `🎯 **Plan Created**\n\n**Goal:** ${userContent}\n\n**Reasoning:** ${reasoning}\n\n**Tasks (${suggestedTasks.length}):**\n${suggestedTasks.map((t, i) => `${i + 1}. **${t.title}** → \`${t.assignedTo}\``).join('\n')}\n\n---\n\n`;
+
+      yield* emitText(planSummary);
+
+      // Execute plan and stream delegation events as they happen
+      try {
+        // Create event queue to convert callbacks to async iteration
+        const eventQueue: DelegationEvent[] = [];
+        let executionComplete = false;
+
+
+        // Start execution in background
+        const executionPromise = executePlan(
+          plan,
+          self.space,
+          self.getModel({ spaceId }),
+          (event: DelegationEvent) => {
+            console.log("[XAgent] Delegation event (streaming)", {
+              status: event.status,
+              agentId: event.agentId,
+              agentName: event.agentName,
+              taskId: event.taskId,
+              taskTitle: event.taskTitle,
+              resultPreview: event.result
+                ? String(event.result).slice(0, 100)
+                : undefined,
+            });
+            eventQueue.push(event);
+          }
+        ).then(
+          (result) => {
+            executionComplete = true;
+            return result;
+          },
+          (error) => {
+
+            executionComplete = true;
+            throw error;
+          }
+        );
+
+        // Process events as they arrive
+        let processedCount = 0;
+        while (!executionComplete || processedCount < eventQueue.length) {
+          if (processedCount < eventQueue.length) {
+            const event = eventQueue[processedCount];
+            processedCount++;
+
+            // Emit event as text
+            let eventText = "";
+            if (event.status === "started") {
+              eventText = `\n🔄 **Delegating to ${event.agentName}**: ${event.taskTitle}\n`;
+            } else if (event.status === "streaming") {
+              // Just yield the chunk directly
+              if (event.result) {
+                yield* emitText(event.result);
+              }
+              continue; // Skip the rest of the loop for streaming events
+            } else if (event.status === "completed") {
+              eventText = `\n✅ **${event.agentName} completed**: ${event.taskTitle}\n`;
+              // Don't show result preview if we've been streaming it
+              // But if we haven't (e.g. non-streaming agent), we might want to show it
+              // For now, let's assume if we got streaming events, we don't need the summary
+              // But since we don't track state easily here, let's just show completion
+            } else if (event.status === "failed") {
+              eventText = `\n❌ **${event.agentName} failed**: ${event.taskTitle}\n`;
+              if (event.error) {
+                eventText += `Error: ${event.error}\n`;
+              }
+            }
+
+            yield* emitText(eventText);
+          } else {
+            // Wait a bit before checking again
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+
+        // Get results
+        const { results } = await executionPromise;
+
+        // Synthesize results
+        let finalResponse = "";
+        try {
+          finalResponse = await synthesizeResults(
+            self.getModel({ spaceId }),
+            plan,
+            results,
+            userContent
+          );
+        } catch (synthError) {
+          console.error(`[XAgent] synthesizeResults failed:`, synthError);
+          finalResponse = `⚠️ Results synthesis failed: ${synthError instanceof Error ? synthError.message : String(synthError)}\n\nTask results are still available in the plan.`;
+        }
+
+        // Yield final response
+        const finalText = `\n\n## 📊 Final Summary\n\n${finalResponse}\n`;
+        yield* emitText(finalText);
+
+      } catch (error) {
+        const errorText = `\n\n⚠️ **Plan execution failed:** ${error instanceof Error ? error.message : String(error)}\n`;
+        yield* emitText(errorText);
+      }
+
+      // Yield finish
+      yield { type: "finish" as const, finishReason: "stop" as const };
+    }
+
+    // Create shared buffer for stream consumption
+    const chunks: any[] = [];
+    let consumersWaiting: Array<() => void> = [];
+    let isGenerating = false;
+    let generationComplete = false;
+
+    // Start generation immediately and buffer chunks
+    const startGeneration = async () => {
+      if (isGenerating) return;
+      isGenerating = true;
+
+      try {
+        for await (const chunk of generateFullStream()) {
+          chunks.push(chunk);
+          // Notify waiting consumers
+          consumersWaiting.forEach(resolve => resolve());
+          consumersWaiting = [];
+        }
+      } finally {
+        generationComplete = true;
+        // Notify any remaining consumers
+        consumersWaiting.forEach(resolve => resolve());
+        consumersWaiting = [];
+      }
+    };
+
+    // Start generation
+    startGeneration();
+
+    // Create textStream from buffered chunks
+    async function* generateTextStream() {
+      let index = 0;
+      while (true) {
+        if (index < chunks.length) {
+          const chunk = chunks[index];
+          index++;
+          if (chunk.type === "text-delta") {
+            yield chunk.textDelta;
+          }
+        } else if (generationComplete) {
+          break;
+        } else {
+          // Wait for more chunks
+          await new Promise<void>(resolve => {
+            consumersWaiting.push(resolve);
+          });
+        }
+      }
+    }
+
+    // Create fullStream from buffered chunks
+    async function* generateFullStreamFromBuffer() {
+      let index = 0;
+      while (true) {
+        if (index < chunks.length) {
+          yield chunks[index];
+          index++;
+        } else if (generationComplete) {
+          break;
+        } else {
+          // Wait for more chunks
+          await new Promise<void>(resolve => {
+            consumersWaiting.push(resolve);
+          });
+        }
+      }
+    }
+
+    // Collect full text
+    const textPromise = (async () => {
+      let fullText = "";
+      for await (const chunk of generateTextStream()) {
+        if (chunk.type === "text-delta") {
+          fullText += chunk.textDelta;
+        }
+      }
+      return fullText;
+    })();
+
+    return {
+      fullStream: generateFullStreamFromBuffer(),
+      textStream: generateTextStream(),
+      text: textPromise,
+      toUIMessageStreamResponse: () => {
+        return new Response(
+          new ReadableStream({
+            async start(controller) {
+              for await (const chunk of generateFullStreamFromBuffer()) {
+                const encoder = new TextEncoder();
+                controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
+              }
+              controller.close();
+            },
+          }),
+          {
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          }
+        );
+      },
+    } as any as StreamTextResultType;
+  }
+
+  /**
+   * Execute with plan - streams delegation events as they happen
+   * Returns a summary string of the execution results
+   * @deprecated Use executeWithStreamingPlan instead
+   */
+  protected async executeWithPlan(
+    userContent: string,
     suggestedTasks: Array<{
       title: string;
       description: string;
@@ -663,164 +904,39 @@ export class XAgent extends Agent {
     }>,
     spaceId: string | undefined,
     _metadata: Record<string, unknown>
-  ): Promise<StreamTextResultType> {
-    const plan = createPlanFromAnalysis(userRequest, suggestedTasks);
+  ): Promise<string> {
+    const plan = createPlanFromAnalysis(userContent, suggestedTasks);
     this.space.plan = plan;
 
-    const eventQueue: DelegationEvent[] = [];
-    let planComplete = false;
-    let finalResponse = "";
-    let artifacts: string[] = [];
-    let executionError: string | null = null;
-
-    // Execute plan in background, collecting events
-    const executionPromise = (async () => {
-      try {
-        const { results, artifacts: a } = await executePlan(
-          plan,
-          this.space,
-          this.getModel({ spaceId }),
-          (event) => eventQueue.push(event)
-        );
-        artifacts = a;
-        try {
-          finalResponse = await synthesizeResults(
-            this.getModel({ spaceId }),
-            plan,
-            results,
-            userRequest
-          );
-        } catch (synthError) {
-          console.error(`[XAgent] synthesizeResults failed:`, synthError);
-          finalResponse = `⚠️ Results synthesis failed: ${synthError instanceof Error ? synthError.message : String(synthError)}\n\nTask results are still available above.`;
+    // Execute plan
+    try {
+      const { results } = await executePlan(
+        plan,
+        this.space,
+        this.getModel({ spaceId }),
+        (event) => {
+          // TODO: Emit events to client via data stream if possible
+          console.log(`[XAgent] Delegation event: ${event.type} - ${event.taskTitle}`);
         }
-      } catch (error) {
-        console.error(`[XAgent] Plan execution failed:`, error);
-        executionError = error instanceof Error ? error.message : String(error);
+      );
+
+      // Synthesize results
+      try {
+        const finalResponse = await synthesizeResults(
+          this.getModel({ spaceId }),
+          plan,
+          results,
+          userContent
+        );
+        return finalResponse;
+      } catch (synthError) {
+        console.error(`[XAgent] synthesizeResults failed:`, synthError);
+        return `⚠️ Results synthesis failed: ${synthError instanceof Error ? synthError.message : String(synthError)}\n\nTask results are still available in the plan.`;
       }
-      planComplete = true;
-    })();
-
-    // Stream events via createUIMessageStream
-    return {
-      text: `## Plan: ${plan.goal}`,
-      toUIMessageStreamResponse: async () => {
-        const stream = createUIMessageStream({
-          async execute({ writer }) {
-            const id = "text";
-            writer.write({ type: "text-start", id });
-            writer.write({
-              type: "text-delta",
-              id,
-              delta: `## Plan: ${plan.goal}\n\n`,
-            });
-
-            while (!planComplete || eventQueue.length > 0) {
-              if (eventQueue.length > 0) {
-                const e = eventQueue.shift()!;
-                // Send data part (e already has type: "delegation")
-                writer.write({
-                  type: `data-delegation`,
-                  id: `del-${e.taskId}`,
-                  data: e,
-                });
-
-                // Send text
-                if (e.status === "started") {
-                  writer.write({
-                    type: "text-delta",
-                    id,
-                    delta: `🔄 **${e.agentName}** → "${e.taskTitle}"\n`,
-                  });
-                } else if (e.status === "completed") {
-                  // Stream tool calls
-                  for (const tc of e.toolCalls || []) {
-                    const tcId = tc.toolCallId || `tc-${Date.now()}`;
-                    writer.write({
-                      type: "data-tool-call",
-                      id: tcId,
-                      data: {
-                        type: "tool-call",
-                        toolCallId: tcId,
-                        toolName: tc.name,
-                        args: tc.args,
-                      },
-                    });
-                    if (tc.result !== undefined) {
-                      writer.write({
-                        type: "data-tool-result",
-                        id: `${tcId}-r`,
-                        data: {
-                          type: "tool-result",
-                          toolCallId: tcId,
-                          toolName: tc.name,
-                          result: tc.result,
-                        },
-                      });
-                    }
-                  }
-                  // Stream artifact
-                  if (e.artifactId) {
-                    writer.write({
-                      type: "data-artifact",
-                      id: `art-${e.artifactId}`,
-                      data: {
-                        type: "artifact",
-                        artifactId: e.artifactId,
-                        title: e.taskTitle,
-                      },
-                    });
-                  }
-                  let txt = `✅ **${e.agentName}** completed "${e.taskTitle}"\n`;
-                  if (e.result) txt += `\n${e.result}\n`;
-                  if (e.toolCalls?.length)
-                    txt += `   🔧 ${e.toolCalls.length} tool(s)\n`;
-                  if (e.artifactId) txt += `   📄 ${e.artifactId}\n`;
-                  writer.write({ type: "text-delta", id, delta: txt + "\n" });
-                } else if (e.status === "failed") {
-                  writer.write({
-                    type: "text-delta",
-                    id,
-                    delta: `❌ **${e.agentName}** failed: ${e.error}\n\n`,
-                  });
-                }
-              } else {
-                await new Promise((r) => setTimeout(r, 100));
-              }
-            }
-
-            await executionPromise;
-
-            // Show execution error if any
-            if (executionError) {
-              writer.write({
-                type: "text-delta",
-                id,
-                delta: `\n❌ **Plan Execution Error**\n\n${executionError}\n\n`,
-              });
-            }
-
-            if (artifacts.length) {
-              writer.write({
-                type: "text-delta",
-                id,
-                delta: `\n### Artifacts\n${artifacts.join("\n")}\n\n`,
-              });
-            }
-            if (finalResponse) {
-              writer.write({
-                type: "text-delta",
-                id,
-                delta: `### Summary\n\n${finalResponse}`,
-              });
-            }
-            writer.write({ type: "text-end", id });
-          },
-          onError: (e) => (e instanceof Error ? e.message : "Error"),
-        });
-        return createUIMessageStreamResponse({ stream });
-      },
-    } as any as StreamTextResultType;
+    } catch (error) {
+      console.error(`[XAgent] Plan execution failed:`, error);
+      return `⚠️ Plan execution failed: ${error instanceof Error ? error.message : String(error)}`;
+    }
   }
 
   // Removed buildOrchestrationResponse - not needed, streaming handles this
@@ -838,6 +954,12 @@ export class XAgent extends Agent {
       (metadata?.taskId as string | undefined) ||
       (metadata?.conversationId as string | undefined) ||
       "default";
+    
+    console.log(`[XAgent] updateSpaceHistory space keys:`, Object.keys(this.space || {}));
+    if (typeof this.space.getOrCreateTask !== 'function') {
+      console.error(`[XAgent] this.space.getOrCreateTask is not a function!`, this.space);
+    }
+
     const task = this.space.getOrCreateTask(taskId);
 
     const existingMessages = task.history;
