@@ -87,3 +87,6 @@ export * from "./space/manager";
 // Utilities
 export * from "./utils/paths";
 export * from "./utils/id";
+
+// Re-export AI SDK streaming utilities for xchat route
+export { createUIMessageStream, createUIMessageStreamResponse } from "ai";
