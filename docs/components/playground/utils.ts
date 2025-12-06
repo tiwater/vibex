@@ -65,9 +65,116 @@ export function getToolIcon(toolName: string): LucideIcon {
   return Wrench;
 }
 
-// Timeline item - represents one agent's contribution (message + tool calls)
+// Split multi-agent workflow content into separate sections
+interface ContentSection {
+  content: string;
+  agentName?: string;
+}
+
+function splitMultiAgentContent(text: string): ContentSection[] {
+  const sections: ContentSection[] = [];
+
+  // Define markers that indicate section boundaries
+  // These are the visual markers emitted by the multi-agent workflow
+  const markers = [
+    { pattern: /🎯\s*\*\*Plan Created\*\*/g, type: "plan" },
+    {
+      pattern: /🔄\s*\*\*Delegating to ([^*:]+)\*\*:?\s*/g,
+      type: "delegation",
+    },
+    { pattern: /✅\s*\*\*([^*]+)\s*completed\*\*:?\s*/g, type: "completed" },
+    { pattern: /📊\s*\*\*Final Summary\*\*/g, type: "summary" },
+  ];
+
+  // Find all marker positions
+  const markerPositions: {
+    index: number;
+    length: number;
+    type: string;
+    agentName?: string;
+  }[] = [];
+
+  for (const marker of markers) {
+    let match;
+    marker.pattern.lastIndex = 0; // Reset regex state
+    while ((match = marker.pattern.exec(text)) !== null) {
+      const agentName = match[1]?.trim(); // Capture agent name if present
+      markerPositions.push({
+        index: match.index,
+        length: match[0].length,
+        type: marker.type,
+        agentName,
+      });
+    }
+  }
+
+  // If no markers found, return text as-is
+  if (markerPositions.length === 0) {
+    return [{ content: text }];
+  }
+
+  // Sort by position
+  markerPositions.sort((a, b) => a.index - b.index);
+
+  // Split content by markers
+  let lastEnd = 0;
+
+  for (let i = 0; i < markerPositions.length; i++) {
+    const marker = markerPositions[i];
+    const nextMarker = markerPositions[i + 1];
+
+    // Content before this marker (if any)
+    if (marker.index > lastEnd) {
+      const beforeContent = text.slice(lastEnd, marker.index).trim();
+      if (beforeContent) {
+        sections.push({ content: beforeContent });
+      }
+    }
+
+    // Content of this section (from marker to next marker or end)
+    const sectionStart = marker.index;
+    const sectionEnd = nextMarker?.index ?? text.length;
+    const sectionContent = text.slice(sectionStart, sectionEnd).trim();
+
+    if (sectionContent) {
+      // Determine agent name based on marker type
+      let agentName: string | undefined;
+      if (marker.type === "plan") {
+        agentName = "X (Orchestrator)";
+      } else if (marker.type === "delegation" && marker.agentName) {
+        agentName = marker.agentName;
+      } else if (marker.type === "completed" && marker.agentName) {
+        agentName = marker.agentName;
+      } else if (marker.type === "summary") {
+        agentName = "X (Orchestrator)";
+      }
+
+      sections.push({ content: sectionContent, agentName });
+    }
+
+    lastEnd = sectionEnd;
+  }
+
+  // Any remaining content after last marker
+  if (lastEnd < text.length) {
+    const remaining = text.slice(lastEnd).trim();
+    if (remaining) {
+      sections.push({ content: remaining });
+    }
+  }
+
+  return sections;
+}
+
+// Timeline item - represents one contribution in the conversation
 export interface TimelineItem {
-  type: "agent-message" | "tool-call" | "tool-result" | "artifact";
+  type:
+    | "user-message"
+    | "agent-message"
+    | "tool-call"
+    | "tool-result"
+    | "artifact"
+    | "reasoning";
   agentName: string;
   agentId?: string;
   content?: string;
@@ -86,6 +193,20 @@ export interface TimelineItem {
 export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
   const items: TimelineItem[] = [];
 
+  // Handle user messages separately - they should never be shown as "Assistant"
+  if (message.role === "user") {
+    if (message.content) {
+      items.push({
+        type: "user-message",
+        agentName: "You",
+        agentId: "user",
+        content: message.content,
+        timestamp: message.createdAt,
+      });
+    }
+    return items;
+  }
+
   if (!message.parts || message.parts.length === 0) {
     // Fallback: if no parts, treat entire content as one message
     if (message.content) {
@@ -100,7 +221,7 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
     return items;
   }
 
-  // Track current agent context
+  // Track current agent context (for assistant messages only)
   let currentAgent = message.agentName || "Assistant";
   let currentAgentId = currentAgent.toLowerCase();
 
@@ -130,6 +251,22 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
       artifactParts.push(part);
     } else if (part.type === "reasoning") {
       reasoningParts.push(part);
+    } else if (part.type === "agent-text") {
+      // Handle agent-text parts directly
+      items.push({
+        type: "agent-message",
+        agentName: (part as any).agentId,
+        agentId: (part as any).agentId,
+        content: (part as any).text,
+        timestamp: message.createdAt,
+      });
+    } else if (part.type === "data-agent") {
+      // Handle data-agent parts - update current agent context
+      const agentData = (part as any).data;
+      if (agentData && agentData.agentId) {
+        currentAgent = agentData.agentId;
+        currentAgentId = agentData.agentId.toLowerCase();
+      }
     } else {
       textParts.push(part);
     }
@@ -140,12 +277,11 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
     const reasoningPart = part as { type: "reasoning"; text: string };
     if (reasoningPart.text) {
       items.push({
-        type: "agent-message", // Reuse agent-message for now, but style it differently or add new type
+        type: "reasoning",
         agentName: currentAgent,
         agentId: currentAgentId,
-        content: `Thinking: ${reasoningPart.text}`, // Prefix to distinguish
+        content: reasoningPart.text,
         timestamp: message.createdAt,
-        // Add a flag or specific type if we want custom rendering
       });
     }
   }
@@ -235,6 +371,32 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
       const text = part.text.trim();
       if (!text) continue;
 
+      // Split multi-agent workflow content into separate sections
+      // Pattern: 🎯 **Plan Created**, 🔄 **Delegating to**, ✅ **X completed**, 📊 **Final Summary**
+      const sections = splitMultiAgentContent(text);
+
+      if (sections.length > 1) {
+        // Multiple sections detected - render each as separate bubble
+        for (const section of sections) {
+          if (!section.content.trim()) continue;
+
+          items.push({
+            type: "agent-message",
+            agentName: section.agentName || currentAgent,
+            agentId: (section.agentName || currentAgent).toLowerCase(),
+            content: section.content,
+            timestamp: message.createdAt,
+          });
+
+          // Update current agent if this was a delegation
+          if (section.agentName) {
+            currentAgent = section.agentName;
+            currentAgentId = section.agentName.toLowerCase();
+          }
+        }
+        continue;
+      }
+
       // Check if this is a delegation message (parsed from delegation events)
       const delegationMatch = text.match(
         /\*\*Delegated\*\* "([^"]+)" to \*\*([^*]+)\*\*/
@@ -253,57 +415,6 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
         // Update current agent for subsequent messages
         currentAgent = agentName;
         currentAgentId = agentName.toLowerCase();
-        continue;
-      }
-
-      // Check for completion messages (may include result)
-      // BUT: Don't consume if we have tool-call or artifact parts - those should be shown separately
-      // Only match if this is a simple completion without tool calls/artifacts
-      const hasToolCallsOrArtifacts = message.parts?.some(
-        (p) =>
-          p.type === "tool-call" ||
-          p.type === "tool-result" ||
-          p.type === "artifact"
-      );
-
-      if (!hasToolCallsOrArtifacts) {
-        const completedMatch = text.match(
-          /\*\*([^*]+)\*\* completed "([^"]+)"([\s\S]*?)(?:\n\n|$)/
-        );
-        if (completedMatch) {
-          const agentName = completedMatch[1].trim();
-          const taskTitle = completedMatch[2];
-          const result = completedMatch[3]?.trim();
-          const content = result
-            ? `Completed "${taskTitle}"\n\n${result}`
-            : `Completed "${taskTitle}"`;
-          items.push({
-            type: "agent-message",
-            agentName,
-            agentId: agentName.toLowerCase(),
-            content,
-            timestamp: message.createdAt,
-          });
-          continue;
-        }
-      }
-
-      // If we have tool calls/artifacts, just show the completion header without consuming the full text
-      // The tool calls and artifacts will be shown as separate items
-      const simpleCompletedMatch = text.match(
-        /✅ \*\*([^*]+)\*\* completed "([^"]+)"/
-      );
-      if (simpleCompletedMatch && hasToolCallsOrArtifacts) {
-        const agentName = simpleCompletedMatch[1].trim();
-        const taskTitle = simpleCompletedMatch[2];
-        items.push({
-          type: "agent-message",
-          agentName,
-          agentId: agentName.toLowerCase(),
-          content: `Completed "${taskTitle}"`,
-          timestamp: message.createdAt,
-        });
-        // Don't continue - let tool calls and artifacts be processed as separate parts
         continue;
       }
 
