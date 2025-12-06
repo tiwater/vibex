@@ -146,8 +146,8 @@ export async function POST(req: Request) {
           if (chunk?.type === "text-delta" && chunk.textDelta) {
             const speakingAgent = "x";
 
-            // If switching from worker back to X
-            if (currentAgentId !== speakingAgent && currentAgentId !== null) {
+            // If agent changed or this is the first agent, emit marker
+            if (currentAgentId !== speakingAgent) {
               currentAgentId = speakingAgent;
               writer.write({
                 type: "data-agent",
