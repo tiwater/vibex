@@ -29,6 +29,7 @@ export async function POST(req: Request) {
   const messagesWithoutId = messages.map(({ id, ...msg }) => msg);
   const modelMessages = convertToModelMessages(messagesWithoutId);
 
+  // Using multiplex pattern for multi-agent streaming
   const stream = createUIMessageStream<ChatUIMessage>({
     execute: async ({ writer }) => {
       const researcher = openrouter("openai/gpt-4o");
