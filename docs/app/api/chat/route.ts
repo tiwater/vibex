@@ -34,6 +34,13 @@ export async function POST(req: Request) {
       const researcher = openrouter("openai/gpt-4o");
       const analyst = openrouter("anthropic/claude-3.5-sonnet");
 
+      // Each user message should get MULTIPLE responses (one from each agent)
+      // Use toUIMessageStream() for proper message structure, then intercept to customize IDs
+
+      const timestamp = Date.now();
+      const researcherMessageId = `msg-researcher-${timestamp}`;
+      const analystMessageId = `msg-analyst-${timestamp + 1}`;
+
       // First agent - researcher
       console.log("[Chat API] Starting researcher");
       const result1 = streamText({
@@ -43,17 +50,18 @@ export async function POST(req: Request) {
           "You are a researcher. Provide a brief summary of facts related to the user's request. Be concise.",
       });
 
-      // Mark researcher's content
+      // Mark researcher's content with data-agent event
+      // The frontend will use this to identify which agent this content belongs to
       writer.write({
         type: "data-agent",
         id: "agent-researcher",
-        data: { agentId: "researcher", messageId: "msg-researcher" },
-      } as any);
+        data: { agentId: "researcher", messageId: researcherMessageId },
+      });
 
-      // Stream researcher (don't finish - more agents coming)
+      // Use writer.merge() with toUIMessageStream() - the recommended approach
+      // sendFinish: false because we have more agents coming
       writer.merge(result1.toUIMessageStream({ sendFinish: false }));
 
-      // Wait for researcher to complete before starting next agent
       await result1.text;
       console.log("[Chat API] Researcher complete");
 
@@ -66,15 +74,19 @@ export async function POST(req: Request) {
           "You are an analyst. Provide a brief analysis of the implications of the user's request. Be concise.",
       });
 
-      // Mark analyst's content
+      // Mark analyst's content with data-agent event
       writer.write({
         type: "data-agent",
         id: "agent-analyst",
-        data: { agentId: "analyst", messageId: "msg-analyst" },
-      } as any);
+        data: { agentId: "analyst", messageId: analystMessageId },
+      });
 
-      // Stream analyst (final agent - send finish)
-      writer.merge(result2.toUIMessageStream({ sendStart: false }));
+      // Use writer.merge() for the second agent
+      // sendStart: true signals a new message section
+      // sendFinish: true because this is the final agent
+      writer.merge(
+        result2.toUIMessageStream({ sendStart: true, sendFinish: true })
+      );
 
       await result2.text;
       console.log("[Chat API] All agents streamed");

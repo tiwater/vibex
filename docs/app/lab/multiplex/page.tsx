@@ -49,7 +49,7 @@ export default function MultiplexLabPage() {
 
   const isLoading = status === "streaming" || status === "submitted";
 
-  // Split combined assistant message into separate agent messages
+  // Build display messages by extracting agent info from message parts
   useEffect(() => {
     const newDisplayMessages: DisplayMessage[] = [];
 
@@ -65,72 +65,76 @@ export default function MultiplexLabPage() {
             .join(""),
         });
       } else {
-        // Assistant message - split by agent sequence
-        const fullContent = msg.parts
-          .filter((p) => p.type === "text")
-          .map((p) => (p as { text: string }).text)
-          .join("");
+        // Extract agent info from message parts
+        // The data-agent parts contain the agent information
+        const agentParts = msg.parts.filter(
+          (
+            p
+          ): p is {
+            type: "data-agent";
+            data: { agentId: string; messageId: string };
+          } => p.type === "data-agent" && "data" in p
+        );
 
-        const agentCount = agentSequenceRef.current.length;
+        // Extract text content
+        const textParts = msg.parts.filter(
+          (p): p is { type: "text"; text: string } => p.type === "text"
+        );
 
-        if (agentCount === 0) {
-          // No agent data yet, show as single message
-          newDisplayMessages.push({
-            id: msg.id,
-            role: "assistant",
-            agentId: "assistant",
-            content: fullContent,
-          });
-        } else if (agentCount === 1) {
-          // Single agent
-          newDisplayMessages.push({
-            id: msg.id,
-            role: "assistant",
-            agentId: agentSequenceRef.current[0],
-            content: fullContent,
-          });
-        } else {
-          // Multiple agents - split content
-          // Try to find a natural split point around the middle
-          const contentLength = fullContent.length;
-          const targetSplitPoint = Math.floor(contentLength / agentCount);
+        // If we have multiple agents in one message, split content by agent
+        if (agentParts.length > 1) {
+          // Group text parts by agent (associate each text part with the preceding agent)
+          let currentAgentIndex = 0;
+          const agentContentMap = new Map<string, string>();
 
-          let currentPos = 0;
-          for (let i = 0; i < agentCount; i++) {
-            const agentId = agentSequenceRef.current[i];
-
-            if (i === agentCount - 1) {
-              // Last agent gets remaining content
-              newDisplayMessages.push({
-                id: `${msg.id}-${agentId}`,
-                role: "assistant",
-                agentId,
-                content: fullContent.slice(currentPos),
-              });
-            } else {
-              // Find sentence boundary near target split
-              const searchStart = currentPos + targetSplitPoint;
-              const searchText = fullContent.slice(searchStart, searchStart + 200);
-              const sentenceMatch = searchText.match(/[.!?]\s+/);
-
-              let splitPoint = searchStart;
-              if (sentenceMatch && sentenceMatch.index !== undefined) {
-                splitPoint = searchStart + sentenceMatch.index + sentenceMatch[0].length;
-              } else {
-                // No sentence boundary found, just use target
-                splitPoint = searchStart;
+          for (const part of msg.parts) {
+            if (part.type === "data-agent") {
+              const agentId = part.data.agentId;
+              if (!agentContentMap.has(agentId)) {
+                agentContentMap.set(agentId, "");
               }
-
-              newDisplayMessages.push({
-                id: `${msg.id}-${agentId}`,
-                role: "assistant",
-                agentId,
-                content: fullContent.slice(currentPos, splitPoint).trim(),
-              });
-
-              currentPos = splitPoint;
+              // Find the index of this agent in agentParts
+              currentAgentIndex = agentParts.findIndex(
+                (ap) => ap.data.agentId === agentId
+              );
+            } else if (part.type === "text") {
+              // Associate text with the current agent
+              const currentAgent = agentParts[currentAgentIndex];
+              if (currentAgent) {
+                const existing =
+                  agentContentMap.get(currentAgent.data.agentId) || "";
+                agentContentMap.set(
+                  currentAgent.data.agentId,
+                  existing + part.text
+                );
+              }
             }
           }
+
+          // Create separate display messages for each agent
+          for (const [agentId, content] of agentContentMap.entries()) {
+            if (content.trim()) {
+              newDisplayMessages.push({
+                id: `${msg.id}-${agentId}`,
+                role: "assistant",
+                agentId,
+                content,
+              });
+            }
+          }
+        } else {
+          // Single agent or no agent info
+          const agentId =
+            agentParts.length > 0 ? agentParts[0].data.agentId : "assistant";
+
+          const content = textParts.map((p) => p.text).join("");
+
+          newDisplayMessages.push({
+            id: msg.id,
+            role: "assistant",
+            agentId,
+            content,
+          });
         }
       }
     }
@@ -159,9 +163,10 @@ export default function MultiplexLabPage() {
   return (
     <div className="container mx-auto p-4 max-w-6xl h-[calc(100vh-4rem)] flex flex-col">
       <div className="mb-4 flex-none">
-        <h1 className="text-2xl font-bold">Multiplexing Lab</h1>
+        <h1 className="text-2xl font-bold">Multi-Agent Chat Lab</h1>
         <p className="text-muted-foreground">
-          Testing interleaved multi-agent streaming in a group chat format.
+          Testing multiple agents responding to the same user message in
+          parallel.
         </p>
       </div>
 
@@ -169,7 +174,8 @@ export default function MultiplexLabPage() {
         {/* Group Chat Stream */}
         <Card className="flex flex-col overflow-hidden">
           <div className="p-2 bg-muted/50 border-b font-medium text-sm">
-            Group Chat ({displayMessages.length} messages, {agentSequenceRef.current.length} agents detected)
+            Group Chat ({displayMessages.length} messages,{" "}
+            {agentSequenceRef.current.length} agents detected)
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {displayMessages.map((msg) => (

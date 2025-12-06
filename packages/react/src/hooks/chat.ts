@@ -1,5 +1,4 @@
 import { useChat, type UIMessage } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { useState, useMemo, useCallback } from "react";
 import type {
   XChatMessage,
@@ -7,7 +6,7 @@ import type {
   CreateXMessage,
   XChatStatus,
 } from "../types";
-import type { ChatTransport } from "ai";
+import { DefaultChatTransport, type ChatTransport } from "ai";
 
 export interface UseXChatOptions {
   /** The space ID to associate messages with */
@@ -64,11 +63,11 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
         args?: unknown;
         state?: string;
       };
-      
+
       console.log("[uiMessageToX] Processing tool-call part:", {
         toolName: toolPart.toolName,
         toolCallId: toolPart.toolCallId,
-        state: toolPart.state
+        state: toolPart.state,
       });
 
       if (toolPart.toolName) {
@@ -115,7 +114,11 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
       }
     } else if (part.type === "reasoning") {
       // Handle reasoning parts (AI SDK v6)
-      const reasoningPart = part as { type: "reasoning"; text: string; details?: unknown };
+      const reasoningPart = part as {
+        type: "reasoning";
+        text: string;
+        details?: unknown;
+      };
       xParts.push({
         type: "reasoning",
         text: reasoningPart.text,
@@ -188,6 +191,61 @@ function uiMessageToX(msg: UIMessage): XChatMessage {
               title: title || artifactId,
               version: version || 1,
             });
+          }
+        } else if (
+          data.type === "text-delta" ||
+          data.type === "data-text-delta"
+        ) {
+          // Handle standard text delta from our API
+          const textDelta = data.delta as string;
+          if (textDelta) {
+            // Check if the last part is also an agent-text part for the default agent
+            const lastPart = xParts[xParts.length - 1];
+            const defaultAgentId = "assistant"; // Or derive from metadata if available
+
+            if (
+              lastPart &&
+              lastPart.type === "agent-text" &&
+              lastPart.agentId === defaultAgentId
+            ) {
+              lastPart.text += textDelta;
+            } else {
+              xParts.push({
+                type: "agent-text",
+                agentId: defaultAgentId,
+                text: textDelta,
+              });
+            }
+          }
+        } else if (
+          data.type === "agent-text-delta" ||
+          data.type === "data-agent-text-delta"
+        ) {
+          // Handle agent text delta
+          const agentId = data.agentId as string;
+          const textDelta = data.textDelta as string;
+          const taskId = data.taskId as string | undefined;
+
+          if (agentId && textDelta) {
+            // Check if the last part is also an agent-text part for the same agent
+            const lastPart = xParts[xParts.length - 1];
+            if (
+              lastPart &&
+              lastPart.type === "agent-text" &&
+              lastPart.agentId === agentId &&
+              lastPart.taskId === taskId
+            ) {
+              // Merge with previous part
+              lastPart.text += textDelta;
+            } else {
+              // Create new part
+              xParts.push({
+                type: "agent-text",
+                agentId,
+                text: textDelta,
+                taskId,
+              });
+            }
           }
         } else if (data.type === "tool-result") {
           // Handle data-tool-result separately (in case it comes without tool-call)
@@ -284,7 +342,7 @@ export function useXChat({
   spaceId,
   agentId,
   metadata,
-  api = "/api/chat",
+  api = "/api/chat/",
   transport: customTransport,
   initialMessages,
   onError,
@@ -299,44 +357,21 @@ export function useXChat({
     return initialMessages.map(xToUiMessage);
   }, [initialMessages]);
 
-  // Create transport with custom body for spaceId, agentId, metadata
-  const transport = useMemo(() => {
-    const finalChatMode = metadata?.chatMode || (agentId ? "agent" : "ask");
-    console.log("[useXChat] Creating transport with:", {
-      spaceId,
-      agentId,
-      metadataChatMode: metadata?.chatMode,
-      finalChatMode,
-      fullMetadata: metadata,
-    });
-    // Use the default transport; the API returns a JSON event stream.
-    if (customTransport) return customTransport;
-
-    return new DefaultChatTransport({
-      api,
-      body: {
-        spaceId,
-        agentId,
-        metadata: {
-          ...metadata,
-          chatMode: finalChatMode,
-          requestedAgent: agentId,
-        },
-      },
-    });
-  }, [api, spaceId, agentId, metadata, customTransport]);
-
   // Use the AI SDK's useChat hook
   const chat = useChat({
-    // Pass initial messages
+    // Custom transport if provided, otherwise create default with API
+    transport:
+      customTransport ||
+      new DefaultChatTransport({
+        api,
+      }),
+    // Initial messages
     messages: uiInitialMessages,
-    // Transport for API communication
-    transport,
     // Error handler
     onError,
     // Finish handler
     onFinish: onFinish
-      ? ({ message }) => {
+      ? ({ message }: { message: UIMessage }) => {
           onFinish(uiMessageToX(message));
         }
       : undefined,
@@ -363,7 +398,7 @@ export function useXChat({
         ...metadata,
         chatMode: metadata?.chatMode, // Use current chatMode from state
       };
-      
+
       console.log("[useXChat] Sending message with metadata:", {
         chatMode: currentMetadata.chatMode,
         spaceId,
