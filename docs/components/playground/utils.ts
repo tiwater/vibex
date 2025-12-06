@@ -231,256 +231,9 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
     { toolName: string; args: Record<string, unknown>; agentName: string }
   >();
 
-  // Process parts in order - tool calls and artifacts should come before completion text
-  // First, collect all parts
-  const allParts = [...(message.parts || [])];
-
-  // Separate tool calls, tool results, artifacts, and reasoning from text
-  const toolCallParts: typeof allParts = [];
-  const toolResultParts: typeof allParts = [];
-  const artifactParts: typeof allParts = [];
-  const reasoningParts: typeof allParts = [];
-  const textParts: typeof allParts = [];
-
-  for (const part of allParts) {
+  // Process parts sequentially to maintain context
+  for (const part of message.parts) {
     if (part.type === "tool-call") {
-      toolCallParts.push(part);
-    } else if (part.type === "tool-result") {
-      toolResultParts.push(part);
-    } else if (part.type === "artifact") {
-      artifactParts.push(part);
-    } else if (part.type === "reasoning") {
-      reasoningParts.push(part);
-    } else if (part.type === "agent-text") {
-      // Handle agent-text parts directly
-      items.push({
-        type: "agent-message",
-        agentName: (part as any).agentId,
-        agentId: (part as any).agentId,
-        content: (part as any).text,
-        timestamp: message.createdAt,
-      });
-    } else if (part.type === "data-agent") {
-      // Handle data-agent parts - update current agent context
-      const agentData = (part as any).data;
-      if (agentData && agentData.agentId) {
-        currentAgent = agentData.agentId;
-        currentAgentId = agentData.agentId.toLowerCase();
-      }
-    } else {
-      textParts.push(part);
-    }
-  }
-
-  // Process reasoning parts first
-  for (const part of reasoningParts) {
-    const reasoningPart = part as { type: "reasoning"; text: string };
-    if (reasoningPart.text) {
-      items.push({
-        type: "reasoning",
-        agentName: currentAgent,
-        agentId: currentAgentId,
-        content: reasoningPart.text,
-        timestamp: message.createdAt,
-      });
-    }
-  }
-
-  // Process tool calls first (they should appear before completion messages)
-  for (const part of toolCallParts) {
-    const toolCall = part as {
-      toolCallId?: string;
-      toolName?: string;
-      args?: Record<string, unknown>;
-      status?: string;
-    };
-
-    if (toolCall.toolCallId && toolCall.toolName) {
-      // Store for matching with result
-      pendingToolCalls.set(toolCall.toolCallId, {
-        toolName: toolCall.toolName,
-        args: toolCall.args || {},
-        agentName: currentAgent,
-      });
-
-      items.push({
-        type: "tool-call",
-        agentName: currentAgent,
-        agentId: currentAgentId,
-        toolCallId: toolCall.toolCallId,
-        toolName: toolCall.toolName,
-        toolArgs: toolCall.args || {},
-        toolStatus: (toolCall.status as any) || "running",
-        timestamp: message.createdAt,
-      });
-    }
-  }
-
-  // Process tool results
-  for (const part of toolResultParts) {
-    const toolResult = part as {
-      toolCallId?: string;
-      toolName?: string;
-      result?: unknown;
-    };
-
-    if (toolResult.toolCallId) {
-      const pending = pendingToolCalls.get(toolResult.toolCallId);
-      if (pending) {
-        items.push({
-          type: "tool-result",
-          agentName: pending.agentName,
-          agentId: pending.agentName.toLowerCase(),
-          toolCallId: toolResult.toolCallId,
-          toolName: toolResult.toolName || pending.toolName,
-          toolResult:
-            typeof toolResult.result === "string"
-              ? toolResult.result
-              : JSON.stringify(toolResult.result, null, 2),
-          toolStatus: "completed",
-          timestamp: message.createdAt,
-        });
-        pendingToolCalls.delete(toolResult.toolCallId);
-      }
-    }
-  }
-
-  // Process artifacts
-  for (const part of artifactParts) {
-    const artifactPart = part as {
-      artifactId?: string;
-      title?: string;
-      version?: number;
-    };
-    if (artifactPart.artifactId) {
-      items.push({
-        type: "artifact",
-        agentName: currentAgent,
-        agentId: currentAgentId,
-        artifactId: artifactPart.artifactId,
-        artifactTitle: artifactPart.title || artifactPart.artifactId,
-        artifactVersion: artifactPart.version || 1,
-        timestamp: message.createdAt,
-      });
-    }
-  }
-
-  // Now process text parts (completion messages, etc.)
-  for (const part of textParts) {
-    if (part.type === "text") {
-      const text = part.text.trim();
-      if (!text) continue;
-
-      // Split multi-agent workflow content into separate sections
-      // Pattern: 🎯 **Plan Created**, 🔄 **Delegating to**, ✅ **X completed**, 📊 **Final Summary**
-      const sections = splitMultiAgentContent(text);
-
-      if (sections.length > 1) {
-        // Multiple sections detected - render each as separate bubble
-        for (const section of sections) {
-          if (!section.content.trim()) continue;
-
-          items.push({
-            type: "agent-message",
-            agentName: section.agentName || currentAgent,
-            agentId: (section.agentName || currentAgent).toLowerCase(),
-            content: section.content,
-            timestamp: message.createdAt,
-          });
-
-          // Update current agent if this was a delegation
-          if (section.agentName) {
-            currentAgent = section.agentName;
-            currentAgentId = section.agentName.toLowerCase();
-          }
-        }
-        continue;
-      }
-
-      // Check if this is a delegation message (parsed from delegation events)
-      const delegationMatch = text.match(
-        /\*\*Delegated\*\* "([^"]+)" to \*\*([^*]+)\*\*/
-      );
-      if (delegationMatch) {
-        // This is a delegation - the next agent will be the delegatee
-        const taskTitle = delegationMatch[1];
-        const agentName = delegationMatch[2].trim();
-        items.push({
-          type: "agent-message",
-          agentName: currentAgent,
-          agentId: currentAgentId,
-          content: `Delegated "${taskTitle}" to ${agentName}`,
-          timestamp: message.createdAt,
-        });
-        // Update current agent for subsequent messages
-        currentAgent = agentName;
-        currentAgentId = agentName.toLowerCase();
-        continue;
-      }
-
-      // Check for artifact IDs in text (pattern: artifact_* or explicit mentions)
-      // Artifact IDs typically look like: artifact_<taskId>_<timestamp>
-      const artifactIdPattern =
-        /(?:artifact[_\s:]+|artifact\s+id[:\s]+)?(artifact_[a-zA-Z0-9_]+)/gi;
-      const artifactMatches = [...text.matchAll(artifactIdPattern)];
-
-      if (artifactMatches.length > 0) {
-        // Split text by artifact IDs and create separate items
-        let lastIndex = 0;
-        for (const match of artifactMatches) {
-          // Add text before artifact ID
-          if (match.index !== undefined && match.index > lastIndex) {
-            const beforeText = text.slice(lastIndex, match.index).trim();
-            if (beforeText) {
-              items.push({
-                type: "agent-message",
-                agentName: currentAgent,
-                agentId: currentAgentId,
-                content: beforeText,
-                timestamp: message.createdAt,
-              });
-            }
-          }
-
-          // Add artifact item
-          const artifactId = match[1];
-          items.push({
-            type: "artifact",
-            agentName: currentAgent,
-            agentId: currentAgentId,
-            artifactId: artifactId,
-            artifactTitle: artifactId, // Will be updated if we have metadata
-            artifactVersion: 1,
-            timestamp: message.createdAt,
-          });
-
-          lastIndex = (match.index || 0) + match[0].length;
-        }
-
-        // Add remaining text after last artifact
-        if (lastIndex < text.length) {
-          const afterText = text.slice(lastIndex).trim();
-          if (afterText) {
-            items.push({
-              type: "agent-message",
-              agentName: currentAgent,
-              agentId: currentAgentId,
-              content: afterText,
-              timestamp: message.createdAt,
-            });
-          }
-        }
-      } else {
-        // Regular text content from current agent (no artifacts detected)
-        items.push({
-          type: "agent-message",
-          agentName: currentAgent,
-          agentId: currentAgentId,
-          content: text,
-          timestamp: message.createdAt,
-        });
-      }
-    } else if (part.type === "tool-call") {
       const toolCall = part as {
         toolCallId?: string;
         toolName?: string;
@@ -547,6 +300,145 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
           artifactId: artifactPart.artifactId,
           artifactTitle: artifactPart.title || artifactPart.artifactId,
           artifactVersion: artifactPart.version || 1,
+          timestamp: message.createdAt,
+        });
+      }
+    } else if (part.type === "reasoning") {
+      const reasoningPart = part as { type: "reasoning"; text: string };
+      if (reasoningPart.text) {
+        items.push({
+          type: "reasoning",
+          agentName: currentAgent,
+          agentId: currentAgentId,
+          content: reasoningPart.text,
+          timestamp: message.createdAt,
+        });
+      }
+    } else if (part.type === "agent-text") {
+      // Handle agent-text parts directly
+      items.push({
+        type: "agent-message",
+        agentName: (part as any).agentId,
+        agentId: (part as any).agentId,
+        content: (part as any).text,
+        timestamp: message.createdAt,
+      });
+    } else if (part.type === "data-agent") {
+      // Handle data-agent parts - update current agent context
+      const agentData = (part as any).data;
+      if (agentData && agentData.agentId) {
+        currentAgent = agentData.agentId;
+        currentAgentId = agentData.agentId.toLowerCase();
+      }
+    } else if (part.type === "text") {
+      const text = part.text.trim();
+      if (!text) continue;
+
+      // Split multi-agent workflow content into separate sections
+      // Pattern: 🎯 **Plan Created**, 🔄 **Delegating to**, ✅ **X completed**, 📊 **Final Summary**
+      const sections = splitMultiAgentContent(text);
+
+      if (sections.length > 1) {
+        // Multiple sections detected - render each as separate bubble
+        for (const section of sections) {
+          if (!section.content.trim()) continue;
+
+          items.push({
+            type: "agent-message",
+            agentName: section.agentName || currentAgent,
+            agentId: (section.agentName || currentAgent).toLowerCase(),
+            content: section.content,
+            timestamp: message.createdAt,
+          });
+
+          // Update current agent if this was a delegation
+          if (section.agentName) {
+            currentAgent = section.agentName;
+            currentAgentId = section.agentName.toLowerCase();
+          }
+        }
+        continue;
+      }
+
+      // Check if this is a delegation message (parsed from delegation events)
+      const delegationMatch = text.match(
+        /\*\*Delegated\*\* "([^"]+)" to \*\*([^*]+)\*\*/
+      );
+      if (delegationMatch) {
+        // This is a delegation - the next agent will be the delegatee
+        const taskTitle = delegationMatch[1];
+        const agentName = delegationMatch[2].trim();
+        items.push({
+          type: "agent-message",
+          agentName: currentAgent,
+          agentId: currentAgentId,
+          content: `Delegated "${taskTitle}" to ${agentName}`,
+          timestamp: message.createdAt,
+        });
+        // Update current agent for subsequent messages
+        currentAgent = agentName;
+        currentAgentId = agentName.toLowerCase();
+        continue;
+      }
+
+      // Check for artifact IDs in text (pattern: artifact_* or explicit mentions)
+      const artifactIdPattern =
+        /(?:artifact[_\s:]+|artifact\s+id[:\s]+)?(artifact_[a-zA-Z0-9_]+)/gi;
+      const artifactMatches = [...text.matchAll(artifactIdPattern)];
+
+      if (artifactMatches.length > 0) {
+        // Split text by artifact IDs and create separate items
+        let lastIndex = 0;
+        for (const match of artifactMatches) {
+          // Add text before artifact ID
+          if (match.index !== undefined && match.index > lastIndex) {
+            const beforeText = text.slice(lastIndex, match.index).trim();
+            if (beforeText) {
+              items.push({
+                type: "agent-message",
+                agentName: currentAgent,
+                agentId: currentAgentId,
+                content: beforeText,
+                timestamp: message.createdAt,
+              });
+            }
+          }
+
+          // Add artifact item
+          const artifactId = match[1];
+          items.push({
+            type: "artifact",
+            agentName: currentAgent,
+            agentId: currentAgentId,
+            artifactId: artifactId,
+            artifactTitle: artifactId,
+            artifactVersion: 1,
+            timestamp: message.createdAt,
+          });
+
+          lastIndex = (match.index || 0) + match[0].length;
+        }
+
+        // Add remaining text after last artifact
+        if (lastIndex < text.length) {
+          const afterText = text.slice(lastIndex).trim();
+          if (afterText) {
+            items.push({
+              type: "agent-message",
+              agentName: currentAgent,
+              agentId: currentAgentId,
+              content: afterText,
+              timestamp: message.createdAt,
+            });
+          }
+        }
+      } else {
+        // Regular text content from current agent
+        items.push({
+          type: "agent-message",
+          agentName: currentAgent,
+          agentId: currentAgentId,
+          content: text,
           timestamp: message.createdAt,
         });
       }
