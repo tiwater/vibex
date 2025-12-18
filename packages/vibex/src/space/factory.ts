@@ -10,9 +10,11 @@ import type { ResourceAdapter, StorageAdapter, KnowledgeAdapter } from "@vibex/c
 
 export type DataMode = "local" | "database" | "auto";
 
-let resourceAdapterInstance: ResourceAdapter | null = null;
-let storageAdapterInstance: StorageAdapter | null = null;
-let knowledgeAdapterInstance: KnowledgeAdapter | null = null;
+const globalForAdapters = globalThis as unknown as {
+  resourceAdapterInstance: ResourceAdapter | null;
+  storageAdapterInstance: StorageAdapter | null;
+  knowledgeAdapterInstance: KnowledgeAdapter | null;
+};
 
 /**
  * Detect which mode to use based on environment
@@ -34,8 +36,8 @@ export async function getServerResourceAdapter(): Promise<ResourceAdapter> {
     throw new Error("getServerResourceAdapter() can only be called on the server");
   }
 
-  if (resourceAdapterInstance) {
-    return resourceAdapterInstance;
+  if (globalForAdapters.resourceAdapterInstance) {
+    return globalForAdapters.resourceAdapterInstance;
   }
 
   const mode = detectMode();
@@ -49,7 +51,7 @@ export async function getServerResourceAdapter(): Promise<ResourceAdapter> {
   // Dynamic import to avoid bundling @vibex/local in client code
   const { LocalResourceAdapter } = await import("@vibex/local");
   const adapter = new LocalResourceAdapter();
-  resourceAdapterInstance = adapter;
+  globalForAdapters.resourceAdapterInstance = adapter;
   return adapter;
 }
 
@@ -68,8 +70,8 @@ export async function getStorageAdapter(): Promise<StorageAdapter> {
     throw new Error("getStorageAdapter() can only be called on the server");
   }
 
-  if (storageAdapterInstance) {
-    return storageAdapterInstance;
+  if (globalForAdapters.storageAdapterInstance) {
+    return globalForAdapters.storageAdapterInstance;
   }
 
   const mode = detectMode();
@@ -82,7 +84,7 @@ export async function getStorageAdapter(): Promise<StorageAdapter> {
 
   const { LocalStorageAdapter } = await import("@vibex/local");
   const adapter = new LocalStorageAdapter();
-  storageAdapterInstance = adapter;
+  globalForAdapters.storageAdapterInstance = adapter;
   return adapter;
 }
 
@@ -94,8 +96,8 @@ export async function getKnowledgeAdapter(): Promise<KnowledgeAdapter> {
     throw new Error("getKnowledgeAdapter() can only be called on the server");
   }
 
-  if (knowledgeAdapterInstance) {
-    return knowledgeAdapterInstance;
+  if (globalForAdapters.knowledgeAdapterInstance) {
+    return globalForAdapters.knowledgeAdapterInstance;
   }
 
   const mode = detectMode();
@@ -108,7 +110,7 @@ export async function getKnowledgeAdapter(): Promise<KnowledgeAdapter> {
 
   const { LocalKnowledgeAdapter } = await import("@vibex/local");
   const adapter = new LocalKnowledgeAdapter();
-  knowledgeAdapterInstance = adapter;
+  globalForAdapters.knowledgeAdapterInstance = adapter;
   return adapter;
 }
 
@@ -116,9 +118,9 @@ export async function getKnowledgeAdapter(): Promise<KnowledgeAdapter> {
  * Reset all adapter instances (useful for testing)
  */
 export function resetAdapters(): void {
-  resourceAdapterInstance = null;
-  storageAdapterInstance = null;
-  knowledgeAdapterInstance = null;
+  globalForAdapters.resourceAdapterInstance = null;
+  globalForAdapters.storageAdapterInstance = null;
+  globalForAdapters.knowledgeAdapterInstance = null;
 }
 
 /**

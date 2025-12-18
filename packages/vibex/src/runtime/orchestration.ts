@@ -16,6 +16,7 @@ import { generateObject, generateText } from "ai";
 import type { LanguageModel } from "ai";
 import { z } from "zod/v3";
 import type { XMessage } from "../types/message";
+import { mergeIterators } from "../utils/async";
 
 export interface DelegationEvent {
   type: "delegation";
@@ -33,8 +34,39 @@ export interface DelegationEvent {
     args: unknown;
     result?: unknown;
   }>;
+  warnings?: string[]; // Warnings about agent capabilities
+  configuredTools?: string[]; // Tools the agent is configured to use
+  loadedToolCount?: number; // Actual tools loaded
   timestamp: number;
 }
+
+export interface LLMCallEvent {
+  type: "llm-call";
+  id: string;
+  status: "started" | "completed" | "failed";
+  model: string;
+  agentId: string;
+  agentName: string;
+  purpose: string; // e.g., "analyze-request", "task-execution", "synthesize-results"
+  // Request info
+  systemPromptPreview?: string; // First 200 chars
+  userMessagePreview?: string; // First 200 chars
+  messageCount?: number;
+  toolsAvailable?: string[];
+  // Response info (for completed)
+  responsePreview?: string; // First 500 chars
+  tokenUsage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+  durationMs?: number;
+  error?: string;
+  timestamp: number;
+}
+
+// Union type for all orchestration events
+export type OrchestrationEvent = DelegationEvent | LLMCallEvent;
 
 export interface OrchestrationResult {
   plan: Plan;
@@ -273,16 +305,17 @@ export function createPlanFromAnalysis(
 
 /**
  * Execute a plan by delegating tasks to agents
+ * Returns an async generator that yields orchestration events
  */
-export async function executePlan(
+export async function* executePlan(
   plan: Plan,
   space: Space,
-  model: LanguageModel,
-  onEvent: (event: DelegationEvent) => void
-): Promise<{
-  results: Map<string, string>;
-  artifacts: string[];
-}> {
+  model: LanguageModel
+): AsyncGenerator<
+  OrchestrationEvent,
+  { results: Map<string, string>; artifacts: string[] },
+  void
+> {
   const results = new Map<string, string>();
   const artifacts: string[] = [];
   const completedTaskIds = new Set<string>();
@@ -312,25 +345,23 @@ export async function executePlan(
       break;
     }
 
-    // Execute actionable tasks in parallel
-    const taskPromises = actionableTasks.map(async (task) => {
-      return executeTask(task, space, model, results, onEvent);
-    });
+    // Execute actionable tasks in parallel using mergeIterators
+    const taskIterators = actionableTasks.map((task) =>
+      executeTask(task, space, model, results)
+    );
 
-    const taskResults = await Promise.all(taskPromises);
+    // Stream events from all parallel tasks
+    for await (const event of mergeIterators(taskIterators)) {
+      yield event;
 
-    // Process results (events are already emitted by executeTask)
-    for (const { task, result, artifactId, error } of taskResults) {
-      if (error) {
-        // Task already marked as failed in executeTask
-        continue;
-      } else {
-        // Task already marked as completed in executeTask
-        completedTaskIds.add(task.id);
-        results.set(task.id, result || "");
-
-        if (artifactId) {
-          artifacts.push(artifactId);
+      // Update local state when a task completes
+      if (event.type === "delegation" && event.status === "completed") {
+        completedTaskIds.add(event.taskId);
+        if (event.result) {
+          results.set(event.taskId, event.result);
+        }
+        if (event.artifactId) {
+          artifacts.push(event.artifactId);
         }
       }
     }
@@ -341,22 +372,18 @@ export async function executePlan(
 
 /**
  * Execute a single task by delegating to an agent
+ * Returns an async generator that yields orchestration events
  */
-async function executeTask(
+async function* executeTask(
   task: Task,
   space: Space,
   model: LanguageModel, // Model to use for agent execution
-  previousResults: Map<string, string>,
-  onEvent: (event: DelegationEvent) => void
-): Promise<{
-  task: Task;
-  result?: string;
-  artifactId?: string;
-  error?: string;
-}> {
+  previousResults: Map<string, string>
+): AsyncGenerator<OrchestrationEvent, void, void> {
   const agentId = task.assignedTo;
   if (!agentId) {
-    return { task, error: "No agent assigned to task" };
+    // Should not happen if plan is valid
+    return;
   }
 
   // Emit delegation started event
@@ -373,7 +400,7 @@ async function executeTask(
     // Agent not found yet, will be loaded below
   }
 
-  onEvent({
+  yield {
     type: "delegation",
     taskId: task.id,
     taskTitle: task.title,
@@ -381,21 +408,25 @@ async function executeTask(
     agentName,
     status: "started",
     timestamp: Date.now(),
-  });
+  };
 
   // Get the agent by ID first
   let agent = space.getAgent(agentId);
   if (!agent) {
     // Try to find by name (case-insensitive) as fallback
     // Try to find by name (case-insensitive and normalized) as fallback
-    const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, " ").trim();
-    
+    const normalize = (s: string) =>
+      s.toLowerCase().replace(/[-_]/g, " ").trim();
+
     for (const [id, candidateAgent] of space.agents.entries()) {
       const normalizedId = normalize(id);
       const normalizedName = normalize(candidateAgent.name || "");
       const normalizedTarget = normalize(agentId);
 
-      if (normalizedName === normalizedTarget || normalizedId === normalizedTarget) {
+      if (
+        normalizedName === normalizedTarget ||
+        normalizedId === normalizedTarget
+      ) {
         agent = candidateAgent;
         console.log(
           `[Orchestrator] Found agent by fuzzy match: ${agentId} -> ${id} (${candidateAgent.name})`
@@ -430,13 +461,28 @@ async function executeTask(
       `[Orchestrator] Agent '${agentId}' not found. Available agents:`,
       Array.from(space.agents.keys())
     );
-    return { task, error: `Agent '${agentId}' not found` };
+    const error = `Agent '${agentId}' not found`;
+    task.fail(error);
+    yield {
+      type: "delegation",
+      taskId: task.id,
+      taskTitle: task.title,
+      agentId,
+      agentName,
+      status: "failed",
+      error,
+      timestamp: Date.now(),
+    };
+    return;
   }
+
+  // Get agent's configured tools for warning detection
+  const configuredTools: string[] = (agent as any).tools || [];
 
   // Log agent's tool configuration
   console.log(`[Orchestrator] Using agent:`, {
     name: agent.name,
-    toolConfig: (agent as any).tools,
+    toolConfig: configuredTools,
   });
 
   // Update agentName to ensure it's correct for the try block
@@ -457,9 +503,30 @@ async function executeTask(
     ? `Context from previous work:\n${context}\n\nYour task: ${task.description}`
     : task.description;
 
+  // Generate unique ID for this LLM call
+  const llmCallId = `llm_${task.id}_${Date.now()}`;
+  const llmStartTime = Date.now();
+  const modelId = (model as any).modelId || "unknown";
+
   try {
+    // Emit LLM call started event
+    yield {
+      type: "llm-call",
+      id: llmCallId,
+      status: "started",
+      model: modelId,
+      agentId,
+      agentName,
+      purpose: "task-execution",
+      userMessagePreview: prompt.slice(0, 200),
+      messageCount: 1,
+      toolsAvailable: configuredTools,
+      timestamp: llmStartTime,
+    };
+
     // Execute the agent using streamText to capture tool calls
     // Pass the model from the orchestrator so all agents use the same model
+    // IMPORTANT: Set mode to "worker" to ensure agent follows instructions
     const stream = await agent.streamText({
       messages: [{ role: "user", content: prompt }] as XMessage[],
       spaceId: space.spaceId,
@@ -468,6 +535,7 @@ async function executeTask(
         taskId: task.id,
         taskTitle: task.title,
         delegatedFrom: "x",
+        mode: "worker", // Force worker mode
       },
     });
 
@@ -489,18 +557,20 @@ async function executeTask(
       chunkTypes[chunk.type] = (chunkTypes[chunk.type] || 0) + 1;
 
       if (chunk.type === "text-delta") {
-        result += chunk.delta;
+        // AI SDK uses textDelta property, not delta
+        const delta = chunk.textDelta || (chunk as any).delta || "";
+        result += delta;
         // Emit streaming event
-        onEvent({
+        yield {
           type: "delegation",
           taskId: task.id,
           taskTitle: task.title,
           agentId,
           agentName,
           status: "streaming",
-          result: chunk.delta, // Send just the delta for streaming events
+          result: delta, // Send just the delta for streaming events
           timestamp: Date.now(),
-        });
+        };
       } else if (chunk.type === "tool-call") {
         const toolCallId =
           chunk.toolCallId || `tool-${Date.now()}-${Math.random()}`;
@@ -575,12 +645,34 @@ async function executeTask(
       }
     }
 
+    // Emit LLM call completed event
+    yield {
+      type: "llm-call",
+      id: llmCallId,
+      status: "completed",
+      model: modelId,
+      agentId,
+      agentName,
+      purpose: "task-execution",
+      responsePreview: result.slice(0, 500),
+      durationMs: Date.now() - llmStartTime,
+      timestamp: Date.now(),
+    };
+
     // Mark task as completed
     task.complete(result);
 
+    // Generate warnings about tool usage
+    const warnings: string[] = [];
+    if (configuredTools.length > 0 && toolCalls.length === 0) {
+      warnings.push(
+        `Agent has ${configuredTools.length} tools configured (${configuredTools.join(", ")}) but made no tool calls. Tools may not be loaded or the agent chose not to use them.`
+      );
+    }
+
     // Emit completion event with tool calls and artifact info
     // NO TRUNCATION - stream EVERY BIT of data
-    onEvent({
+    yield {
       type: "delegation",
       taskId: task.id,
       taskTitle: task.title,
@@ -595,41 +687,54 @@ async function executeTask(
         args: tc.args,
         result: tc.result, // FULL result - no truncation
       })),
+      warnings: warnings.length > 0 ? warnings : undefined,
+      configuredTools: configuredTools.length > 0 ? configuredTools : undefined,
+      loadedToolCount: toolCalls.length,
       timestamp: Date.now(),
-    });
-
-    return { task, result, artifactId };
+    };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
+
+    // Emit LLM call failed event
+    yield {
+      type: "llm-call",
+      id: llmCallId,
+      status: "failed",
+      model: modelId,
+      agentId,
+      agentName,
+      purpose: "task-execution",
+      error: errorMessage,
+      durationMs: Date.now() - llmStartTime,
+      timestamp: Date.now(),
+    };
 
     // Mark task as failed
     task.fail(errorMessage);
 
     // Get agent name for better visibility
-    let agentName = agentId;
+    let failedAgentName = agentName;
     try {
       const failedAgent = space.getAgent(agentId);
       if (failedAgent) {
-        agentName = failedAgent.name || agentId;
+        failedAgentName = failedAgent.name || agentId;
       }
     } catch (e) {
       // Agent not found
     }
 
     // Emit failure event
-    onEvent({
+    yield {
       type: "delegation",
       taskId: task.id,
       taskTitle: task.title,
       agentId,
-      agentName,
+      agentName: failedAgentName,
       status: "failed",
       error: errorMessage,
       timestamp: Date.now(),
-    });
-
-    return { task, error: errorMessage };
+    };
   }
 }
 

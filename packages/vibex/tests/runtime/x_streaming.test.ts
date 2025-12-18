@@ -50,9 +50,9 @@ describe("XAgent Streaming", () => {
             },
           ],
         }),
-        executePlan: vi.fn().mockImplementation(async (plan, space, model, onEvent) => {
+        executePlan: vi.fn().mockImplementation(async function* (plan, space, model) {
           // Emit events
-          onEvent({
+          yield {
             type: "delegation",
             taskId: "task-1",
             taskTitle: "Task 1",
@@ -60,10 +60,10 @@ describe("XAgent Streaming", () => {
             agentName: "Worker 1",
             status: "started",
             timestamp: Date.now(),
-          } as DelegationEvent);
+          } as DelegationEvent;
 
           // Emit streaming chunks
-          onEvent({
+          yield {
             type: "delegation",
             taskId: "task-1",
             taskTitle: "Task 1",
@@ -72,9 +72,9 @@ describe("XAgent Streaming", () => {
             status: "streaming",
             result: "Hello ",
             timestamp: Date.now(),
-          } as DelegationEvent);
+          } as DelegationEvent;
 
-          onEvent({
+          yield {
             type: "delegation",
             taskId: "task-1",
             taskTitle: "Task 1",
@@ -83,9 +83,9 @@ describe("XAgent Streaming", () => {
             status: "streaming",
             result: "World",
             timestamp: Date.now(),
-          } as DelegationEvent);
+          } as DelegationEvent;
 
-          onEvent({
+          yield {
             type: "delegation",
             taskId: "task-1",
             taskTitle: "Task 1",
@@ -94,7 +94,7 @@ describe("XAgent Streaming", () => {
             status: "completed",
             result: "Hello World",
             timestamp: Date.now(),
-          } as DelegationEvent);
+          } as DelegationEvent;
 
           return { results: new Map([["task-1", "Hello World"]]), artifacts: [] };
         }),
@@ -119,17 +119,44 @@ describe("XAgent Streaming", () => {
       metadata: { mode: "agent" },
     });
 
-    const chunks: string[] = [];
-    for await (const chunk of result.textStream) {
-      chunks.push(chunk);
+    const fullStreamChunks: any[] = [];
+    for await (const chunk of result.fullStream) {
+      fullStreamChunks.push(chunk);
     }
 
-    const fullText = chunks.join("");
+    const textChunks: string[] = [];
+    for await (const chunk of result.textStream) {
+      textChunks.push(chunk);
+    }
+    const fullText = textChunks.join("");
     console.error("Full Text:", fullText);
     
-    // Verify streaming content
-    expect(fullText).toContain("Hello ");
-    expect(fullText).toContain("World");
+    // Verify we got delegation events
+    const delegationEvents = fullStreamChunks.filter(c => c.type === "delegation");
+    expect(delegationEvents.length).toBeGreaterThan(0);
+    expect(delegationEvents[0]).toMatchObject({
+      type: "delegation",
+      status: "started",
+      taskTitle: "Task 1",
+      agentId: "worker-1"
+    });
+
+    // Verify we got agent-text-delta events (multiplexed streaming)
+    const agentTextDeltas = fullStreamChunks.filter(c => c.type === "agent-text-delta");
+    expect(agentTextDeltas.length).toBeGreaterThan(0);
+    expect(agentTextDeltas[0]).toMatchObject({
+      type: "agent-text-delta",
+      agentId: "worker-1",
+      taskId: "task-1"
+    });
+    
+    // Verify content matches
+    const agentContent = agentTextDeltas.map(c => c.textDelta).join("");
+    expect(agentContent).toBe("Hello World");
+
+    // Verify text stream still contains everything (backward compatibility)
+    expect(fullText).toContain("Hello World");
+    expect(fullText).toContain("Plan Created");
     expect(fullText).toContain("Final Summary");
     
     // Verify delegation started message

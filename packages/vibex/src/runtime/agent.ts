@@ -21,6 +21,7 @@ export interface AgentContext {
   taskId?: string;
   conversationHistory: XMessage[];
   metadata?: Record<string, any>;
+  mode?: "autonomous" | "worker";
 }
 
 export interface AgentResponse {
@@ -116,6 +117,17 @@ export class Agent {
    */
   protected getSystemPrompt(context?: AgentContext): string {
     const segments: string[] = [];
+
+    // Worker Mode Preamble (High Priority)
+    if (context?.mode === "worker") {
+      segments.push(`🚨 **WORKER MODE ACTIVE** 🚨`);
+      segments.push(`You are currently operating in WORKER MODE.`);
+      segments.push(`Your goal is to execute the specific task assigned to you efficiently and accurately.`);
+      segments.push(`Do NOT attempt to create a new plan or ask for clarification unless absolutely necessary.`);
+      segments.push(`Focus on using your available tools to complete the task immediately.`);
+      segments.push(`Ignore any previous instructions to "plan next steps" - just DO the task.`);
+      segments.push(`\n---\n`);
+    }
 
     // Base identity
     segments.push(`You are ${this.name}.`);
@@ -265,6 +277,7 @@ export class Agent {
       spaceId: spaceId || "default",
       conversationHistory: [],
       metadata: enrichedMetadata,
+      mode: enrichedMetadata.mode as "autonomous" | "worker",
     };
 
     // Use agent-specific prompt and append any extra system context
@@ -355,6 +368,7 @@ export class Agent {
       spaceId: spaceId || "default",
       conversationHistory: [],
       metadata: enrichedMetadata,
+      mode: enrichedMetadata.mode as "autonomous" | "worker",
     };
 
     // Use agent-specific prompt and append any extra system context
@@ -446,6 +460,7 @@ export class Agent {
       spaceId: spaceId || "default",
       conversationHistory: [],
       metadata: enrichedMetadata,
+      mode: enrichedMetadata.mode as "autonomous" | "worker",
     };
 
     // Use agent-specific prompt and append any extra system context
@@ -511,6 +526,7 @@ export class Agent {
       spaceId: spaceId || "default",
       conversationHistory: [],
       metadata: enrichedMetadata,
+      mode: enrichedMetadata.mode as "autonomous" | "worker",
     };
 
     // Use agent-specific prompt and append any extra system context

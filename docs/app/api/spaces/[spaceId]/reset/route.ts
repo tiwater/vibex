@@ -76,11 +76,10 @@ export async function POST(
 
       // Clear all state
       if (space.plan) space.plan = undefined;
-      space.history.clear();
-      space.messageQueue.clear();
-      space.tasks.clear();
+      space.history.length = 0; // Clear array by setting length to 0
+      space.tasks.clear(); // Map has .clear()
       if (space.artifacts) space.artifacts = [];
-      space.agents.clear();
+      space.agents.clear(); // Map has .clear()
 
       await space.persistState();
       spaceReset = true;

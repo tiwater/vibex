@@ -68,6 +68,7 @@ export default function PlaygroundPage() {
     chatMode,
     setChatMode,
     resetSpace,
+    diagnostics,
   } = usePlayground();
 
   // Initialize after mount
@@ -353,6 +354,10 @@ export default function PlaygroundPage() {
               isLoading={isLoading}
               onClose={() => setShowDiagnosis(false)}
               className="h-full"
+              chatMode={chatMode}
+              agentId={agentId}
+              error={error}
+              diagnostics={diagnostics}
             />
           </div>
         )}

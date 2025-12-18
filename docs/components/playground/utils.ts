@@ -314,7 +314,7 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
           timestamp: message.createdAt,
         });
       }
-    } else if (part.type === "agent-text") {
+    } else if ((part as any).type === "agent-text") {
       // Handle agent-text parts directly
       items.push({
         type: "agent-message",
@@ -323,7 +323,7 @@ export function parseMessageToTimeline(message: XChatMessage): TimelineItem[] {
         content: (part as any).text,
         timestamp: message.createdAt,
       });
-    } else if (part.type === "data-agent") {
+    } else if ((part as any).type === "data-agent") {
       // Handle data-agent parts - update current agent context
       const agentData = (part as any).data;
       if (agentData && agentData.agentId) {

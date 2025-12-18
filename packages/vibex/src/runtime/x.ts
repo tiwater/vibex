@@ -34,6 +34,7 @@ import {
   synthesizeResults,
   DelegationEvent,
 } from "./orchestration";
+import { teeAsync } from "../utils/async";
 
 export interface XOptions {
   model?: string; // AI model to use
@@ -376,13 +377,37 @@ export class XAgent extends Agent {
     // If simple request, use ask mode
     if (!analysis.needsPlan || !analysis.suggestedTasks || analysis.suggestedTasks.length === 0) {
       console.log("[XAgent] Simple request detected, using ask mode");
-      return this.handleAskMode(
+      // Wrap ask mode response with orchestration event
+      const askResponse = await this.handleAskMode(
         messages,
         systemMessage,
         spaceId,
         metadata,
         restOptions
       );
+      
+      // Inject orchestration event showing why multi-agent was NOT used
+      const originalFullStream = askResponse.fullStream as AsyncIterable<any>;
+      const orchestrationEvent = {
+        type: "orchestration" as const,
+        needsPlan: false,
+        reasoning: analysis.reasoning || "Request does not require multi-agent collaboration",
+        availableAgents: availableAgents.map(a => a.name),
+        suggestedTasks: [],
+        taskCount: 0,
+      };
+      
+      async function* wrappedStream() {
+        yield orchestrationEvent;
+        for await (const chunk of originalFullStream) {
+          yield chunk;
+        }
+      }
+      
+      return {
+        ...askResponse,
+        fullStream: wrappedStream(),
+      } as any as StreamTextResultType;
     }
 
     // Execute the plan with streaming delegation events
@@ -394,21 +419,8 @@ export class XAgent extends Agent {
       metadata
     );
 
-    // Trace chunk types for worker agents
-    if (response && response.fullStream) {
-      (async () => {
-        let idx = 0;
-        for await (const chunk of response.fullStream as AsyncIterable<any>) {
-          console.log("[XAgent] fullStream chunk", {
-            idx: idx++,
-            type: chunk?.type,
-            agentName: chunk?.agentName || chunk?.metadata?.agentName,
-            tool: chunk?.toolName,
-            toolCallId: chunk?.toolCallId,
-          });
-        }
-      })();
-    }
+    // NOTE: Do NOT consume fullStream here for logging - it's single-use!
+    // The stream will be consumed by the API route handler.
     return response;
   }
 
@@ -426,32 +438,179 @@ export class XAgent extends Agent {
       );
     }
 
-    // Collect delegation events
-    const events: DelegationEvent[] = [];
+    const self = this;
+    const userContent = plan.goal;
 
-    // Execute the plan
-    const { results } = await executePlan(
-      plan,
-      this.space,
-      this.getModel({ spaceId }),
-      (event) => {
-        events.push(event);
-        console.log("[XAgent] Delegation event:", event);
+    // Helper to emit text chunks
+    function* emitText(text: string) {
+      for (const char of text) {
+        yield {
+          type: "text-delta" as const,
+          textDelta: char
+        };
       }
-    );
+    }
 
-    // Synthesize final response
-    const finalResponse = await synthesizeResults(
-      this.getModel({ spaceId }),
-      plan,
-      results,
-      plan.goal
-    );
+    // Create async generator for fullStream
+    async function* generateFullStream() {
+      // Yield initial text
+      yield* emitText(`🚀 **Executing Plan:** ${plan!.goal}\n\n`);
 
-    // Build simple text summary
-    const streamContent = `## Plan: ${plan.goal}\n\n${finalResponse || ""}`;
+      const results = new Map<string, string>();
 
-    return this.createTextStreamResponse(streamContent);
+      try {
+        // Execute plan and stream delegation events
+        const eventStream = executePlan(
+          plan!,
+          self.space,
+          self.getModel({ spaceId })
+        );
+
+        for await (const event of eventStream) {
+          // Handle LLM call events
+          if (event.type === "llm-call") {
+             yield {
+                type: "llm-call" as const,
+                id: event.id,
+                status: event.status,
+                model: event.model,
+                agentId: event.agentId,
+                agentName: event.agentName,
+                purpose: event.purpose,
+                userMessagePreview: event.userMessagePreview,
+                responsePreview: event.responsePreview,
+                durationMs: event.durationMs,
+                error: event.error,
+              };
+              continue;
+          }
+
+          // Handle delegation events
+          const delegationEvent = event as DelegationEvent;
+
+          // Update local results map
+          if (delegationEvent.status === "completed" && delegationEvent.result) {
+            results.set(delegationEvent.taskId, delegationEvent.result);
+          }
+
+          // Yield delegation event for UI
+          yield {
+            type: "delegation" as const,
+            status: delegationEvent.status,
+            taskId: delegationEvent.taskId,
+            taskTitle: delegationEvent.taskTitle,
+            agentId: delegationEvent.agentId,
+            agentName: delegationEvent.agentName,
+            result: delegationEvent.status === "streaming" ? delegationEvent.result : undefined,
+            error: delegationEvent.error,
+            warnings: delegationEvent.warnings,
+            configuredTools: delegationEvent.configuredTools,
+            loadedToolCount: delegationEvent.loadedToolCount,
+          };
+
+          // Emit text representation
+          let eventText = "";
+          if (delegationEvent.status === "started") {
+            eventText = `\n🔄 **Delegating to ${delegationEvent.agentName}**: ${delegationEvent.taskTitle}\n`;
+          } else if (delegationEvent.status === "streaming") {
+             if (delegationEvent.result) {
+                // MULTIPLEXING: Yield specific agent-text-delta event
+                yield {
+                  type: "agent-text-delta",
+                  agentId: delegationEvent.agentId,
+                  taskId: delegationEvent.taskId,
+                  textDelta: delegationEvent.result
+                };
+             }
+             continue;
+          } else if (delegationEvent.status === "completed") {
+            eventText = `\n✅ **${delegationEvent.agentName} completed**: ${delegationEvent.taskTitle}\n`;
+          } else if (delegationEvent.status === "failed") {
+            eventText = `\n❌ **${delegationEvent.agentName} failed**: ${delegationEvent.taskTitle}\n`;
+            if (delegationEvent.error) {
+              eventText += `Error: ${delegationEvent.error}\n`;
+            }
+          }
+          yield* emitText(eventText);
+        }
+
+        // Synthesize final response
+        let finalResponse = "";
+        try {
+          finalResponse = await synthesizeResults(
+            self.getModel({ spaceId }),
+            plan!,
+            results,
+            userContent
+          );
+        } catch (synthError) {
+          console.error(`[XAgent] synthesizeResults failed:`, synthError);
+          finalResponse = `⚠️ Results synthesis failed: ${synthError instanceof Error ? synthError.message : String(synthError)}\n\nTask results are still available in the plan.`;
+        }
+
+        // Yield final response
+        const finalText = `\n\n## 📊 Final Summary\n\n${finalResponse}\n`;
+        yield* emitText(finalText);
+
+      } catch (error) {
+        const errorText = `\n\n⚠️ **Plan execution failed:** ${error instanceof Error ? error.message : String(error)}\n`;
+        yield* emitText(errorText);
+      }
+
+      // Yield finish
+      yield { type: "finish" as const, finishReason: "stop" as const };
+    }
+
+    // Split the stream for multiple consumers
+    const [fullStreamForResponse, fullStreamForTextProcessing] = teeAsync(generateFullStream());
+    const [fullStreamForTextStream, fullStreamForTextPromise] = teeAsync(fullStreamForTextProcessing);
+
+    // Create textStream
+    async function* generateTextStream() {
+      for await (const chunk of fullStreamForTextStream) {
+        if (chunk.type === "text-delta") {
+          yield chunk.textDelta;
+        } else if (chunk.type === "agent-text-delta") {
+          // Include agent text in the main text stream for backward compatibility
+          yield chunk.textDelta;
+        }
+      }
+    }
+
+    // Collect full text
+    const textPromise = (async () => {
+      let fullText = "";
+      for await (const chunk of fullStreamForTextPromise) {
+        if (chunk.type === "text-delta") {
+          fullText += chunk.textDelta;
+        } else if (chunk.type === "agent-text-delta") {
+          fullText += chunk.textDelta;
+        }
+      }
+      return fullText;
+    })();
+
+    return {
+      fullStream: fullStreamForResponse,
+      textStream: generateTextStream(),
+      text: textPromise,
+      toUIMessageStreamResponse: () => {
+        return new Response(
+          new ReadableStream({
+            async start(controller) {
+              for await (const chunk of fullStreamForResponse) {
+                const encoder = new TextEncoder();
+                controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
+              }
+              controller.close();
+            },
+          }),
+          {
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          }
+        );
+      },
+    } as any as StreamTextResultType;
   }
 
   /**
@@ -676,89 +835,108 @@ export class XAgent extends Agent {
       }
     }
 
+    // Get available agents for the orchestration event
+    const availableAgentsList = await this.getAvailableAgents();
+    const availableAgentNames = availableAgentsList.map(a => a.name);
+
     // Create async generator for fullStream that actually streams events
     async function* generateFullStream() {
+      // Yield orchestration decision event first (for diagnosis panel)
+      yield {
+        type: "orchestration" as const,
+        needsPlan: true,
+        reasoning,
+        availableAgents: availableAgentNames,
+        suggestedTasks: suggestedTasks.map(t => ({
+          title: t.title,
+          assignedTo: t.assignedTo,
+        })),
+        taskCount: suggestedTasks.length,
+      };
+
       // Yield initial text explaining the plan
       const planSummary = `🎯 **Plan Created**\n\n**Goal:** ${userContent}\n\n**Reasoning:** ${reasoning}\n\n**Tasks (${suggestedTasks.length}):**\n${suggestedTasks.map((t, i) => `${i + 1}. **${t.title}** → \`${t.assignedTo}\``).join('\n')}\n\n---\n\n`;
 
       yield* emitText(planSummary);
 
+      const results = new Map<string, string>();
+
       // Execute plan and stream delegation events as they happen
       try {
-        // Create event queue to convert callbacks to async iteration
-        const eventQueue: DelegationEvent[] = [];
-        let executionComplete = false;
-
-
-        // Start execution in background
-        const executionPromise = executePlan(
+        const eventStream = executePlan(
           plan,
           self.space,
-          self.getModel({ spaceId }),
-          (event: DelegationEvent) => {
-            console.log("[XAgent] Delegation event (streaming)", {
-              status: event.status,
-              agentId: event.agentId,
-              agentName: event.agentName,
-              taskId: event.taskId,
-              taskTitle: event.taskTitle,
-              resultPreview: event.result
-                ? String(event.result).slice(0, 100)
-                : undefined,
-            });
-            eventQueue.push(event);
-          }
-        ).then(
-          (result) => {
-            executionComplete = true;
-            return result;
-          },
-          (error) => {
-
-            executionComplete = true;
-            throw error;
-          }
+          self.getModel({ spaceId })
         );
 
-        // Process events as they arrive
-        let processedCount = 0;
-        while (!executionComplete || processedCount < eventQueue.length) {
-          if (processedCount < eventQueue.length) {
-            const event = eventQueue[processedCount];
-            processedCount++;
-
-            // Emit event as text
-            let eventText = "";
-            if (event.status === "started") {
-              eventText = `\n🔄 **Delegating to ${event.agentName}**: ${event.taskTitle}\n`;
-            } else if (event.status === "streaming") {
-              // Just yield the chunk directly
-              if (event.result) {
-                yield* emitText(event.result);
-              }
-              continue; // Skip the rest of the loop for streaming events
-            } else if (event.status === "completed") {
-              eventText = `\n✅ **${event.agentName} completed**: ${event.taskTitle}\n`;
-              // Don't show result preview if we've been streaming it
-              // But if we haven't (e.g. non-streaming agent), we might want to show it
-              // For now, let's assume if we got streaming events, we don't need the summary
-              // But since we don't track state easily here, let's just show completion
-            } else if (event.status === "failed") {
-              eventText = `\n❌ **${event.agentName} failed**: ${event.taskTitle}\n`;
-              if (event.error) {
-                eventText += `Error: ${event.error}\n`;
-              }
-            }
-
-            yield* emitText(eventText);
-          } else {
-            // Wait a bit before checking again
-            await new Promise(resolve => setTimeout(resolve, 100));
+        for await (const event of eventStream) {
+          // Handle LLM call events
+          if (event.type === "llm-call") {
+             yield {
+                type: "llm-call" as const,
+                id: event.id,
+                status: event.status,
+                model: event.model,
+                agentId: event.agentId,
+                agentName: event.agentName,
+                purpose: event.purpose,
+                userMessagePreview: event.userMessagePreview,
+                responsePreview: event.responsePreview,
+                durationMs: event.durationMs,
+                error: event.error,
+              };
+              continue; // LLM call events don't need text output
           }
-        }
 
-        // Get results
-        const { results } = await executionPromise;
+          // Handle delegation events
+          const delegationEvent = event as DelegationEvent;
+
+          // Update local results map
+          if (delegationEvent.status === "completed" && delegationEvent.result) {
+            results.set(delegationEvent.taskId, delegationEvent.result);
+          }
+
+          // FIRST: Yield the delegation event itself for diagnosis panel
+          yield {
+            type: "delegation" as const,
+            status: delegationEvent.status,
+            taskId: delegationEvent.taskId,
+            taskTitle: delegationEvent.taskTitle,
+            agentId: delegationEvent.agentId,
+            agentName: delegationEvent.agentName,
+            result: delegationEvent.status === "streaming" ? delegationEvent.result : undefined,
+            error: delegationEvent.error,
+            warnings: delegationEvent.warnings,
+            configuredTools: delegationEvent.configuredTools,
+            loadedToolCount: delegationEvent.loadedToolCount,
+          };
+
+          // THEN: Emit event as text for the chat UI
+          let eventText = "";
+          if (delegationEvent.status === "started") {
+            eventText = `\n🔄 **Delegating to ${delegationEvent.agentName}**: ${delegationEvent.taskTitle}\n`;
+          } else if (delegationEvent.status === "streaming") {
+            // MULTIPLEXING: Yield specific agent-text-delta event
+            if (delegationEvent.result) {
+              yield {
+                type: "agent-text-delta",
+                agentId: delegationEvent.agentId,
+                taskId: delegationEvent.taskId,
+                textDelta: delegationEvent.result
+              };
+            }
+            continue; // Skip the rest of the loop for streaming events
+          } else if (delegationEvent.status === "completed") {
+            eventText = `\n✅ **${delegationEvent.agentName} completed**: ${delegationEvent.taskTitle}\n`;
+          } else if (delegationEvent.status === "failed") {
+            eventText = `\n❌ **${delegationEvent.agentName} failed**: ${delegationEvent.taskTitle}\n`;
+            if (delegationEvent.error) {
+              eventText += `Error: ${delegationEvent.error}\n`;
+            }
+          }
+
+          yield* emitText(eventText);
+        }
 
         // Synthesize results
         let finalResponse = "";
@@ -787,70 +965,18 @@ export class XAgent extends Agent {
       yield { type: "finish" as const, finishReason: "stop" as const };
     }
 
-    // Create shared buffer for stream consumption
-    const chunks: any[] = [];
-    let consumersWaiting: Array<() => void> = [];
-    let isGenerating = false;
-    let generationComplete = false;
+    // Split the stream for multiple consumers
+    const [fullStreamForResponse, fullStreamForTextProcessing] = teeAsync(generateFullStream());
+    const [fullStreamForTextStream, fullStreamForTextPromise] = teeAsync(fullStreamForTextProcessing);
 
-    // Start generation immediately and buffer chunks
-    const startGeneration = async () => {
-      if (isGenerating) return;
-      isGenerating = true;
-
-      try {
-        for await (const chunk of generateFullStream()) {
-          chunks.push(chunk);
-          // Notify waiting consumers
-          consumersWaiting.forEach(resolve => resolve());
-          consumersWaiting = [];
-        }
-      } finally {
-        generationComplete = true;
-        // Notify any remaining consumers
-        consumersWaiting.forEach(resolve => resolve());
-        consumersWaiting = [];
-      }
-    };
-
-    // Start generation
-    startGeneration();
-
-    // Create textStream from buffered chunks
+    // Create textStream
     async function* generateTextStream() {
-      let index = 0;
-      while (true) {
-        if (index < chunks.length) {
-          const chunk = chunks[index];
-          index++;
-          if (chunk.type === "text-delta") {
-            yield chunk.textDelta;
-          }
-        } else if (generationComplete) {
-          break;
-        } else {
-          // Wait for more chunks
-          await new Promise<void>(resolve => {
-            consumersWaiting.push(resolve);
-          });
-        }
-      }
-    }
-
-    // Create fullStream from buffered chunks
-    async function* generateFullStreamFromBuffer() {
-      let index = 0;
-      while (true) {
-        if (index < chunks.length) {
-          yield chunks[index];
-          index++;
-        } else if (generationComplete) {
-          break;
-        } else {
-          // Wait for more chunks
-          await new Promise<void>(resolve => {
-            consumersWaiting.push(resolve);
-          });
+      for await (const chunk of fullStreamForTextStream) {
+        if (chunk.type === "text-delta") {
+          yield chunk.textDelta;
+        } else if (chunk.type === "agent-text-delta") {
+          // Include agent text in the main text stream for backward compatibility
+          yield chunk.textDelta;
         }
       }
     }
@@ -858,8 +984,10 @@ export class XAgent extends Agent {
     // Collect full text
     const textPromise = (async () => {
       let fullText = "";
-      for await (const chunk of generateTextStream()) {
+      for await (const chunk of fullStreamForTextPromise) {
         if (chunk.type === "text-delta") {
+          fullText += chunk.textDelta;
+        } else if (chunk.type === "agent-text-delta") {
           fullText += chunk.textDelta;
         }
       }
@@ -867,14 +995,14 @@ export class XAgent extends Agent {
     })();
 
     return {
-      fullStream: generateFullStreamFromBuffer(),
+      fullStream: fullStreamForResponse,
       textStream: generateTextStream(),
       text: textPromise,
       toUIMessageStreamResponse: () => {
         return new Response(
           new ReadableStream({
             async start(controller) {
-              for await (const chunk of generateFullStreamFromBuffer()) {
+              for await (const chunk of fullStreamForResponse) {
                 const encoder = new TextEncoder();
                 controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
               }
@@ -910,15 +1038,21 @@ export class XAgent extends Agent {
 
     // Execute plan
     try {
-      const { results } = await executePlan(
-        plan,
-        this.space,
-        this.getModel({ spaceId }),
-        (event) => {
-          // TODO: Emit events to client via data stream if possible
-          console.log(`[XAgent] Delegation event: ${event.type} - ${event.taskTitle}`);
+      // Execute plan (ignoring events as this is the deprecated non-streaming version)
+      const { results } = await (async () => {
+        const results = new Map<string, string>();
+        const eventStream = executePlan(
+          plan,
+          this.space,
+          this.getModel({ spaceId })
+        );
+        for await (const event of eventStream) {
+          if (event.type === "delegation" && event.status === "completed" && event.result) {
+            results.set(event.taskId, event.result);
+          }
         }
-      );
+        return { results };
+      })();
 
       // Synthesize results
       try {

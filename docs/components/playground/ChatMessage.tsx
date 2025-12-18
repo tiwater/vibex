@@ -4,7 +4,6 @@ import React, { useState, useMemo, memo, useRef } from "react";
 import {
   Bot,
   User,
-  Wrench,
   CheckCircle,
   XCircle,
   Loader2,
@@ -14,10 +13,6 @@ import {
   ChevronRight,
   Copy,
   Check,
-  Terminal,
-  Code,
-  Search,
-  Globe,
   ArrowRight,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -75,8 +70,6 @@ function CopyButton({
     </Button>
   );
 }
-
-
 
 // Tool Call Component - shown as a separate message from the agent (memoized)
 const ToolCallMessage = memo(function ToolCallMessage({

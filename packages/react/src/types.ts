@@ -84,6 +84,13 @@ export interface UIReasoningPart {
   isCollapsed?: boolean;
 }
 
+export interface UIAgentTextPart {
+  type: "agent-text";
+  agentId: string;
+  text: string;
+  taskId?: string;
+}
+
 /**
  * Union of all UI message part types
  */
@@ -92,7 +99,8 @@ export type XChatPart =
   | UIToolCallPart
   | UIToolResultPart
   | UIArtifactPart
-  | UIReasoningPart;
+  | UIReasoningPart
+  | UIAgentTextPart;
 
 /**
  * A message in an X chat conversation (client-side)
